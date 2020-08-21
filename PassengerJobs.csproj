@@ -48,6 +48,7 @@
     <Reference Include="UnityModManager, Version=0.22.8.0, Culture=neutral, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extensions.cs" />
     <Compile Include="PassengerJobGenerator.cs" />
     <Compile Include="PassengerJobs.cs" />
     <Compile Include="Patches.cs" />
