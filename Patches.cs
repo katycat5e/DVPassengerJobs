@@ -1,4 +1,5 @@
-﻿using Harmony12;
+﻿using DV.RenderTextureSystem.BookletRender;
+using Harmony12;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,18 +9,6 @@ using UnityEngine;
 
 namespace PassengerJobsMod
 {
-    //[HarmonyPatch(typeof(StationController), "Update")]
-    //class StationController_Update_Patch
-    //{
-    //    static void Postfix( StationController __instance )
-    //    {
-    //        if( PassengerJobGenerator.LinkedGenerators.TryGetValue(__instance, out var generator) )
-    //        {
-    //            generator.OnStationUpdate();
-    //        }
-    //    }
-    //}
-
     [HarmonyPatch(typeof(StationProceduralJobsController), "Awake")]
     class StationController_Start_Patch
     {
@@ -39,23 +28,19 @@ namespace PassengerJobsMod
         }
     }
 
-    //[HarmonyPatch(typeof(JobValidator), "ProcessJobOverview")]
-    //class Validator_Process_Patch
-    //{
-    //    static void Prefix( JobOverview jobOverview, List<StationController> ___allStations )
-    //    {
-    //        //var allStationsField = typeof(JobValidator).GetField("allStations", BindingFlags.NonPublic | BindingFlags.Static);
-    //        //var stations = allStationsField.GetValue(null) as List<StationController>;
+    [HarmonyPatch(typeof(BookletCreator), "GetJobLicenseTemplateData")]
+    class BookletCreator_GetTemplate_Patch
+    {
+        static bool Prefix( JobLicenses jobLicense, ref LicenseTemplatePaperData __result )
+        {
+            if( jobLicense == PassLicenses.Passengers1 )
+            {
+                // override the BookletCreator method
+                __result = PassengerLicenseUtil.GetPassengerLicenseTemplate();
+                return false;
+            }
 
-    //        var sb = new StringBuilder();
-    //        foreach( var st in ___allStations )
-    //        {
-    //            sb.Clear();
-    //            sb.AppendLine($"Station {st.stationInfo.Name}:");
-    //            sb.AppendLine($"\tLogicstation: {st.logicStation}");
-    //            sb.Append($"\t\tavailableJobs: {st.logicStation?.availableJobs}");
-    //            PassengerJobs.ModEntry.Logger.Log(sb.ToString());
-    //        }
-    //    }
-    //}
+            return true;
+        }
+    }
 }

@@ -51,6 +51,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="PassengerJobGenerator.cs" />
     <Compile Include="PassengerJobs.cs" />
+    <Compile Include="PassengerLicenseUtil.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

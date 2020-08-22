@@ -22,21 +22,5 @@ namespace PassengerJobsMod
 
             return true;
         }
-
-        //private static bool firstLoaded = true;
-        //private static void OnSceneLoaded( Scene arg0, LoadSceneMode arg1 )
-        //{
-        //    if( firstLoaded )
-        //    {
-        //        firstLoaded = false;
-
-        //        var stations = UnityEngine.Object.FindObjectsOfType<StationController>();
-        //        foreach( var station in stations )
-        //        {
-        //            var generator = station.gameObject.AddComponent<PassengerJobGenerator>();
-        //            generator.Initialize();
-        //        }
-        //    }
-        //}
     }
 }
