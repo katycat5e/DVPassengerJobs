@@ -26,10 +26,25 @@ namespace PassengerJobsMod
 
 
         private static FieldInfo licensePriceField = typeof(LicenseManager).GetField("jobLicenseToPrice", BindingFlags.NonPublic | BindingFlags.Static);
+        private static Type quotaBonusUpdateDataType = typeof(LicenseManager).GetNestedType("InsuranceQuotaAndBonusTimeUpdateData", BindingFlags.NonPublic);
         private static FieldInfo quotaBonusField = typeof(LicenseManager).GetField("jobLicenseToInsuranceQuotaAndBonusTimeUpdateData", BindingFlags.NonPublic | BindingFlags.Static);
         public static void RegisterPassengerLicenses()
         {
+            // add Passengers 1 to price dict
+            var licenseToPrice = licensePriceField.GetValue(null) as Dictionary<JobLicenses, float>;
+            licenseToPrice.Add(PassLicenses.Passengers1, PASS1_COST);
 
+            // add Passengers 1 to insurance/bonus time dict
+            // we can't access the dictionary value type so we need to use reflection to build it
+            ConstructorInfo cInfo = quotaBonusUpdateDataType.GetConstructor(new Type[] { typeof(float), typeof(float) });
+            object newQuotaBonusData = cInfo.Invoke(new object[] { PASS1_INSURANCE_INCREASE, PASS1_TIME_DECREASE });
+            
+            // get dictionary add method
+            MethodInfo nonGenericAdd = typeof(Dictionary<,>).GetMethod("Add", BindingFlags.Public | BindingFlags.Instance);
+            MethodInfo addMethod = nonGenericAdd.MakeGenericMethod(typeof(JobLicenses), quotaBonusUpdateDataType);
+
+            var quotaBonus = quotaBonusField.GetValue(null);
+            addMethod.Invoke(quotaBonus, new object[] { PassLicenses.Passengers1, newQuotaBonusData });
         }
 
         public static LicenseTemplatePaperData GetPassengerLicenseTemplate()
