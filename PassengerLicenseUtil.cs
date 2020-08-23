@@ -38,10 +38,10 @@ namespace PassengerJobsMod
             // we can't access the dictionary value type so we need to use reflection to build it
             ConstructorInfo cInfo = quotaBonusUpdateDataType.GetConstructor(new Type[] { typeof(float), typeof(float) });
             object newQuotaBonusData = cInfo.Invoke(new object[] { PASS1_INSURANCE_INCREASE, PASS1_TIME_DECREASE });
-            
+
             // get dictionary add method
-            MethodInfo nonGenericAdd = typeof(Dictionary<,>).GetMethod("Add", BindingFlags.Public | BindingFlags.Instance);
-            MethodInfo addMethod = nonGenericAdd.MakeGenericMethod(typeof(JobLicenses), quotaBonusUpdateDataType);
+            Type quotaBonusDictType = typeof(Dictionary<,>).MakeGenericType(typeof(JobLicenses), quotaBonusUpdateDataType);
+            MethodInfo addMethod = quotaBonusDictType.GetMethod("Add", BindingFlags.Public | BindingFlags.Instance);
 
             var quotaBonus = quotaBonusField.GetValue(null);
             addMethod.Invoke(quotaBonus, new object[] { PassLicenses.Passengers1, newQuotaBonusData });

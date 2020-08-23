@@ -363,7 +363,7 @@ namespace PassengerJobsMod
         {
             // populate the actual job
             StaticTransportJobDefinition jobDefinition = chainController.jobChainGO.AddComponent<StaticTransportJobDefinition>();
-            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData);
+            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, PassLicenses.Passengers1);
 
             jobDefinition.startingTrack = startTrack;
             jobDefinition.trainCarsToTransport = logicCars;
@@ -454,7 +454,7 @@ namespace PassengerJobsMod
             }
 
             var jobDefinition = chainController.jobChainGO.AddComponent<StaticEmptyHaulJobDefinition>();
-            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, JobLicenses.LogisticalHaul);
+            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, JobLicenses.LogisticalHaul | PassLicenses.Passengers1);
             jobDefinition.startingTrack = startTrack;
             jobDefinition.trainCarsToTransport = logicCars;
             jobDefinition.destinationTrack = destTrack;

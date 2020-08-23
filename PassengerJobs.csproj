@@ -56,6 +56,7 @@
     <Compile Include="PassengerJobs.cs" />
     <Compile Include="PassengerLicenseUtil.cs" />
     <Compile Include="Patches.cs" />
+    <Compile Include="Patches_CareerManager.cs" />
     <Compile Include="Patches_LicenseManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
