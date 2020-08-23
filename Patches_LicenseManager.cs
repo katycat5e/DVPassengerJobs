@@ -12,7 +12,7 @@ namespace PassengerJobsMod
         {
             if( license == PassLicenses.Passengers1 )
             {
-                __result = "Passengers 1";
+                __result = PassengerLicenseUtil.PASS1_LICENSE_NAME;
                 return false;
             }
             return true;

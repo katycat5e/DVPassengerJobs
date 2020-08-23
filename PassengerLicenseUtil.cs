@@ -24,6 +24,8 @@ namespace PassengerJobsMod
         public const float PASS1_INSURANCE_INCREASE = 150_000f;
         public const float PASS1_TIME_DECREASE = 0.04f;
 
+        public static Sprite Pass1Sprite = null;
+
 
         private static FieldInfo licensePriceField = typeof(LicenseManager).GetField("jobLicenseToPrice", BindingFlags.NonPublic | BindingFlags.Static);
         private static Type quotaBonusUpdateDataType = typeof(LicenseManager).GetNestedType("InsuranceQuotaAndBonusTimeUpdateData", BindingFlags.NonPublic);
@@ -45,6 +47,13 @@ namespace PassengerJobsMod
 
             var quotaBonus = quotaBonusField.GetValue(null);
             addMethod.Invoke(quotaBonus, new object[] { PassLicenses.Passengers1, newQuotaBonusData });
+
+            // Load license sprite
+            Pass1Sprite = Resources.Load("Passengers1", typeof(Sprite)) as Sprite;
+            if( Pass1Sprite == null )
+            {
+                PassengerJobs.ModEntry.Logger.Warning($"Couldn't load Passengers license sprite");
+            }
         }
 
         public static LicenseTemplatePaperData GetPassengerLicenseTemplate()

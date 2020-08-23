@@ -1,11 +1,7 @@
-﻿using DV.RenderTextureSystem.BookletRender;
-using Harmony12;
+﻿using Harmony12;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using UnityEngine;
 
 namespace PassengerJobsMod
 {
@@ -25,22 +21,6 @@ namespace PassengerJobsMod
                 gen = __instance.gameObject.AddComponent<PassengerJobGenerator>();
                 gen.Initialize();
             }
-        }
-    }
-
-    [HarmonyPatch(typeof(BookletCreator), "GetJobLicenseTemplateData")]
-    class BookletCreator_GetTemplate_Patch
-    {
-        static bool Prefix( JobLicenses jobLicense, ref LicenseTemplatePaperData __result )
-        {
-            if( jobLicense == PassLicenses.Passengers1 )
-            {
-                // override the BookletCreator method
-                __result = PassengerLicenseUtil.GetPassengerLicenseTemplate();
-                return false;
-            }
-
-            return true;
         }
     }
 }

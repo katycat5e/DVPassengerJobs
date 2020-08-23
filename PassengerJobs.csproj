@@ -48,6 +48,10 @@
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
     <Reference Include="UnityModManager, Version=0.22.8.0, Culture=neutral, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +60,7 @@
     <Compile Include="PassengerJobs.cs" />
     <Compile Include="PassengerLicenseUtil.cs" />
     <Compile Include="Patches.cs" />
+    <Compile Include="Patches_BookletCreator.cs" />
     <Compile Include="Patches_CareerManager.cs" />
     <Compile Include="Patches_LicenseManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
