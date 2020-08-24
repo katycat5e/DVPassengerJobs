@@ -23,7 +23,13 @@ namespace PassengerJobsMod
             }
             catch( Exception ex )
             {
-                ModEntry.Logger.Error($"Failed to inject new license definitions into LicenseManager:\n{ex.Message}\n{ex.StackTrace}");
+                var sb = new StringBuilder("Failed to inject new license definitions into LicenseManager:\n");
+                for( ; ex != null; ex = ex.InnerException )
+                {
+                    sb.AppendLine(ex.Message);
+                }
+                ModEntry.Logger.Error(sb.ToString());
+
                 return false;
             }
 

@@ -7,6 +7,7 @@ using DV.RenderTextureSystem.BookletRender;
 using DV.Logic.Job;
 using UnityEngine.UI;
 using UnityEngine;
+using System.Reflection;
 
 namespace PassengerJobsMod
 {
@@ -52,6 +53,52 @@ namespace PassengerJobsMod
                 slot.sprite = PassengerLicenseUtil.Pass1Sprite;
                 slot.gameObject.SetActive(true);
             }
+        }
+    }
+
+    // BookletCreator.CreateLicense()
+    [HarmonyPatch(typeof(BookletCreator), nameof(BookletCreator.CreateLicense))]
+    [HarmonyPatch(new Type[] { typeof(JobLicenses), typeof(Vector3), typeof(Quaternion), typeof(Transform) })]
+    static class BC_CreateLicense_Patch
+    {
+        public const string COPIED_PREFAB_NAME = "LicenseHazmat1";
+        private static readonly MethodInfo spawnLicenseMethod = AccessTools.Method(typeof(BookletCreator), "SpawnLicenseRelatedPrefab");
+
+        static bool Prefix( JobLicenses license, Vector3 position, Quaternion rotation, Transform parent )
+        {
+            if( license != PassLicenses.Passengers1 ) return true;
+
+            // we'll try to copy from the Hazmat 1 license prefab
+            GameObject licenseObj = spawnLicenseMethod.Invoke(null,
+                new object[] { COPIED_PREFAB_NAME, position, rotation, true, parent }) as GameObject;
+
+            PassengerLicenseUtil.SetLicenseObjectProperties(licenseObj, PassBookletType.Passengers1License);
+
+            PassengerJobs.ModEntry.Logger.Log("Created Passengers 1 license");
+            return false;
+        }
+    }
+
+    // BookletCreator.CreateLicenseInfo()
+    [HarmonyPatch(typeof(BookletCreator), nameof(BookletCreator.CreateLicenseInfo))]
+    [HarmonyPatch(new Type[] { typeof(JobLicenses), typeof(Vector3), typeof(Quaternion), typeof(Transform) })]
+    static class BC_CreateLicenseInfo_Patch
+    {
+        public const string COPIED_PREFAB_NAME = "LicenseHazmat1Info";
+        private static readonly MethodInfo spawnLicenseMethod = AccessTools.Method(typeof(BookletCreator), "SpawnLicenseRelatedPrefab");
+
+        static bool Prefix( JobLicenses license, Vector3 position, Quaternion rotation, Transform parent )
+        {
+            if( license != PassLicenses.Passengers1 ) return true;
+
+            // we'll try to copy the Hazmat 1 info prefab
+            GameObject infoObj = spawnLicenseMethod.Invoke(null,
+                new object[] { COPIED_PREFAB_NAME, position, rotation, false, parent }) as GameObject;
+
+            PassengerLicenseUtil.SetLicenseObjectProperties(infoObj, PassBookletType.Passengers1Info);
+
+            PassengerJobs.ModEntry.Logger.Log("Created Passengers 1 info page");
+            return false;
         }
     }
 }
