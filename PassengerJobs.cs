@@ -17,26 +17,26 @@ namespace PassengerJobsMod
         {
             ModEntry = modEntry;
 
+            try
+            {
+                PassengerLicenseUtil.RegisterPassengerLicenses();
+            }
+            catch( Exception ex )
+            {
+                var sb = new StringBuilder("Failed to inject new license definitions into LicenseManager:\n");
+                for( ; ex != null; ex = ex.InnerException )
+                {
+                    sb.AppendLine(ex.Message);
+                }
+                ModEntry.Logger.Error(sb.ToString());
+
+                return false;
+            }
+
             var harmony = Harmony12.HarmonyInstance.Create("com.foxden.passenger_jobs");
             harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
             return true;
         }
-
-        //private static bool firstLoaded = true;
-        //private static void OnSceneLoaded( Scene arg0, LoadSceneMode arg1 )
-        //{
-        //    if( firstLoaded )
-        //    {
-        //        firstLoaded = false;
-
-        //        var stations = UnityEngine.Object.FindObjectsOfType<StationController>();
-        //        foreach( var station in stations )
-        //        {
-        //            var generator = station.gameObject.AddComponent<PassengerJobGenerator>();
-        //            generator.Initialize();
-        //        }
-        //    }
-        //}
     }
 }
