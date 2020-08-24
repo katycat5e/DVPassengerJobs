@@ -128,6 +128,11 @@ namespace PassengerJobsMod
         public List<Track> StorageTracks;
         public List<Track> PlatformTracks;
 
+        public Track ArrivalTrack
+        {
+            get => PlatformTracks.FirstOrDefault();
+        }
+
         private readonly YardTracksOrganizer TrackOrg;
 
         public PassengerJobGenerator()
@@ -203,22 +208,33 @@ namespace PassengerJobsMod
             GenerateTrackIdObjectMethod.Invoke(Controller, new object[] { stationRailTracks });
         }
 
+        private int GetNumberTransportJobsToSpawn()
+        {
+            var availTracks = TrackOrg.FilterOutOccupiedTracks(PlatformTracks);
+            availTracks.Remove(ArrivalTrack);
+
+            return availTracks.Count;
+        }
+
+        private int GetNumberLogiJobsToSpawn()
+        {
+            var availTracks = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(StorageTracks));
+            int targetFill = (StorageTracks.Count + 1) / 2;
+            return targetFill - (StorageTracks.Count - availTracks.Count - 1);
+        }
+
         public void GeneratePassengerJobs()
         {
             PassengerJobs.ModEntry.Logger.Log($"Generating jobs at {Controller.stationInfo.Name}");
 
             try
             {
-                // Create passenger hauls until <= half the platforms are filled
-                var availTracks = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(PlatformTracks));
-                int nJobSpawns = availTracks.Count - ((PlatformTracks.Count + 1) / 2);
-
+                // Create passenger hauls until >= half the platforms are filled
+                int nJobSpawns = GetNumberTransportJobsToSpawn();
                 for( int i = 0; i < nJobSpawns; i++ ) GenerateNewRoundTripJob();
 
-                // Create logi hauls until <= half the storage tracks are filled
-                availTracks = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(StorageTracks));
-                nJobSpawns = availTracks.Count - ((StorageTracks.Count + 1)/ 2);
-
+                // Create logi hauls until >= half the storage tracks are filled
+                nJobSpawns = GetNumberLogiJobsToSpawn();
                 for( int i = 0; i < nJobSpawns; i++ ) GenerateNewLogisticHaul();
             }
             catch( Exception ex )
@@ -242,7 +258,8 @@ namespace PassengerJobsMod
             float trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nCars);
 
             // pick start platform
-            var availTracks = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(PlatformTracks));
+            var availTracks = TrackOrg.FilterOutOccupiedTracks(PlatformTracks);
+            availTracks.Remove(ArrivalTrack);
             Track startPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(availTracks, trainLength);
 
             if( startPlatform == null ) return;
@@ -253,7 +270,9 @@ namespace PassengerJobsMod
             {
                 destStation = PassDestinations.GetRandomFromList(Rand, Controller);
                 var destGenerator = LinkedGenerators[destStation];
-                destPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(TrackOrg.FilterOutOccupiedTracks(destGenerator.PlatformTracks), trainLength);
+                destPlatform = destGenerator.ArrivalTrack;
+
+                if( TrackOrg.GetFreeSpaceOnTrack(destPlatform) < trainLength ) destPlatform = null; // check if it's actually long enough
             }
             if( destPlatform == null ) return;
 
