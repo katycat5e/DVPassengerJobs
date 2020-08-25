@@ -65,6 +65,7 @@
     <Compile Include="Patches_BookletCreator.cs" />
     <Compile Include="Patches_CareerManager.cs" />
     <Compile Include="Patches_LicenseManager.cs" />
+    <Compile Include="PJModSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

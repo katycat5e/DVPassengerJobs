@@ -14,7 +14,9 @@ namespace PassengerJobsMod
     {
         public const int MIN_CARS_TRANSPORT = 2;
         public const int MAX_CARS_TRANSPORT = 5;
-        
+
+        public const float BASE_WAGE_SCALE = 0.33f;
+        public const float BONUS_TO_BASE_WAGE_RATIO = 3f;
 
         public TrainCarType[] PassCarTypes = new TrainCarType[]
         {
@@ -285,8 +287,11 @@ namespace PassengerJobsMod
             // calculate haul payment
             // divided in half for out, half for return trip
             float haulDistance = JobPaymentCalculator.GetDistanceBetweenStations(Controller, destStation);
-            float bonusLimit = Mathf.Floor(JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false) / 2);
-            float payment = Mathf.Floor(JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes)) / 2);
+            float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
+
+            float payment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes));
+            float wageScale = PassengerJobs.Settings.UseCustomWages ? BASE_WAGE_SCALE : 1;
+            payment = Mathf.Round(payment * 0.5f * wageScale);
 
             // create starting job definition
             var jobDefinition = PopulateJobDefinition(chainController, Controller.logicStation, startPlatform, destPlatform, jobCarTypes, chainData, bonusLimit, payment);
@@ -302,9 +307,10 @@ namespace PassengerJobsMod
             chainController.AddJobDefinitionToChain(jobDefinition);
 
             // try to create return trip job definition
+            var returnChainData = new StationsChainData(chainData.chainDestinationYardId, chainData.chainOriginYardId);
             var returnJobDefinition = PopulateJobExistingCars(
-                chainController, destStation.logicStation, destPlatform, startPlatform,
-                jobDefinition.trainCarsToTransport, jobCarTypes, chainData, bonusLimit, payment);
+                chainController, destStation.logicStation, destPlatform, ArrivalTrack,
+                jobDefinition.trainCarsToTransport, jobCarTypes, returnChainData, bonusLimit, payment);
 
             if( returnJobDefinition == null )
             {
