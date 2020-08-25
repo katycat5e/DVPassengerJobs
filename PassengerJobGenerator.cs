@@ -67,10 +67,10 @@ namespace PassengerJobsMod
 
         public static readonly Dictionary<string, HashSet<string>> PlatformTrackNames = new Dictionary<string, HashSet<string>>()
         {
-            { "CSW",new HashSet<string>(){ "CSW-B-6-LP", "CSW-B-3-LP", "CSW-B-4-LP", "CSW-B-5-LP" } },
+            { "CSW",new HashSet<string>(){ "CSW-B-6-LP", "CSW-B-3-LP" } }, // not enough clearance: "CSW-B-4-LP", "CSW-B-5-LP"
             { "MF", new HashSet<string>(){ "MF-D-1-LP", "MF-D-2-LP" } },
             { "FF", new HashSet<string>(){ "#Y-#S-354-#T", "#Y-#S-339-#T" } },
-            { "HB", new HashSet<string>(){ "HB-F-1-LP", "HB-F-2-LP" } },
+            { "HB", new HashSet<string>(){ "HB-F-1-LP" } }, // not enough clearance: "HB-F-2-LP"
             { "GF", new HashSet<string>(){ "GF-C-2-LP", "GF-C-3-LP" } }
         };
 
