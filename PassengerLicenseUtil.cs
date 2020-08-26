@@ -30,7 +30,7 @@ namespace PassengerJobsMod
         public const float PASS1_COST = 100_000f;
         // same as hazmat 2
         public const float PASS1_INSURANCE_INCREASE = 150_000f;
-        public const float PASS1_TIME_DECREASE = 0.04f;
+        public const float PASS1_TIME_DECREASE = 0.0f;
 
         public static Sprite Pass1Sprite = null;
         public static Texture2D Pass1LicenseTexture = null;
@@ -112,8 +112,8 @@ namespace PassengerJobsMod
             string costString = $"${PASS1_COST:F}";
             string insuranceIncrease = $"+${PASS1_INSURANCE_INCREASE:F}";
 
-            float percentBonusDecrease = PASS1_TIME_DECREASE * 100f;
-            string bonusDecrease = $"-{percentBonusDecrease:F}%";
+            //float percentBonusDecrease = PASS1_TIME_DECREASE * 100f;
+            string bonusDecrease = "N/A"; // "$"-{percentBonusDecrease:F}%";
 
             return new LicenseTemplatePaperData(
                 PASS1_LICENSE_NAME, PASS1_LICENSE_DESC, PASSENGER_LICENSE_COLOR, costString, insuranceIncrease, bonusDecrease, licenseIcon);

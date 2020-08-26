@@ -1,4 +1,5 @@
-﻿using Harmony12;
+﻿using DV.Logic.Job;
+using Harmony12;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using UnityEngine;
 namespace PassengerJobsMod
 {
     [HarmonyPatch(typeof(StationProceduralJobsController), "Awake")]
-    class StationController_Start_Patch
+    class SPJC_Awake_Patch
     {
         private static HashSet<string> ManagedYards = new HashSet<string>() { "CSW", "MF", "FF", "HB", "GF" };
 
@@ -99,6 +100,22 @@ namespace PassengerJobsMod
             {
                 __result.Add(__state);
             }
+        }
+    }
+
+    // Job.GetPotentialBonusPaymentForTheJob()
+    [HarmonyPatch(typeof(Job), nameof(Job.GetPotentialBonusPaymentForTheJob))]
+    static class Job_GetBonus_Patch
+    {
+        static bool Prefix( Job __instance, ref float __result, float ___initialWage )
+        {
+            if( PassengerJobs.Settings.UseCustomWages && __instance.requiredLicenses.HasFlag(PassLicenses.Passengers1) )
+            {
+                // it's a passenger job
+                __result = ___initialWage * PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO;
+                return false;
+            }
+            return true;
         }
     }
 }
