@@ -8,7 +8,7 @@ using UnityEngine;
 namespace PassengerJobsMod
 {
     [HarmonyPatch(typeof(StationProceduralJobsController), "Awake")]
-    class StationController_Start_Patch
+    class SPJC_Awake_Patch
     {
         private static HashSet<string> ManagedYards = new HashSet<string>() { "CSW", "MF", "FF", "HB", "GF" };
 

@@ -15,8 +15,8 @@ namespace PassengerJobsMod
         public const int MIN_CARS_TRANSPORT = 2;
         public const int MAX_CARS_TRANSPORT = 5;
 
-        public const float BASE_WAGE_SCALE = 0.33f;
-        public const float BONUS_TO_BASE_WAGE_RATIO = 3f;
+        public const float BASE_WAGE_SCALE = 0.5f;
+        public const float BONUS_TO_BASE_WAGE_RATIO = 2f;
 
         public TrainCarType[] PassCarTypes = new TrainCarType[]
         {
@@ -71,7 +71,7 @@ namespace PassengerJobsMod
         {
             { "CSW",new HashSet<string>(){ "CSW-B-6-LP", "CSW-B-3-LP" } }, // not enough clearance: "CSW-B-4-LP", "CSW-B-5-LP"
             { "MF", new HashSet<string>(){ "MF-D-1-LP", "MF-D-2-LP" } },
-            { "FF", new HashSet<string>(){ "#Y-#S-354-#T", "#Y-#S-339-#T" } },
+            { "FF", new HashSet<string>(){ "#Y-#S-168-#T", "#Y-#S-491-#T" } },
             { "HB", new HashSet<string>(){ "HB-F-1-LP" } }, // not enough clearance: "HB-F-2-LP"
             { "GF", new HashSet<string>(){ "GF-C-2-LP", "GF-C-3-LP" } }
         };
@@ -94,11 +94,11 @@ namespace PassengerJobsMod
             // fix track IDs at Food Factory
             foreach( var track in result )
             {
-                if( track.ID.FullDisplayID == "#Y-#S-354-#T" )
+                if( track.ID.FullDisplayID == "#Y-#S-168-#T" ) // used to be #Y-#S-354-#T
                 {
                     track.OverrideTrackID(new TrackID("FF", "B", "1", TrackID.LOADING_PASSENGER_TYPE));
                 }
-                else if( track.ID.FullDisplayID == "#Y-#S-339-#T" )
+                else if( track.ID.FullDisplayID == "#Y-#S-491-#T" ) // used to be #Y-#S-339-#T
                 {
                     track.OverrideTrackID(new TrackID("FF", "B", "2", TrackID.LOADING_PASSENGER_TYPE));
                 }
@@ -155,7 +155,7 @@ namespace PassengerJobsMod
                 foreach( Track t in PlatformTracks.Union(StorageTracks) )
                 {
                     YardTracksOrganizer.Instance.InitializeYardTrack(t);
-                    YardTracksOrganizer.Instance.yardTrackIdToTrack.Add(t.ID.FullID, t);
+                    YardTracksOrganizer.Instance.yardTrackIdToTrack[t.ID.FullID] = t;
                 }
 
                 var sb = new StringBuilder($"Created generator for {Controller.stationInfo.Name}:\n");
@@ -264,7 +264,11 @@ namespace PassengerJobsMod
             availTracks.Remove(ArrivalTrack);
             Track startPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(availTracks, trainLength);
 
-            if( startPlatform == null ) return;
+            if( startPlatform == null )
+            {
+                PassengerJobs.ModEntry.Logger.Log($"No available platform for new job at {Controller.stationInfo.Name}");
+                return;
+            }
 
             // pick ending platform
             Track destPlatform = null;
@@ -276,7 +280,11 @@ namespace PassengerJobsMod
 
                 if( TrackOrg.GetFreeSpaceOnTrack(destPlatform) < trainLength ) destPlatform = null; // check if it's actually long enough
             }
-            if( destPlatform == null ) return;
+            if( destPlatform == null )
+            {
+                PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
+                return;
+            }
 
             // create job chain controller
             var chainData = new StationsChainData(Controller.stationInfo.YardID, destStation.stationInfo.YardID);
@@ -299,7 +307,7 @@ namespace PassengerJobsMod
             if( jobDefinition == null )
             {
                 chainController.DestroyChain();
-                PassengerJobs.ModEntry.Logger.Warning($"Failed to generate job at {Controller.stationInfo.Name}");
+                PassengerJobs.ModEntry.Logger.Warning($"Failed to generate new job definition at {Controller.stationInfo.Name}");
                 return;
             }
 
