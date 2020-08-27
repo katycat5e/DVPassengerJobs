@@ -12,6 +12,9 @@ namespace PassengerJobsMod
         [Draw("Use custom wage scaling for (new) passenger haul jobs")]
         public bool UseCustomWages = true;
 
+        [Draw("Generate passenger trains with uniform car type")]
+        public bool UniformConsists = true;
+
         public override void Save( UnityModManager.ModEntry modEntry )
         {
             Save(this, modEntry);

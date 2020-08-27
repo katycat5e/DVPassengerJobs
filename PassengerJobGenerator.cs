@@ -222,7 +222,7 @@ namespace PassengerJobsMod
         {
             var availTracks = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(StorageTracks));
             int targetFill = (StorageTracks.Count + 1) / 2;
-            return targetFill - (StorageTracks.Count - availTracks.Count - 1);
+            return targetFill - (StorageTracks.Count - availTracks.Count);
         }
 
         public void GeneratePassengerJobs()
@@ -255,7 +255,17 @@ namespace PassengerJobsMod
 
             // generate a consist
             int nCars = Rand.Next(MIN_CARS_TRANSPORT, MAX_CARS_TRANSPORT + 1);
-            var jobCarTypes = PassCarTypes.ChooseMany(Rand, nCars);
+            List<TrainCarType> jobCarTypes;
+
+            if( PassengerJobs.Settings.UniformConsists )
+            {
+                TrainCarType carType = PassCarTypes.GetRandomFromList(Rand);
+                jobCarTypes = Enumerable.Repeat(carType, nCars).ToList();
+            }
+            else
+            {
+                jobCarTypes = PassCarTypes.ChooseMany(Rand, nCars);
+            }
 
             float trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nCars);
 
@@ -383,6 +393,11 @@ namespace PassengerJobsMod
                 PassengerJobs.ModEntry.Logger.Error("Couldn't extract logic cars, deleting spawned cars");
                 SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(spawnedCars, true);
                 return null;
+            }
+
+            if( SkinManager_Patch.Enabled )
+            {
+                SkinManager_Patch.UnifyConsist(spawnedCars);
             }
 
             return PopulateJobExistingCars(chainController, startStation, startTrack, destTrack, logicCars, carTypes, chainData, timeLimit, initialPay);

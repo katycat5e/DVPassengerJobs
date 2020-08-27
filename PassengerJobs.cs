@@ -42,6 +42,8 @@ namespace PassengerJobsMod
             ModEntry.OnGUI = DrawGUI;
             ModEntry.OnSaveGUI = SaveGUI;
 
+            if( Settings.UniformConsists ) SkinManager_Patch.Initialize();
+
             var harmony = Harmony12.HarmonyInstance.Create("com.foxden.passenger_jobs");
             harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
