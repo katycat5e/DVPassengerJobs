@@ -2,10 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace PassengerJobsMod
@@ -18,12 +16,39 @@ namespace PassengerJobsMod
         public const float BASE_WAGE_SCALE = 0.5f;
         public const float BONUS_TO_BASE_WAGE_RATIO = 2f;
 
+        public static readonly JobType JT_Passenger = (JobType)(Enum.GetValues(typeof(JobType)).Cast<int>().Max() + 1);
+
         public TrainCarType[] PassCarTypes = new TrainCarType[]
         {
             TrainCarType.PassengerRed, TrainCarType.PassengerGreen, TrainCarType.PassengerBlue
         };
 
-        public static List<StationController> PassDestinations = new List<StationController>();
+        public static Dictionary<string, StationController> PassDestinations = new Dictionary<string, StationController>();
+
+        public static Dictionary<string, string[][]> TransportRoutes = new Dictionary<string, string[][]>
+        {
+            { "CSW", new string[][] {
+                new string[] { "MF", "FF" } ,
+                new string[] { "GF" } ,
+                new string[] { "HB" } } },
+
+            { "FF", new string[][] {
+                new string[] { "MF", "CSW" },
+                new string[] { "HB", "CSW" } } },
+
+            { "GF", new string[][] {
+                new string[] { "CSW" },
+                new string[] { "HB" },
+                new string[] { "FF", "MF" } } },
+
+            { "HB", new string[][] {
+                new string[] { "CSW" },
+                new string[] { "GF" },
+                new string[] { "FF" } } },
+
+            { "MF", new string[][] {
+                new string[] { "FF", "GF" } } }
+        };
 
         internal static Dictionary<StationController, PassengerJobGenerator> LinkedGenerators =
             new Dictionary<StationController, PassengerJobGenerator>();
@@ -116,7 +141,7 @@ namespace PassengerJobsMod
             if( gen.PlatformTracks.Count > 0 )
             {
                 // potential destination
-                PassDestinations.Add(controller);
+                PassDestinations[controller.stationInfo.YardID] = controller;
             }
         }
 
@@ -233,7 +258,7 @@ namespace PassengerJobsMod
             {
                 // Create passenger hauls until >= half the platforms are filled
                 int nJobSpawns = GetNumberTransportJobsToSpawn();
-                for( int i = 0; i < nJobSpawns; i++ ) GenerateNewRoundTripJob();
+                for( int i = 0; i < nJobSpawns; i++ ) GenerateNewTransportJob();
 
                 // Create logi hauls until >= half the storage tracks are filled
                 nJobSpawns = GetNumberLogiJobsToSpawn();
@@ -241,7 +266,8 @@ namespace PassengerJobsMod
             }
             catch( Exception ex )
             {
-                PassengerJobs.ModEntry.Logger.Error($"Exception encountered while generating jobs for {Controller.stationInfo.Name}:\n{ex.Message}");
+                // $"Exception encountered while generating jobs for {Controller.stationInfo.Name}:\n{ex.Message}"
+                PassengerJobs.ModEntry.Logger.LogException(ex);
             }
         }
 
@@ -249,10 +275,8 @@ namespace PassengerJobsMod
 
         #region Transport Job Generation
 
-        public void GenerateNewRoundTripJob()
+        public void GenerateNewTransportJob( Tuple<StaticPassengerJobDefinition, List<TrainCar>> previousJob = null )
         {
-            StationController destStation = null;
-
             // generate a consist
             int nCars = Rand.Next(MIN_CARS_TRANSPORT, MAX_CARS_TRANSPORT + 1);
             List<TrainCarType> jobCarTypes;
@@ -269,50 +293,110 @@ namespace PassengerJobsMod
 
             float trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nCars);
 
+            // Choose a route
+            if( !TransportRoutes.TryGetValue(Controller.stationInfo.YardID, out string[][] possibleRoutes) )
+            {
+                PassengerJobs.ModEntry.Logger.Log($"No potential routes found originating from {Controller.stationInfo.Name}");
+                return;
+            }
+
+            string[] route = possibleRoutes.GetRandomFromList(Rand);
+            if( route.Length < 1 )
+            {
+                PassengerJobs.ModEntry.Logger.Warning($"Selected route was empty, this shouldn't happen!");
+            }
+
             // pick start platform
-            var availTracks = TrackOrg.FilterOutOccupiedTracks(PlatformTracks);
-            availTracks.Remove(ArrivalTrack);
-            Track startPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(availTracks, trainLength);
+            Track startPlatform;
 
-            if( startPlatform == null )
+            if( previousJob == null )
             {
-                PassengerJobs.ModEntry.Logger.Log($"No available platform for new job at {Controller.stationInfo.Name}");
-                return;
+                var availTracks = TrackOrg.FilterOutOccupiedTracks(PlatformTracks);
+                availTracks.Remove(ArrivalTrack);
+                startPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(availTracks, trainLength);
+
+                if( startPlatform == null )
+                {
+                    PassengerJobs.ModEntry.Logger.Log($"No available platform for new job at {Controller.stationInfo.Name}");
+                    return;
+                }
+            }
+            else
+            {
+                startPlatform = previousJob.Item1.destinationTracks.LastOrDefault();
+
+                if( startPlatform == null )
+                {
+                    PassengerJobs.ModEntry.Logger.Log($"Invalid destination platform from parent job {previousJob.Item1.gameObject.name}");
+                    return;
+                }
             }
 
-            // pick ending platform
-            Track destPlatform = null;
-            for( int i = 0; (destPlatform == null) && (i < 5); i++ )
-            {
-                destStation = PassDestinations.GetRandomFromList(Rand, Controller);
-                var destGenerator = LinkedGenerators[destStation];
-                destPlatform = destGenerator.ArrivalTrack;
+            var destPlatforms = new Track[route.Length];
+            var destStations = new StationController[route.Length];
 
-                if( TrackOrg.GetFreeSpaceOnTrack(destPlatform) < trainLength ) destPlatform = null; // check if it's actually long enough
-            }
-            if( destPlatform == null )
+            for( int i = 0; i < route.Length; i++ )
             {
-                PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
-                return;
+                // pick ending platform
+                if( PassDestinations.TryGetValue(route[i], out var destController) )
+                {
+                    var destGenerator = LinkedGenerators[destController];
+                    destStations[i] = destController;
+                    destPlatforms[i] = destGenerator.ArrivalTrack;
+
+                    if( TrackOrg.GetFreeSpaceOnTrack(destPlatforms[i]) < trainLength ) destPlatforms = null; // check if it's actually long enough
+                }
+                if( destPlatforms == null )
+                {
+                    PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
+                    return;
+                }
             }
 
             // create job chain controller
-            var chainData = new StationsChainData(Controller.stationInfo.YardID, destStation.stationInfo.YardID);
-            var chainJobObject = new GameObject($"ChainJob[{JobType.Transport}]: {Controller.logicStation.ID} - {destStation.logicStation.ID}");
+            var lastStation = destStations.Last();
+            var chainData = new ComplexChainData(Controller.stationInfo.YardID, destStations.Select(s => s.stationInfo.YardID).ToArray());
+            var chainJobObject = new GameObject($"ChainJob[Passenger]: {Controller.logicStation.ID} - {lastStation.logicStation.ID}");
             chainJobObject.transform.SetParent(Controller.transform);
-            var chainController = new JobChainControllerWithEmptyHaulGeneration(chainJobObject);
+            var chainController = new PassengerTransportChainController(chainJobObject);
 
-            // calculate haul payment
-            // divided in half for out, half for return trip
-            float haulDistance = JobPaymentCalculator.GetDistanceBetweenStations(Controller, destStation);
-            float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
+            float payment = 0;
+            float bonusLimit = 0;
 
-            float payment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes));
+            for( int i = 0; i < route.Length; i++ )
+            {
+                StationController fromStation = (i > 0) ? destStations[i - 1] : Controller;
+                StationController toStation = destStations[i];
+
+                // calculate haul payment
+                float haulDistance = JobPaymentCalculator.GetDistanceBetweenStations(fromStation, toStation);
+                bonusLimit += JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
+
+                payment += JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes));
+            }
+
+            // scale job payment depending on settings
             float wageScale = PassengerJobs.Settings.UseCustomWages ? BASE_WAGE_SCALE : 1;
             payment = Mathf.Round(payment * 0.5f * wageScale);
 
             // create starting job definition
-            var jobDefinition = PopulateJobDefinition(chainController, Controller.logicStation, startPlatform, destPlatform, jobCarTypes, chainData, bonusLimit, payment);
+            StaticPassengerJobDefinition jobDefinition;
+            if( previousJob != null )
+            {
+                chainController.trainCarsForJobChain = previousJob.Item2;
+
+                jobDefinition = PopulateJobExistingCars(
+                    chainController, Controller.logicStation, startPlatform, destPlatforms,
+                    destStations.Select(s => s.stationInfo.YardID).ToArray(),
+                    previousJob.Item1.trainCarsToTransport, chainData, bonusLimit, payment);
+            }
+            else
+            {
+                jobDefinition = PopulateJobAndSpawn(
+                    chainController, Controller.logicStation, startPlatform, destPlatforms,
+                    destStations.Select(s => s.stationInfo.YardID).ToArray(),
+                    jobCarTypes, chainData, bonusLimit, payment);
+            }
 
             if( jobDefinition == null )
             {
@@ -324,25 +408,10 @@ namespace PassengerJobsMod
             // assign initial haul job to chain
             chainController.AddJobDefinitionToChain(jobDefinition);
 
-            // try to create return trip job definition
-            var returnChainData = new StationsChainData(chainData.chainDestinationYardId, chainData.chainOriginYardId);
-            var returnJobDefinition = PopulateJobExistingCars(
-                chainController, destStation.logicStation, destPlatform, ArrivalTrack,
-                jobDefinition.trainCarsToTransport, jobCarTypes, returnChainData, bonusLimit, payment);
-
-            if( returnJobDefinition == null )
-            {
-                PassengerJobs.ModEntry.Logger.Warning($"Failed to generate return trip for \"{chainJobObject.name}\"");
-            }
-            else
-            {
-                chainController.AddJobDefinitionToChain(returnJobDefinition);
-            }
-
             // Finalize job
             chainController.FinalizeSetupAndGenerateFirstJob();
 
-            PassengerJobs.ModEntry.Logger.Log($"Generated new transport job: {chainJobObject.name}");
+            PassengerJobs.ModEntry.Logger.Log($"Generated new passenger haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID})");
         }
 
         private static PaymentCalculationData GetJobPaymentData( IEnumerable<TrainCarType> carTypes, bool logisticHaul = false )
@@ -375,9 +444,9 @@ namespace PassengerJobsMod
             return new PaymentCalculationData(carTypeCount, cargoTypeDict);
         }
 
-        private static StaticTransportJobDefinition PopulateJobDefinition(
+        private static StaticPassengerJobDefinition PopulateJobAndSpawn(
             JobChainController chainController, Station startStation,
-            Track startTrack, Track destTrack, List<TrainCarType> carTypes,
+            Track startTrack, Track[] destTracks, string[] destYards, List<TrainCarType> carTypes,
             StationsChainData chainData, float timeLimit, float initialPay )
         {
             // Spawn the cars
@@ -400,25 +469,23 @@ namespace PassengerJobsMod
                 SkinManager_Patch.UnifyConsist(spawnedCars);
             }
 
-            return PopulateJobExistingCars(chainController, startStation, startTrack, destTrack, logicCars, carTypes, chainData, timeLimit, initialPay);
+            return PopulateJobExistingCars(chainController, startStation, startTrack, destTracks, destYards, logicCars, chainData, timeLimit, initialPay);
         }
 
-        private static StaticTransportJobDefinition PopulateJobExistingCars(
+        private static StaticPassengerJobDefinition PopulateJobExistingCars(
             JobChainController chainController, Station startStation,
-            Track startTrack, Track destTrack,
-            List<Car> logicCars, List<TrainCarType> carTypes,
+            Track startTrack, Track[] destTracks, string[] destYards,
+            List<Car> logicCars,
             StationsChainData chainData, float timeLimit, float initialPay )
         {
             // populate the actual job
-            StaticTransportJobDefinition jobDefinition = chainController.jobChainGO.AddComponent<StaticTransportJobDefinition>();
+            StaticPassengerJobDefinition jobDefinition = chainController.jobChainGO.AddComponent<StaticPassengerJobDefinition>();
             jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, PassLicenses.Passengers1);
 
             jobDefinition.startingTrack = startTrack;
             jobDefinition.trainCarsToTransport = logicCars;
-            jobDefinition.transportedCargoPerCar = carTypes.Select(ct => CargoType.Passengers).ToList();
-            jobDefinition.cargoAmountPerCar = carTypes.Select(ct => 1f).ToList();
-            jobDefinition.forceCorrectCargoStateOnCars = true;
-            jobDefinition.destinationTrack = destTrack;
+            jobDefinition.destinationTracks = destTracks;
+            jobDefinition.destinationYards = destYards;
 
             return jobDefinition;
         }
@@ -445,9 +512,12 @@ namespace PassengerJobsMod
 
             // pick ending storage track
             Track destSiding = null;
+            var possibleDestinations = PassDestinations.Values.ToList();
+            possibleDestinations.Remove(Controller);
+
             for( int i = 0; (destSiding == null) && (i < 5); i++ )
             {
-                destStation = PassDestinations.GetRandomFromList(Rand, Controller);
+                destStation = possibleDestinations.GetRandomFromList(Rand);
                 var destGenerator = LinkedGenerators[destStation];
                 destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(TrackOrg.FilterOutOccupiedTracks(destGenerator.StorageTracks), trainLength);
             }
@@ -478,7 +548,7 @@ namespace PassengerJobsMod
             chainController.AddJobDefinitionToChain(jobDefinition);
             chainController.FinalizeSetupAndGenerateFirstJob(false);
 
-            PassengerJobs.ModEntry.Logger.Log($"Generated new logi haul job: {chainJobObject.name}");
+            PassengerJobs.ModEntry.Logger.Log($"Generated new logi haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID})");
         }
 
         private static StaticEmptyHaulJobDefinition PopulateLogisticJob(

@@ -118,4 +118,42 @@ namespace PassengerJobsMod
             return true;
         }
     }
+
+    // IdGenerator.GenerateJobId()
+    [HarmonyPatch(typeof(IdGenerator), nameof(IdGenerator.GenerateJobID))]
+    static class IG_GenerateJobId_Patch
+    {
+        static bool Prefix( JobType jobType, StationsChainData jobStationsInfo, ref string __result, 
+            System.Random ___idRng, HashSet<string> ___existingJobIds )
+        {
+            if( jobType != PassengerJobGenerator.JT_Passenger ) return true;
+
+            string yardId = null;
+            if( jobStationsInfo != null )
+            {
+                yardId = jobStationsInfo.chainOriginYardId;
+            }
+
+            int idNum = ___idRng.Next(0, 100);
+
+            for( int attemptNum = 0; attemptNum < 99; attemptNum++ )
+            {
+                string idStr = (yardId != null) ? $"{yardId}-PT-{idNum:D2}" : $"PT-{idNum:D2}";
+
+                if( !___existingJobIds.Contains(idStr) )
+                {
+                    IdGenerator.RegisterJobId(idStr);
+                    __result = idStr;
+                    return false;
+                }
+
+                idNum = (idNum >= 99) ? 0 : (idNum + 1);
+            }
+
+            Debug.LogError("Couldn't find free jobId for job type: PT! Using 0 for jobId number!");
+            __result = (yardId != null) ? $"{yardId}-PT-{0:D2}" : $"PT-{0:D2}";
+
+            return false;
+        }
+    }
 }
