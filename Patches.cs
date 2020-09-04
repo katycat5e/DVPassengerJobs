@@ -156,4 +156,20 @@ namespace PassengerJobsMod
             return false;
         }
     }
+
+    [HarmonyPatch(typeof(JobChainController), nameof(JobChainController.GetJobChainSaveData))]
+    static class JCC_GetJobChainSaveData_Patch
+    {
+        static void Postfix( JobChainController __instance, ref JobChainSaveData __result)
+        {
+            if( __instance is PassengerTransportChainController )
+            {
+                __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Transport, __result);
+            }
+            else if( __instance is CommuterChainController )
+            {
+                __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Commuter, __result);
+            }
+        }
+    }
 }
