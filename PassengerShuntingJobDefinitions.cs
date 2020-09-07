@@ -33,22 +33,36 @@ namespace PassengerJobsMod
 
         protected override void GenerateJob( Station jobOriginStation, float timeLimit = 0, float initialWage = 0, string forcedJobId = null, JobLicenses requiredLicenses = JobLicenses.Basic )
         {
-            if( (carsPerStartingTrack == null) || (carsPerStartingTrack.Count == 0) || (destinationTrack != null) )
+            if( (carsPerStartingTrack == null) || (carsPerStartingTrack.Count == 0) )
             {
                 carsPerStartingTrack = null;
                 destinationTrack = null;
                 job = null;
-                PassengerJobs.ModEntry.Logger.Error("Passenger consist assemble job not created, bad parameters");
+                PassengerJobs.ModEntry.Logger.Error("Passenger consist assemble job not created, null or empty car starting tracks");
+                return;
+            }
+
+            if( destinationTrack == null )
+            {
+                carsPerStartingTrack = null;
+                destinationTrack = null;
+                job = null;
+                PassengerJobs.ModEntry.Logger.Error("Passenger consist assemble job not created, no destination track given");
                 return;
             }
 
             var collectionTasks = new List<Task>();
             foreach( CarsPerTrack cpt in carsPerStartingTrack )
             {
+                // passengers are foreboden for shunting
+                foreach( Car car in cpt.cars )
+                {
+                    car.DumpCargo();
+                }
                 collectionTasks.Add(JobsGenerator.CreateTransportTask(cpt.cars, destinationTrack, cpt.track));
             }
 
-            job = new Job(new ParallelTasks(collectionTasks, 0), PassengerJobGenerator.JT_PassAssemble, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
+            job = new Job(new ParallelTasks(collectionTasks, 0), PassJobType.ConsistAssemble, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
 
             jobOriginStation.AddJobToStation(job);
         }
@@ -92,22 +106,36 @@ namespace PassengerJobsMod
 
         protected override void GenerateJob( Station jobOriginStation, float timeLimit = 0, float initialWage = 0, string forcedJobId = null, JobLicenses requiredLicenses = JobLicenses.Basic )
         {
-            if( (carsPerDestinationTrack == null) || (carsPerDestinationTrack.Count == 0) || (startingTrack == null) )
+            if( (carsPerDestinationTrack == null) || (carsPerDestinationTrack.Count == 0) )
             {
                 carsPerDestinationTrack = null;
                 startingTrack = null;
                 job = null;
-                PassengerJobs.ModEntry.Logger.Error("Passenger consist disassemble job not created, bad parameters");
+                PassengerJobs.ModEntry.Logger.Error("Passenger consist disassemble job not created, null or empty car destination tracks");
+                return;
+            }
+
+            if( startingTrack == null )
+            {
+                carsPerDestinationTrack = null;
+                startingTrack = null;
+                job = null;
+                PassengerJobs.ModEntry.Logger.Error("Passenger consist disassemble job not created, no starting track given");
                 return;
             }
 
             var depositTasks = new List<Task>();
             foreach( CarsPerTrack cpt in carsPerDestinationTrack )
             {
+                // passengers are foreboden for shunting
+                foreach( Car car in cpt.cars )
+                {
+                    car.DumpCargo();
+                }
                 depositTasks.Add(JobsGenerator.CreateTransportTask(cpt.cars, cpt.track, startingTrack));
             }
 
-            job = new Job(new ParallelTasks(depositTasks), PassengerJobGenerator.JT_PassDissasemble, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
+            job = new Job(new ParallelTasks(depositTasks), PassJobType.ConsistDissasemble, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
             jobOriginStation.AddJobToStation(job);
         }
     }

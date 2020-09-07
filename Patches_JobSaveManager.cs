@@ -237,11 +237,13 @@ namespace PassengerJobsMod
                 }
                 else
                 {
-                    Debug.LogError("Job from chain was taken, but there is no task data! Task data won't be loaded!");
+                    PrintError("Job from chain was taken, but there is no task data! Task data won't be loaded!");
                 }
 
                 InitializeCorrespondingJobBooklet(chainController.currentJobInChain);
             }
+
+            PassengerJobs.ModEntry.Logger.Log($"Successfully loaded job chain: {chainController.jobChainGO.name}");
 
             __result = chainController.jobChainGO;
             return false;
@@ -346,7 +348,7 @@ namespace PassengerJobsMod
             return jobDefinition;
         }
 
-        private static StaticTransportJobDefinition CreateCommuterJob( GameObject jobChainGO, TransportJobDefinitionData jobData )
+        private static StaticCommuterJobDefinition CreateCommuterJob( GameObject jobChainGO, TransportJobDefinitionData jobData )
         {
             if( !(GetStationWithId(jobData.stationId) is Station logicStation) )
             {
@@ -385,23 +387,14 @@ namespace PassengerJobsMod
                 return null;
             }
 
-            if( jobData.transportedCargoPerCar.Length != cars.Count || jobData.cargoAmountPerCar.Length != cars.Count )
-            {
-                Debug.LogError("Unmatching number of carsToTransport and transportedCargoPerCar or cargoAmountPerCar! Skipping load of this job chain!");
-                return null;
-            }
-
-            var jobDefinition = jobChainGO.AddComponent<StaticTransportJobDefinition>();
+            var jobDefinition = jobChainGO.AddComponent<StaticCommuterJobDefinition>();
 
             var chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);
 
             jobDefinition.startingTrack = startTrack;
             jobDefinition.trainCarsToTransport = cars;
-            jobDefinition.transportedCargoPerCar = jobData.transportedCargoPerCar.ToList();
-            jobDefinition.cargoAmountPerCar = jobData.cargoAmountPerCar.ToList();
             jobDefinition.destinationTrack = destTrack;
-            jobDefinition.forceCorrectCargoStateOnCars = true;
 
             return jobDefinition;
         }

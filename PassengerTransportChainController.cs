@@ -1,4 +1,5 @@
 ﻿using DV.Logic.Job;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace PassengerJobsMod
                     foreach( CarsPerTrack subConsist in previousJob.carsPerDestinationTrack )
                     {
                         List<TrainCar> trainCars = trainCarsForJobChain.Where(tc => subConsist.cars.Contains(tc.logicCar)).ToList();
-                        generator.GenerateNewCommuterRun(new Tuple<Track, List<TrainCar>>(subConsist.track, trainCars));
+                        generator.GenerateNewCommuterRun(new TrainCarsPerLogicTrack(subConsist.track, trainCars));
                     }
                 }
             }
@@ -56,7 +57,8 @@ namespace PassengerJobsMod
 
                 if( PassengerJobGenerator.LinkedGenerators.TryGetValue(currentStation, out var generator) )
                 {
-                    generator.GenerateNewTransportJob(new Tuple<Track, List<TrainCar>>(previousJob.destinationTrack, trainCarsForJobChain));
+                    var jobConsist = new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain);
+                    generator.GenerateNewTransportJob(new List<TrainCarsPerLogicTrack>() { jobConsist });
                 }
             }
             else
@@ -78,6 +80,13 @@ namespace PassengerJobsMod
         }
 
         public PassChainType ChainType;
+
+        [JsonConstructor]
+        public PassengerChainSaveData( PassChainType type, JobDefinitionDataBase[] jobChainData, string[] trainCarGuids, bool jobTaken, TaskSaveData[] currentJobTaskData, string firstJobId ) :
+            base(jobChainData, trainCarGuids, jobTaken, currentJobTaskData, firstJobId)
+        {
+            ChainType = type;
+        }
 
         public PassengerChainSaveData( PassChainType type, JobChainSaveData baseData ) :
             base(baseData.jobChainData, baseData.trainCarGuids, baseData.jobTaken, baseData.currentJobTaskData, baseData.firstJobId)
