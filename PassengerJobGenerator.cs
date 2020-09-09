@@ -18,7 +18,7 @@ namespace PassengerJobsMod
 
     class PassengerJobGenerator : MonoBehaviour
     {
-        public const int MIN_CARS_TRANSPORT = 3;
+        public const int MIN_CARS_TRANSPORT = 4;
         public const int MAX_CARS_TRANSPORT = 5;
 
         public const float BASE_WAGE_SCALE = 0.5f;
@@ -40,7 +40,7 @@ namespace PassengerJobsMod
 
             { "FF", new string[][] {
                 new string[] { "MF", "CSW" },
-                new string[] { "HB", "CSW" } } },
+                new string[] { "HB", } } },
 
             { "GF", new string[][] {
                 new string[] { "CSW" },
@@ -61,7 +61,7 @@ namespace PassengerJobsMod
             { "CSW", new string[] { "SW", "FRS", "FM", "OWC" } },
             { "FF",  new string[] { "IME", "CM" } },
             { "GF",  new string[] { "OWN", "FRC", "SM" } },
-            { "HB",  new string[] { "FRC", "SM", "CM" } },
+            { "HB",  new string[] { "FRS", "SM" } },
             { "MF",  new string[] { "OWC", "IMW" } }
         };
 
@@ -95,6 +95,10 @@ namespace PassengerJobsMod
         }
 
         private static readonly System.Random Rand = new System.Random(); // seeded with current time
+
+        public static Dictionary<Job, JobChainController> CommuterJobDict = new Dictionary<Job, JobChainController>();
+
+
 
         #region Generator Initialization
 
@@ -209,8 +213,6 @@ namespace PassengerJobsMod
                 RegisterStation(Controller, this);
             }
         }
-        
-        
 
         private bool PlayerWasInGenerateRange = false;
         private bool TrackSignsAreGenerated = false;
@@ -260,12 +262,44 @@ namespace PassengerJobsMod
                 double totalTrackSpace = StorageTracks.Select(t => t.length).Sum();
                 bool genExpress = true;
 
+                foreach( Job job in PlayerJobs.Instance.currentJobs )
+                {
+                    if( CommuterJobDict.TryGetValue(job, out var chainController) && 
+                        (job.chainData.chainDestinationYardId == Controller.stationInfo.YardID) )
+                    {
+                        // commuter job that's heading here
+                        List<TrainCar> jobCars = chainController.trainCarsForJobChain;
+                        if( job.GetJobData().FirstOrDefault() is TaskData transportTask )
+                        {
+                            var segment = new TrainCarsPerLogicTrack(transportTask.destinationTrack, jobCars);
+                            var newChain = GenerateNewTransportJob(new List<TrainCarsPerLogicTrack>() { segment }, true);
+                            if( newChain != null )
+                            {
+                                // register the new chain for delayed initialization
+                                PendingGenerationDict[job] = newChain;
+                                job.JobCompleted += OnIncomingJobCompleted;
+                                job.JobAbandoned += OnIncomingJobAbandoned;
+                                genExpress = false;
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            PassengerJobs.ModEntry.Logger.Warning($"Couldn't get tasks for incoming commuter job to {Controller.stationInfo.Name}");
+                            break;
+                        }
+                    }
+                }
+
                 for( int attemptCounter = 5; attemptCounter > 0; attemptCounter-- )
                 {
                     double freeTrackSpace = StorageTracks.Select(t => TrackOrg.GetFreeSpaceOnTrack(t)).Sum();
-                    if( (freeTrackSpace / totalTrackSpace) <= 0.6d ) break;
+                    if( (freeTrackSpace / totalTrackSpace) <= 0.5d ) break;
 
-                    if( genExpress ) GenerateNewTransportJob();
+                    if( genExpress )
+                    {
+                        GenerateNewTransportJob();
+                    }
                     else GenerateNewCommuterRun();
 
                     genExpress = !genExpress;
@@ -278,14 +312,41 @@ namespace PassengerJobsMod
             }
         }
 
+        private readonly Dictionary<Job, JobChainController> PendingGenerationDict = new Dictionary<Job, JobChainController>();
+
+        private void OnIncomingJobCompleted( Job incoming )
+        {
+            if( PendingGenerationDict.TryGetValue(incoming, out var chainController) )
+            {
+                incoming.JobCompleted -= OnIncomingJobCompleted;
+                incoming.JobAbandoned -= OnIncomingJobAbandoned;
+
+                chainController.FinalizeSetupAndGenerateFirstJob();
+                PendingGenerationDict.Remove(incoming);
+            }
+        }
+
+        private void OnIncomingJobAbandoned( Job incoming )
+        {
+            if( PendingGenerationDict.TryGetValue(incoming, out var chainController) )
+            {
+                incoming.JobCompleted -= OnIncomingJobCompleted;
+                incoming.JobAbandoned -= OnIncomingJobAbandoned;
+
+                chainController.trainCarsForJobChain.Clear();
+                chainController.DestroyChain();
+                PendingGenerationDict.Remove(incoming);
+            }
+        }
+
         #endregion
 
         #region Transport Job Generation
 
-        public void GenerateNewTransportJob( List<TrainCarsPerLogicTrack> consistInfo = null )
+        public PassengerTransportChainController GenerateNewTransportJob( List<TrainCarsPerLogicTrack> consistInfo = null, bool delayedInit = false )
         {
             int nTotalCars;
-            List<Tuple<int, Track>> startSubConsists;
+            List<ConsistSegment> startSubConsists;
             List<TrainCarType> jobCarTypes;
             float trainLength;
 
@@ -301,11 +362,11 @@ namespace PassengerJobsMod
                     jobCarTypes = new List<TrainCarType>();
 
                     // subconsist 1
-                    TrainCarType carType = PassCarTypes.GetRandomFromList(Rand);
+                    TrainCarType carType = PassCarTypes.ChooseOne(Rand);
                     jobCarTypes.AddRange(Enumerable.Repeat(carType, c1Count));
 
                     // subconsist 2
-                    carType = PassCarTypes.GetRandomFromList(Rand);
+                    carType = PassCarTypes.ChooseOne(Rand);
                     jobCarTypes.AddRange(Enumerable.Repeat(carType, c2Count));
                 }
                 else
@@ -321,7 +382,7 @@ namespace PassengerJobsMod
                 if( !(TrackOrg.GetTrackThatHasEnoughFreeSpace(sidingPool, c1Length) is Track c1Track) )
                 {
                     PassengerJobs.ModEntry.Logger.Log($"Couldn't find storage track with enough free space for new job at {Controller.stationInfo.YardID}");
-                    return;
+                    return null;
                 }
 
                 sidingPool.Remove(c1Track);
@@ -342,23 +403,23 @@ namespace PassengerJobsMod
                     else
                     {
                         PassengerJobs.ModEntry.Logger.Log($"Couldn't find storage tracks with enough free space for new job at {Controller.stationInfo.YardID}");
-                        return;
+                        return null;
                     }
                 }
 
                 if( useSingleTrack )
                 {
-                    startSubConsists = new List<Tuple<int, Track>>()
+                    startSubConsists = new List<ConsistSegment>()
                     {
-                        new Tuple<int, Track>(nTotalCars, c1Track)
+                        new ConsistSegment(nTotalCars, c1Track)
                     };
                 }
                 else
                 {
-                    startSubConsists = new List<Tuple<int, Track>>()
+                    startSubConsists = new List<ConsistSegment>()
                     {
-                        new Tuple<int, Track>(c1Count, c1Track),
-                        new Tuple<int, Track>(c2Count, c2Track)
+                        new ConsistSegment(c1Count, c1Track),
+                        new ConsistSegment(c2Count, c2Track)
                     };
                 }
             }
@@ -366,12 +427,45 @@ namespace PassengerJobsMod
             {
                 // Use existing consist
                 nTotalCars = consistInfo.Sum(cpt => cpt.cars.Count);
-                
-                startSubConsists = consistInfo
-                    .Select(cpt => new Tuple<int, Track>(cpt.cars.Count, cpt.track))
-                    .ToList();
 
-                jobCarTypes = consistInfo.SelectMany(cpt => cpt.cars.Select(car => car.carType)).ToList();
+                startSubConsists = new List<ConsistSegment>();
+                jobCarTypes = new List<TrainCarType>();
+
+                foreach( var cut in consistInfo )
+                {
+                    startSubConsists.Add(new ConsistSegment(cut.cars, cut.track));
+                    jobCarTypes.AddRange(cut.cars.Select(car => car.carType));
+                }
+
+                // Make sure our consist is a respectable size
+                if( nTotalCars < MIN_CARS_TRANSPORT )
+                {
+                    // if 3 or less cars
+                    int nNewCars = Rand.Next(1, MAX_CARS_TRANSPORT + 1 - nTotalCars); // we want to spawn at least 1, but not have more than MAX total
+                    
+                    List<TrainCarType> newTypes;
+                    if( PassengerJobs.Settings.UniformConsists )
+                    {
+                        newTypes = Enumerable.Repeat(PassCarTypes.ChooseOne(Rand), nNewCars).ToList();
+                    }
+                    else
+                    {
+                        newTypes = PassCarTypes.ChooseMany(Rand, nNewCars);
+                    }
+
+                    float newLength = TrackOrg.GetTotalCarTypesLength(newTypes) + TrackOrg.GetSeparationLengthBetweenCars(nNewCars);
+                    if( !(TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, newLength) is Track newTrack) )
+                    {
+                        PassengerJobs.ModEntry.Logger.Log("Tried to expand consist of new job with existing cars, but not enough space available");
+                    }
+                    else
+                    {
+                        jobCarTypes.AddRange(newTypes);
+                        startSubConsists.Add(new ConsistSegment(nNewCars, newTrack));
+                        nTotalCars += nNewCars;
+                    }
+                }
+
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
             }
 
@@ -379,10 +473,10 @@ namespace PassengerJobsMod
             if( !TransportRoutes.TryGetValue(Controller.stationInfo.YardID, out string[][] possibleRoutes) )
             {
                 PassengerJobs.ModEntry.Logger.Log($"No potential routes found originating from {Controller.stationInfo.Name}");
-                return;
+                return null;
             }
 
-            string[] route = possibleRoutes.GetRandomFromList(Rand);
+            string[] route = possibleRoutes.ChooseOne(Rand);
             if( route.Length < 1 )
             {
                 PassengerJobs.ModEntry.Logger.Warning($"Selected route was empty, this shouldn't happen!");
@@ -398,7 +492,7 @@ namespace PassengerJobsMod
             if( startPlatform == null )
             {
                 PassengerJobs.ModEntry.Logger.Log($"No available platform for new job at {Controller.stationInfo.Name}");
-                return;
+                return null;
             }
 
             // Pick transport checkpoint platforms
@@ -420,7 +514,7 @@ namespace PassengerJobsMod
                 if( destPlatforms == null )
                 {
                     PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
-                    return;
+                    return null;
                 }
             }
 
@@ -434,7 +528,7 @@ namespace PassengerJobsMod
                 if( destTrack == null )
                 {
                     PassengerJobs.ModEntry.Logger.Log($"No free storage space at {destGenerator.Controller.stationInfo.Name} for inbound job of {jobCarTypes.Count} coaches");
-                    return;
+                    return null;
                 }
 
                 endingSidingAssignments = new List<Tuple<int, Track>>() 
@@ -448,22 +542,22 @@ namespace PassengerJobsMod
                 var pool = destGenerator.StorageTracks.ToList();
 
                 int startIdx = 0;
-                foreach( Tuple<int, Track> consist in startSubConsists )
+                foreach( ConsistSegment consist in startSubConsists )
                 {
-                    var carsForTrack = jobCarTypes.GetRange(startIdx, consist.Item1);
+                    var carsForTrack = jobCarTypes.GetRange(startIdx, consist.CarCount);
 
-                    float consistSize = TrackOrg.GetTotalCarTypesLength(carsForTrack) + TrackOrg.GetSeparationLengthBetweenCars(consist.Item1);
+                    float consistSize = TrackOrg.GetTotalCarTypesLength(carsForTrack) + TrackOrg.GetSeparationLengthBetweenCars(consist.CarCount);
                     
                     Track destTrack = TrackOrg.GetTrackThatHasEnoughFreeSpace(pool, consistSize);
                     if( destTrack == null )
                     {
                         PassengerJobs.ModEntry.Logger.Log($"No free storage space for 1 or more subconsist at {destGenerator.Controller.stationInfo.Name} for inbound job of {jobCarTypes.Count} coaches");
-                        return;
+                        return null;
                     }
 
                     pool.Remove(destTrack);
-                    endingSidingAssignments.Add(new Tuple<int, Track>(consist.Item1, destTrack));
-                    startIdx += consist.Item1;
+                    endingSidingAssignments.Add(new Tuple<int, Track>(consist.CarCount, destTrack));
+                    startIdx += consist.CarCount;
                 }
             }
 
@@ -482,25 +576,16 @@ namespace PassengerJobsMod
             float shuntingPay = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingLoad, shuntingDistance, emptyPaymentData);
 
             StationsChainData chainData = new StationsChainData(Controller.stationInfo.YardID, lastStation.stationInfo.YardID);
-            if( consistInfo == null )
-            {
-                // spawn new cars
-                jobDefinition = PopulateAssemblyJobAndSpawn(
-                    chainController, Controller.logicStation, jobCarTypes, startSubConsists, startPlatform, chainData, shuntingPay);
-            }
-            else
-            {
-                // existing cars
-                chainController.trainCarsForJobChain = consistInfo.SelectMany(cpt => cpt.cars).ToList();
-                jobDefinition = PopulateAssemblyJobExistingCars(
-                    chainController, Controller.logicStation, startPlatform, consistInfo.Select(tcpt => tcpt.CarsPerTrack).ToList(), chainData, shuntingPay);
-            }
+
+            // spawn any new cars and register existing ones
+            jobDefinition = PopulateAssemblyJobAndSpawn(
+                chainController, Controller.logicStation, jobCarTypes, startSubConsists, startPlatform, chainData, shuntingPay);
 
             if( jobDefinition == null )
             {
                 chainController.DestroyChain();
                 PassengerJobs.ModEntry.Logger.Warning($"Failed to generate consist assembly job definition at {Controller.stationInfo.Name}");
-                return;
+                return null;
             }
 
             chainController.AddJobDefinitionToChain(jobDefinition);
@@ -539,7 +624,7 @@ namespace PassengerJobsMod
             {
                 PassengerJobs.ModEntry.Logger.Warning($"Failed to generate transport job definition for {chainController.jobChainGO.name}");
                 chainController.DestroyChain();
-                return;
+                return null;
             }
 
             chainController.AddJobDefinitionToChain(jobDefinition);
@@ -565,15 +650,23 @@ namespace PassengerJobsMod
             {
                 PassengerJobs.ModEntry.Logger.Warning($"Failed to generate consist breakup job definition for {chainController.jobChainGO.name}");
                 chainController.DestroyChain();
-                return;
+                return null;
             }
 
             chainController.AddJobDefinitionToChain(jobDefinition);
 
             // Finalize job
-            chainController.FinalizeSetupAndGenerateFirstJob();
+            if( delayedInit )
+            {
+                PassengerJobs.ModEntry.Logger.Log($"Generated new passenger haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID}) [waiting for incoming cars]");
+            }
+            else
+            {
+                chainController.FinalizeSetupAndGenerateFirstJob();
+                PassengerJobs.ModEntry.Logger.Log($"Generated new passenger haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID})");
+            }
 
-            PassengerJobs.ModEntry.Logger.Log($"Generated new passenger haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID})");
+            return chainController;
         }
 
         private static PaymentCalculationData GetJobPaymentData( IEnumerable<TrainCarType> carTypes, bool emptyHaul = false )
@@ -608,7 +701,7 @@ namespace PassengerJobsMod
 
         private static StaticPassAssembleJobDefinition PopulateAssemblyJobAndSpawn(
             JobChainController chainController, Station station,
-            List<TrainCarType> carTypes, List<Tuple<int, Track>> startingTracks,
+            List<TrainCarType> carTypes, IEnumerable<ConsistSegment> consistSegments,
             Track destinationTrack, StationsChainData chainData, float initialPay )
         {
             List<TrainCar> allTrainCars = new List<TrainCar>();
@@ -617,19 +710,26 @@ namespace PassengerJobsMod
 
             // get spawn data for each sub-consist
             var spawnData = new List<CarSpawner.SpawnData>();
-            foreach( var subConsist in startingTracks )
+            foreach( var subConsist in consistSegments )
             {
-                RailTrack startRT = SingletonBehaviour<LogicController>.Instance.LogicToRailTrack[subConsist.Item2];
-                List<TrainCarType> consistTypes = carTypes.GetRange(curIdx, subConsist.Item1);
-
-                var data = CarSpawner.GetTrackMiddleBasedSpawnData(consistTypes, startRT, 0, false, true);
-                if( data.result != CarSpawner.SpawnDataResult.OK )
+                if( subConsist.AlreadySpawned )
                 {
-                    PassengerJobs.ModEntry.Logger.Warning($"Couldn't spawn coaches on track {subConsist.Item2.ID.FullID}: result = {data.result}");
-                    return null;
+                    allTrainCars.AddRange(subConsist.ExistingCars);
                 }
+                else
+                {
+                    RailTrack startRT = SingletonBehaviour<LogicController>.Instance.LogicToRailTrack[subConsist.Track];
+                    List<TrainCarType> consistTypes = carTypes.GetRange(curIdx, subConsist.CarCount);
 
-                spawnData.Add(data);
+                    var data = CarSpawner.GetTrackMiddleBasedSpawnData(consistTypes, startRT, 0, false, true);
+                    if( data.result != CarSpawner.SpawnDataResult.OK )
+                    {
+                        PassengerJobs.ModEntry.Logger.Warning($"Couldn't spawn coaches on track {subConsist.Track.ID.FullID}: result = {data.result}");
+                        return null;
+                    }
+
+                    spawnData.Add(data);
+                }
             }
 
             // try to do the actual spawning
@@ -794,7 +894,7 @@ namespace PassengerJobsMod
 
             for( int i = 0; (destSiding == null) && (i < 5); i++ )
             {
-                string destYard = possibleDestinations.GetRandomFromList(Rand);
+                string destYard = possibleDestinations.ChooseOne(Rand);
                 destStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[destYard];
                 destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(destStation.logicStation.yard.StorageTracks, trainLength);
             }
@@ -884,7 +984,7 @@ namespace PassengerJobsMod
             StationsChainData chainData, float timeLimit, float initialPay )
         {
             var jobDefinition = chainController.jobChainGO.AddComponent<StaticCommuterJobDefinition>();
-            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, JobLicenses.LogisticalHaul | PassLicenses.Passengers1);
+            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, PassLicenses.Passengers1);
             jobDefinition.startingTrack = startTrack;
             jobDefinition.trainCarsToTransport = logicCars;
             jobDefinition.destinationTrack = destTrack;
@@ -893,6 +993,30 @@ namespace PassengerJobsMod
         }
 
         #endregion
+
+        private class ConsistSegment
+        {
+            public int CarCount;
+            public Track Track;
+            public List<TrainCar> ExistingCars = null;
+
+            public bool AlreadySpawned => ExistingCars != null;
+
+            public ConsistSegment( IEnumerable<TrainCar> extantCars, Track track )
+            {
+                if( extantCars == null ) throw new ArgumentException("Existing car list can't be null");
+
+                ExistingCars = extantCars.ToList();
+                CarCount = ExistingCars.Count;
+                Track = track;
+            }
+
+            public ConsistSegment( int nCars, Track track )
+            {
+                CarCount = nCars;
+                Track = track;
+            }
+        }
     }
 
 }

@@ -9,7 +9,7 @@ namespace PassengerJobsMod
 {
     internal static class Extensions
     {
-        internal static T GetRandomFromList<T>( this IList<T> list, Random rand, T toExclude = default )
+        internal static T ChooseOne<T>( this IList<T> list, Random rand, T toExclude = default )
         {
             if( list == null || list.Count == 0 ) return default;
 
@@ -31,7 +31,7 @@ namespace PassengerJobsMod
 
             for( int i = 0; i < count; i++ )
             {
-                result.Add(GetRandomFromList(source, rand));
+                result.Add(ChooseOne(source, rand));
             }
 
             return result;
