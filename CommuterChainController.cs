@@ -23,7 +23,14 @@ namespace PassengerJobsMod
                 if( PassengerJobGenerator.LinkedGenerators.TryGetValue(currentStation, out var generator) )
                 {
                     var jobConsist = new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain);
-                    generator.GenerateNewTransportJob(new List<TrainCarsPerLogicTrack>() { jobConsist });
+                    if( generator.GenerateNewCommuterRun(jobConsist) == null )
+                    {
+                        PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from {jobChainGO?.name}");
+                    }
+                    else
+                    {
+                        trainCarsForJobChain.Clear();
+                    }
                 }
             }
             else
@@ -32,38 +39,7 @@ namespace PassengerJobsMod
             }
 
             // handle destruction of chain
-            trainCarsForJobChain.Clear();
             base.OnLastJobInChainCompleted(lastJobInChain);
-        }
-    }
-
-    [HarmonyPatch(typeof(JobChainController), "OnJobGenerated")]
-    static class CCC_OnJobGenerated_Patch
-    {
-        static void Postfix( StaticJobDefinition jobDefinition, Job generatedJob, CommuterChainController __instance, List<StaticJobDefinition> ___jobChain )
-        {
-            if( (generatedJob.jobType == PassJobType.Commuter) && (jobDefinition == ___jobChain.LastOrDefault()) )
-            {
-                PassengerJobGenerator.CommuterJobDict[generatedJob] = __instance;
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(JobChainController), "OnJobCompleted")]
-    static class CCC_OnJobCompleted_Patch
-    {
-        static void Postfix( Job completedJob )
-        {
-            if( completedJob.jobType == PassJobType.Commuter ) PassengerJobGenerator.CommuterJobDict.Remove(completedJob);
-        }
-    }
-
-    [HarmonyPatch(typeof(JobChainController), "OnAnyJobFromChainAbandoned")]
-    static class CCC_OnAnyJobAbandoned_Patch
-    {
-        static void Postfix( Job abandonedJob )
-        {
-            if( abandonedJob.jobType == PassJobType.Commuter ) PassengerJobGenerator.CommuterJobDict.Remove(abandonedJob);
         }
     }
 }

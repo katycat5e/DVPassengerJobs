@@ -348,7 +348,7 @@ namespace PassengerJobsMod
             return jobDefinition;
         }
 
-        private static StaticCommuterJobDefinition CreateCommuterJob( GameObject jobChainGO, TransportJobDefinitionData jobData )
+        private static StaticPassengerJobDefinition CreateCommuterJob( GameObject jobChainGO, TransportJobDefinitionData jobData )
         {
             if( !(GetStationWithId(jobData.stationId) is Station logicStation) )
             {
@@ -387,7 +387,7 @@ namespace PassengerJobsMod
                 return null;
             }
 
-            var jobDefinition = jobChainGO.AddComponent<StaticCommuterJobDefinition>();
+            var jobDefinition = jobChainGO.AddComponent<StaticPassengerJobDefinition>();
 
             var chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);

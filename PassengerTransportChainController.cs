@@ -16,17 +16,20 @@ namespace PassengerJobsMod
 
         protected override void OnLastJobInChainCompleted( Job lastJobInChain )
         {
-            if( (jobChain.Last() is StaticPassDissasembleJobDefinition previousJob) && (previousJob.job == lastJobInChain) )
+            if( (jobChain.Last() is StaticPassengerJobDefinition previousJob) && (previousJob.job == lastJobInChain) )
             {
                 string currentYardId = previousJob.chainData.chainDestinationYardId;
                 StationController currentStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[currentYardId];
                 
                 if( PassengerJobGenerator.LinkedGenerators.TryGetValue(currentStation, out var generator) )
                 {
-                    foreach( CarsPerTrack subConsist in previousJob.carsPerDestinationTrack )
+                    if( generator.GenerateNewTransportJob(new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain)) == null )
                     {
-                        List<TrainCar> trainCars = trainCarsForJobChain.Where(tc => subConsist.cars.Contains(tc.logicCar)).ToList();
-                        generator.GenerateNewCommuterRun(new TrainCarsPerLogicTrack(subConsist.track, trainCars));
+                        PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from {jobChainGO?.name}");
+                    }
+                    else
+                    {
+                        trainCarsForJobChain.Clear();
                     }
                 }
             }
@@ -36,7 +39,6 @@ namespace PassengerJobsMod
             }
 
             // handle destruction of chain
-            trainCarsForJobChain.Clear();
             base.OnLastJobInChainCompleted(lastJobInChain);
         }
     }

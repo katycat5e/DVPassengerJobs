@@ -56,7 +56,6 @@
     <Compile Include="CommuterChainController.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectDumper.cs" />
-    <Compile Include="PassengerShuntingJobDefinitions.cs" />
     <Compile Include="PassengerTransportChainController.cs" />
     <Compile Include="PassengerJobGenerator.cs" />
     <Compile Include="PassengerJobs.cs" />
@@ -69,7 +68,7 @@
     <Compile Include="Patches_SkinManager.cs" />
     <Compile Include="PJModSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StaticPassengerJobDefinition.cs" />
+    <Compile Include="PassengerJobDefinitions.cs" />
     <Compile Include="TrainCarsPerLogicTrack.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
