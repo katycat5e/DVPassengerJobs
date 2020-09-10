@@ -37,9 +37,6 @@
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -53,7 +50,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
-    <Reference Include="UnityModManager, Version=0.22.8.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="UnityModManager, Version=0.22.9.0, Culture=neutral, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.cs" />

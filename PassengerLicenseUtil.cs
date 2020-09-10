@@ -175,5 +175,30 @@ namespace PassengerJobsMod
                 PassengerJobs.ModEntry.Logger.Warning($"Couldn't apply properties to license booklet {Enum.GetName(typeof(PassBookletType), bookletType)}");
             }
         }
+
+        public static void RefundLicenses()
+        {
+            if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
+            {
+                LicenseManager.RemoveJobLicense(PassLicenses.Passengers1);
+                LicenseManager.SaveData();
+                SingletonBehaviour<Inventory>.Instance.AddMoney(PASS1_COST);
+                PassengerJobs.ModEntry.Logger.Log($"{PASS1_LICENSE_NAME} job license refunded and removed from player");
+            }
+            else PassengerJobs.ModEntry.Logger.Log($"Player does not own {PASS1_LICENSE_NAME} job license");
+        }
+
+        public static void DestroySpawnedLicenses()
+        {
+            foreach( var kvp in BookletProperties )
+            {
+                GameObject licenseObj = GameObject.Find(kvp.Value.Name);
+                if( licenseObj != null )
+                {
+                    PassengerJobs.ModEntry.Logger.Log($"Deleting booklet {kvp.Value.Name}");
+                    UnityEngine.Object.Destroy(licenseObj);
+                }
+            }
+        }
     }
 }
