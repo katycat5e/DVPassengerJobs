@@ -109,13 +109,99 @@ namespace PassengerJobsMod
     {
         static bool Prefix( Job __instance, ref float __result, float ___initialWage )
         {
-            if( PassengerJobs.Settings.UseCustomWages && __instance.requiredLicenses.HasFlag(PassLicenses.Passengers1) )
+            if( PassengerJobs.Settings.UseCustomWages && 
+                ((__instance.jobType == PassJobType.Express) || (__instance.jobType == PassJobType.Commuter)) )
             {
                 // it's a passenger job
                 __result = ___initialWage * PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO;
                 return false;
             }
             return true;
+        }
+    }
+
+    // IdGenerator.GenerateJobId()
+    [HarmonyPatch(typeof(IdGenerator), nameof(IdGenerator.GenerateJobID))]
+    static class IG_GenerateJobId_Patch
+    {
+        const string EXPRESS_TYPE = "PE";
+        const string COMMUTE_TYPE = "PC";
+        const string ASSEMBLE_TYPE = "PA";
+        const string BREAKUP_TYPE = "PD";
+
+        static bool Prefix( JobType jobType, StationsChainData jobStationsInfo, ref string __result, 
+            System.Random ___idRng, HashSet<string> ___existingJobIds )
+        {
+            if( (jobType != PassJobType.Express) &&
+                (jobType != PassJobType.Commuter) &&
+                (jobType != PassJobType.ConsistAssemble) &&
+                (jobType != PassJobType.ConsistDissasemble) )
+            {
+                return true;
+            }
+
+            string yardId = null;
+            if( jobStationsInfo != null )
+            {
+                yardId = jobStationsInfo.chainOriginYardId;
+            }
+
+            string typeStr = "";
+            switch( jobType )
+            {
+                case PassJobType.Express:
+                    typeStr = EXPRESS_TYPE;
+                    break;
+
+                case PassJobType.Commuter:
+                    typeStr = COMMUTE_TYPE;
+                    break;
+
+                case PassJobType.ConsistAssemble:
+                    typeStr = ASSEMBLE_TYPE;
+                    break;
+
+                case PassJobType.ConsistDissasemble:
+                    typeStr = BREAKUP_TYPE;
+                    break;
+            }
+
+            int idNum = ___idRng.Next(0, 100);
+
+            for( int attemptNum = 0; attemptNum < 99; attemptNum++ )
+            {
+                string idStr = (yardId != null) ? $"{yardId}-{typeStr}-{idNum:D2}" : $"{typeStr}-{idNum:D2}";
+
+                if( !___existingJobIds.Contains(idStr) )
+                {
+                    IdGenerator.RegisterJobId(idStr);
+                    __result = idStr;
+                    return false;
+                }
+
+                idNum = (idNum >= 99) ? 0 : (idNum + 1);
+            }
+
+            PassengerJobs.ModEntry.Logger.Warning($"Couldn't find free jobId for job type: {typeStr}! Using 0 for jobId number!");
+            __result = (yardId != null) ? $"{yardId}-{typeStr}-{0:D2}" : $"{typeStr}-{0:D2}";
+
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(JobChainController), nameof(JobChainController.GetJobChainSaveData))]
+    static class JCC_GetJobChainSaveData_Patch
+    {
+        static void Postfix( JobChainController __instance, ref JobChainSaveData __result)
+        {
+            if( __instance is PassengerTransportChainController )
+            {
+                __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Transport, __result);
+            }
+            else if( __instance is CommuterChainController )
+            {
+                __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Commuter, __result);
+            }
         }
     }
 }

@@ -53,21 +53,23 @@
     <Reference Include="UnityModManager, Version=0.22.9.0, Culture=neutral, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommuterChainController.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectDumper.cs" />
+    <Compile Include="PassengerTransportChainController.cs" />
     <Compile Include="PassengerJobGenerator.cs" />
     <Compile Include="PassengerJobs.cs" />
     <Compile Include="PassengerLicenseUtil.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Patches_BookletCreator.cs" />
     <Compile Include="Patches_CareerManager.cs" />
+    <Compile Include="Patches_JobSaveManager.cs" />
     <Compile Include="Patches_LicenseManager.cs" />
     <Compile Include="Patches_SkinManager.cs" />
     <Compile Include="PJModSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Compile Include="PassengerJobDefinitions.cs" />
+    <Compile Include="TrainCarsPerLogicTrack.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

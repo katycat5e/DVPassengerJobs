@@ -1,7 +1,9 @@
 ﻿using DV.Logic.Job;
+using Harmony12;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -14,12 +16,21 @@ namespace PassengerJobsMod
     {
         internal static UnityModManager.ModEntry ModEntry;
         public static PJModSettings Settings { get; private set; }
-        
+
         public static bool Load( UnityModManager.ModEntry modEntry )
         {
             ModEntry = modEntry;
 
             CargoTypes.cargoTypeToCargoMassPerUnit[CargoType.Passengers] = 3000f;
+
+            if( AccessTools.Field(typeof(ResourceTypes), "cargoToFullCargoDamagePrice")?.GetValue(null) is Dictionary<CargoType, float> cdpDict )
+            {
+                cdpDict[CargoType.Passengers] = 70_000f;
+            }
+            else
+            {
+                ModEntry.Logger.Warning("Failed to adjust passenger damage cost");
+            }
 
             try
             {
