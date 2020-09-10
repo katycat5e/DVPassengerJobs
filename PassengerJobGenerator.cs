@@ -1,4 +1,5 @@
 ﻿using DV.Logic.Job;
+using Harmony12;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -613,6 +614,46 @@ namespace PassengerJobsMod
             {
                 CarCount = nCars;
                 Track = track;
+            }
+        }
+        
+        #endregion
+
+        private static readonly FieldInfo spawnedOverviewsField = AccessTools.Field(typeof(StationController), "spawnedJobOverviews");
+
+        public static void PurgePassengerJobChains()
+        {
+            foreach( var controller in PassDestinations )
+            {
+                var chainList = controller.ProceduralJobsController.GetCurrentJobChains().ToList(); // cache locally since we're modifying the collection
+
+                List<JobOverview> spawnedOverviews = null;
+                if( spawnedOverviewsField?.GetValue(controller) is List<JobOverview> ovList )
+                {
+                    spawnedOverviews = ovList;
+                }
+                else
+                {
+                    PassengerJobs.ModEntry.Logger.Warning($"Couldn't get list of job overviews to delete at {controller.stationInfo.Name}");
+                }
+
+                foreach( JobChainController chain in chainList )
+                {
+                    if( chain.currentJobInChain.requiredLicenses.HasFlag(PassLicenses.Passengers1) )
+                    {
+                        PassengerJobs.ModEntry.Logger.Log($"Deleting passenger chaincontroller {chain.jobChainGO?.name}");
+                        var cars = chain.trainCarsForJobChain;
+
+                        if( (spawnedOverviews?.Find(ov => ov.job == chain.currentJobInChain) is JobOverview overview) )
+                        {
+                            PassengerJobs.ModEntry.Logger.Log($"Destroying job booklet for job {chain.currentJobInChain.ID}");
+                            overview.DestroyJobOverview();
+                        }
+
+                        chain.currentJobInChain.AbandonJob();
+                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(cars);
+                    }
+                }
             }
         }
     }

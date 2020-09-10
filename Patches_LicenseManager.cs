@@ -70,6 +70,7 @@ namespace PassengerJobsMod
                 JobLicenses val = (JobLicenses)savedLicenses.Value;
                 if( val.HasFlag(PassLicenses.Passengers1) )
                 {
+                    PassengerJobs.ModEntry.Logger.Log("Acquiring passengers license");
                     LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
                 }
             }
