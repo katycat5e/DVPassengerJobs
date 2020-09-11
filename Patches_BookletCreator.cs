@@ -108,27 +108,6 @@ namespace PassengerJobsMod
         public const string COMMUTE_JOB_TITLE = "BRANCH PAX";
         public static readonly Color PASS_JOB_COLOR = new Color32(91, 148, 190, 255);
 
-        public static string GetTransportDescription( string[] destYards )
-        {
-            if( destYards.Length < 2 ) return "Transport passengers";
-            
-            var sb = new StringBuilder("Transport passengers via ");
-            for( int i = 0; i < (destYards.Length - 1); i++ )
-            {
-                if( i == (destYards.Length - 2) )
-                {
-                    if( destYards.Length == 3 ) sb.Append(' ');
-                    if( destYards.Length >= 3 ) sb.Append("and ");
-                }
-                sb.Append(destYards[i]);
-
-                if( i == (destYards.Length - 2) ) return sb.ToString();
-                if( destYards.Length > 3 ) sb.Append(", ");
-            }
-
-            return sb.ToString();
-        }
-
         public static float GetLoadedConsistMass( List<Car> cars )
         {
             float cargoMass = CargoTypes.GetCargoUnitMass(CargoType.Passengers);
@@ -174,7 +153,16 @@ namespace PassengerJobsMod
             string jobTitle = (job.jobType == PassJobType.Express) ? EXPRESS_JOB_TITLE : COMMUTE_JOB_TITLE;
 
             string description;
-            if( job.jobType == PassJobType.Express ) description = "Transport a regional express train";
+            if( job.jobType == PassJobType.Express )
+            {
+                description = "Transport a regional express train";
+
+                if( PassengerJobs.Settings.UseCustomWages )
+                {
+                    float bonusAmount = Mathf.Round(PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO * job.GetBasePaymentForTheJob());
+                    description += $" (${bonusAmount} bonus with on-time completion)";
+                }
+            }
             else description = "Transport a commuter train";
 
             string trainLength = jobCars.Sum(c => c.length).ToString("F") + " m";

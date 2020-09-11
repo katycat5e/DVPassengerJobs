@@ -26,11 +26,10 @@ namespace PassengerJobsMod
                     if( generator.GenerateNewCommuterRun(jobConsist) == null )
                     {
                         PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from {jobChainGO?.name}");
+                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCarsForJobChain);
                     }
-                    else
-                    {
-                        trainCarsForJobChain.Clear();
-                    }
+
+                    trainCarsForJobChain.Clear();
                 }
             }
             else
