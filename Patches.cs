@@ -133,9 +133,7 @@ namespace PassengerJobsMod
             System.Random ___idRng, HashSet<string> ___existingJobIds )
         {
             if( (jobType != PassJobType.Express) &&
-                (jobType != PassJobType.Commuter) &&
-                (jobType != PassJobType.ConsistAssemble) &&
-                (jobType != PassJobType.ConsistDissasemble) )
+                (jobType != PassJobType.Commuter) )
             {
                 return true;
             }
@@ -146,25 +144,7 @@ namespace PassengerJobsMod
                 yardId = jobStationsInfo.chainOriginYardId;
             }
 
-            string typeStr = "";
-            switch( jobType )
-            {
-                case PassJobType.Express:
-                    typeStr = EXPRESS_TYPE;
-                    break;
-
-                case PassJobType.Commuter:
-                    typeStr = COMMUTE_TYPE;
-                    break;
-
-                case PassJobType.ConsistAssemble:
-                    typeStr = ASSEMBLE_TYPE;
-                    break;
-
-                case PassJobType.ConsistDissasemble:
-                    typeStr = BREAKUP_TYPE;
-                    break;
-            }
+            string typeStr = (jobType == PassJobType.Express) ? EXPRESS_TYPE : COMMUTE_TYPE;
 
             int idNum = ___idRng.Next(0, 100);
 

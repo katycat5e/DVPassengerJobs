@@ -23,7 +23,7 @@ namespace PassengerJobsMod
 
             return new PassengerJobDefinitionData(
                 timeLimitForJob, initialWage, logicStation.ID, chainData.chainOriginYardId, chainData.chainDestinationYardId, 
-                (int)requiredLicenses, guidsFromCars, startingTrack.ID.FullID, destinationTrack.ID.FullID);
+                (int)requiredLicenses, guidsFromCars, startingTrack.ID.FullID, destinationTrack.ID.FullID, (int)subType);
         }
 
         public override List<TrackReservation> GetRequiredTrackReservations()
@@ -67,18 +67,20 @@ namespace PassengerJobsMod
 
     class PassengerJobDefinitionData : JobDefinitionDataBase
     {
+        public int subType;
         public string[] trainCarGuids;
         public string startingTrack;
         public string destinationTrack;
 
         public PassengerJobDefinitionData( 
             float timeLimitForJob, float initialWage, string stationId, string originStationId, string destinationStationId, int requiredLicenses,
-            string[] transportCarGuids, string startTrackId, string destTrackId) :
+            string[] transportCarGuids, string startTrackId, string destTrackId, int jobType) :
             base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationId, requiredLicenses)
         {
             trainCarGuids = transportCarGuids;
             startingTrack = startTrackId;
             destinationTrack = destTrackId;
+            subType = jobType;
         }
     }
 }

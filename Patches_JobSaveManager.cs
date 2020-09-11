@@ -89,142 +89,27 @@ namespace PassengerJobsMod
 
         static bool Prefix( JobChainSaveData chainSaveData, ref GameObject __result )
         {
-            if( (chainSaveData.jobChainData.Length < 1) || !(chainSaveData is PassengerChainSaveData passChainData) )
+            if( chainSaveData.jobChainData.Length < 1 )
             {
                 return true;
             }
 
-            // Figure out chain type
-            PassengerChainSaveData.PassChainType chainType = passChainData.ChainType;
-
-            if( InitializeCorrespondingJobBooklet == null )
+            JobChainController chainController = null;
+            if( chainSaveData is PassengerChainSaveData passChainData )
             {
-                PrintError("Failed to connect to JobSaveManager methods");
-                return false;
-            }
-
-            List<TrainCar> trainCarsFromCarGuids = GetTrainCarsFromCarGuids(chainSaveData.trainCarGuids);
-            if( trainCarsFromCarGuids == null )
-            {
-                PrintError("Couldn't find trainCarsForJobChain with trainCarGuids from chainSaveData! Skipping load of this job chain!");
-                return false;
-            }
-
-            var jobChainGO = new GameObject();
-            JobChainController chainController;
-
-            if( chainType == PassengerChainSaveData.PassChainType.Transport )
-            {
-                // Initialize chain controller
-                chainController = new PassengerTransportChainController(jobChainGO) { trainCarsForJobChain = trainCarsFromCarGuids };
-                StationsChainData chainData = null;
-                bool firstJob = true;
-
-                foreach( JobDefinitionDataBase jobData in chainSaveData.jobChainData )
-                {
-                    // Check base job definition data
-                    if( !(GetStationWithId(jobData.stationId) is Station station) )
-                    {
-                        PrintError($"Couldn't find corresponding Station with ID: {jobData.stationId}! Skipping load of this job chain!");
-                        UnityEngine.Object.Destroy(jobChainGO);
-                        return false;
-                    }
-
-                    if( (jobData.timeLimitForJob < 0f) || (jobData.initialWage < 0f) ||
-                        string.IsNullOrEmpty(jobData.originStationId) || string.IsNullOrEmpty(jobData.destinationStationId) )
-                    {
-                        PrintError("Invalid data! Skipping load of this job chain!");
-                        UnityEngine.Object.Destroy(jobChainGO);
-                        return false;
-                    }
-
-                    if( !LicenseManager.IsValidForParsingToJobLicense(jobData.requiredLicenses) )
-                    {
-                        PrintError("Undefined job licenses requirement! Skipping load of this job chain!");
-                        UnityEngine.Object.Destroy(jobChainGO);
-                        return false;
-                    }
-
-
-                    StaticJobDefinition jobDefinition;
-
-                    if( jobData is PassengerJobDefinitionData pjData )
-                    {
-                        // PASSENGER TRANSPORT JOB
-                        jobDefinition = CreatePassengerTransportJob(jobChainGO, pjData);
-                        chainData = new ComplexChainData(pjData.originStationId, pjData.destinationYards);
-                    }
-                    else if( jobData is PassAssembleJobData pajData )
-                    {
-                        // CONSIST ASSEMBLY JOB
-                        jobDefinition = CreateConsistAssemblyJob(jobChainGO, pajData);
-                        chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
-                    }
-                    else if( jobData is PassDisassembleJobData pdjData )
-                    {
-                        jobDefinition = CreateConsistBreakupJob(jobChainGO, pdjData);
-                        chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
-                    }
-                    else
-                    {
-                        PrintError("Invalid job definition data type");
-                        return false;
-                    }
-
-                    if( jobDefinition == null )
-                    {
-                        PrintError("Failed to generate job definition from save data");
-                        UnityEngine.Object.Destroy(jobChainGO);
-                        return false;
-                    }
-
-                    jobDefinition.PopulateBaseJobDefinition(station, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);
-
-                    if( firstJob )
-                    {
-                        firstJob = false;
-                        jobDefinition.ForceJobId(chainSaveData.firstJobId);
-                    }
-
-                    chainController.AddJobDefinitionToChain(jobDefinition);
-                }
-
-                jobChainGO.name = $"[LOADED] ChainJob[Passenger]: {chainData.chainOriginYardId} - {chainData.chainDestinationYardId}";
+                chainController = CreateSavedJobChain(passChainData);
             }
             else
             {
-                // COMMUTER JOB CHAIN
-                StaticJobDefinition jobDefinition;
-                StationsChainData chainData = null;
-
-                chainController = new CommuterChainController(jobChainGO) { trainCarsForJobChain = trainCarsFromCarGuids };
-
-                foreach( JobDefinitionDataBase jobDataBase in chainSaveData.jobChainData )
+                var firstJobData = chainSaveData.jobChainData.First();
+                if( ((JobLicenses)firstJobData.requiredLicenses).HasFlag(PassLicenses.Passengers1) )
                 {
-                    if( jobDataBase is TransportJobDefinitionData jobData )
-                    {
-                        jobDefinition = CreateCommuterJob(jobChainGO, jobData);
-                        jobDefinition.ForceJobId(chainSaveData.firstJobId);
-                        chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
-                    }
-                    else
-                    {
-                        PrintError("Commuter chain contains invalid job type");
-                        return false;
-                    }
-
-                    if( jobDefinition == null )
-                    {
-                        PrintError("Failed to generate job definition from save data");
-                        UnityEngine.Object.Destroy(jobChainGO);
-                        return false;
-                    }
-
-                    chainController.AddJobDefinitionToChain(jobDefinition);
+                    DeleteOldChain(chainSaveData);
                 }
-
-                jobChainGO.name = $"[LOADED] ChainJob[Commuter]: {chainData.chainOriginYardId} - {chainData.chainDestinationYardId}";
+                else return true; // pass to base game
             }
+
+            if( chainController == null ) return false;
 
             chainController.FinalizeSetupAndGenerateFirstJob(true);
 
@@ -249,34 +134,155 @@ namespace PassengerJobsMod
             return false;
         }
 
-        private static StaticPassengerJobDefinition CreatePassengerTransportJob( GameObject jobChainGO, PassengerJobDefinitionData jobData )
+        private static void DeleteOldChain( JobChainSaveData chainSaveData )
         {
-            if( (jobData.destinationYards == null) || (jobData.destinationTracks == null) )
+            var cars = GetTrainCarsFromCarGuids(chainSaveData.trainCarGuids);
+
+            if( cars != null )
             {
-                PrintError("Undefined job destination data");
+                PassengerJobs.ModEntry.Logger.Log("Deleting pre v2.0 job chain");
+                SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(cars, true);
+            }
+        }
+
+        private static JobChainController CreateSavedJobChain( PassengerChainSaveData passChainData )
+        {
+            // Figure out chain type
+            PassengerChainSaveData.PassChainType chainType = passChainData.ChainType;
+
+            if( InitializeCorrespondingJobBooklet == null )
+            {
+                PrintError("Failed to connect to JobSaveManager methods");
                 return null;
             }
 
+            List<TrainCar> trainCarsFromCarGuids = GetTrainCarsFromCarGuids(passChainData.trainCarGuids);
+            if( trainCarsFromCarGuids == null )
+            {
+                PrintError("Couldn't find trainCarsForJobChain with trainCarGuids from chainSaveData! Skipping load of this job chain!");
+                return null;
+            }
+
+            var jobChainGO = new GameObject();
+            JobChainController chainController;
+
+            if( chainType == PassengerChainSaveData.PassChainType.Transport )
+            {
+                // PASSENGER TRANSPORT (EXPRESS) CHAIN
+                StaticJobDefinition jobDefinition;
+                StationsChainData chainData = null;
+                chainController = new PassengerTransportChainController(jobChainGO) { trainCarsForJobChain = trainCarsFromCarGuids };
+
+                foreach( JobDefinitionDataBase jobData in passChainData.jobChainData )
+                {
+
+                    if( jobData is PassengerJobDefinitionData pjData )
+                    {
+                        jobDefinition = CreateSavedPassengerJob(jobChainGO, pjData);
+                        jobDefinition.ForceJobId(passChainData.firstJobId);
+                        chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
+                    }
+                    else
+                    {
+                        PrintError("Express pax chain contains invalid job type");
+                        return null;
+                    }
+
+                    if( jobDefinition == null )
+                    {
+                        PrintError("Failed to generate job definition from save data");
+                        UnityEngine.Object.Destroy(jobChainGO);
+                        return null;
+                    }
+
+                    chainController.AddJobDefinitionToChain(jobDefinition);
+                }
+
+                jobChainGO.name = $"[LOADED] ChainJob[Passenger]: {chainData.chainOriginYardId} - {chainData.chainDestinationYardId}";
+            }
+            else
+            {
+                // COMMUTER JOB CHAIN
+                StaticJobDefinition jobDefinition;
+                StationsChainData chainData = null;
+                bool first = true;
+
+                chainController = new CommuterChainController(jobChainGO) { trainCarsForJobChain = trainCarsFromCarGuids };
+
+                foreach( JobDefinitionDataBase jobDataBase in passChainData.jobChainData )
+                {
+                    if( jobDataBase is PassengerJobDefinitionData jobData )
+                    {
+                        jobDefinition = CreateSavedPassengerJob(jobChainGO, jobData);
+
+                        if( first )
+                        {
+                            chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
+                            jobDefinition.ForceJobId(passChainData.firstJobId);
+                            first = false;
+                        }
+                    }
+                    else
+                    {
+                        PrintError("Commuter chain contains invalid job type");
+                        return null;
+                    }
+
+                    if( jobDefinition == null )
+                    {
+                        PrintError("Failed to generate job definition from save data");
+                        UnityEngine.Object.Destroy(jobChainGO);
+                        return null;
+                    }
+
+                    chainController.AddJobDefinitionToChain(jobDefinition);
+                }
+
+                jobChainGO.name = $"[LOADED] ChainJob[Commuter]: {chainData.chainOriginYardId} - {chainData.chainDestinationYardId}";
+            }
+
+            return chainController;
+        }
+
+        private static StaticPassengerJobDefinition CreateSavedPassengerJob( GameObject jobChainGO, PassengerJobDefinitionData jobData )
+        {
+            // associated station
+            if( !(GetStationWithId(jobData.stationId) is Station logicStation) )
+            {
+                PrintError($"Couldn't find corresponding Station with ID: {jobData.stationId}! Skipping load of this job chain!");
+                return null;
+            }
+
+            // bonus time limit, base payment
+            if( jobData.timeLimitForJob < 0f || jobData.initialWage < 0f ||
+                string.IsNullOrEmpty(jobData.originStationId) || string.IsNullOrEmpty(jobData.destinationStationId) )
+            {
+                PrintError("Invalid data! Skipping load of this job chain!");
+                return null;
+            }
+
+            // license requirements
+            if( !LicenseManager.IsValidForParsingToJobLicense(jobData.requiredLicenses) )
+            {
+                PrintError("Undefined job licenses requirement! Skipping load of this job chain!");
+                return null;
+            }
+
+            // starting track
             if( !(GetYardTrackWithId(jobData.startingTrack) is Track startTrack) )
             {
                 PrintError($"Couldn't find corresponding start Track with ID: {jobData.startingTrack}! Skipping load of this job chain!");
                 return null;
             }
 
-            Track[] destTracks = jobData.destinationTracks?.Select(id => GetYardTrackWithId(id)).ToArray();
-            if( (destTracks == null) || destTracks.Any(track => track == null) )
+            // destination track
+            if( !(GetYardTrackWithId(jobData.destinationTrack) is Track destTrack) )
             {
-                PrintError($"Couldn't find corresponding destination Track with ID: {string.Join<Track>(",", destTracks)}! Skipping load of this job chain!");
+                PrintError($"Couldn't find corresponding destination Track with ID: {jobData.destinationTrack}! Skipping load of this job chain!");
                 return null;
             }
 
-            string[] destYards = jobData.destinationYards;
-            if( (destYards == null) || destYards.Any(yard => yard == null) )
-            {
-                PrintError($"Invalid destination yard IDs: {string.Join(",", destYards)}! Skipping load of this job chain!");
-                return null;
-            }
-
+            // consist
             if( !(GetCarsFromCarGuids(jobData.trainCarGuids) is List<Car> consist) )
             {
                 PrintError("Couldn't find all carsToTransport with transportCarGuids! Skipping load of this job chain!");
@@ -284,118 +290,14 @@ namespace PassengerJobsMod
             }
 
             StaticPassengerJobDefinition jobDefinition = jobChainGO.AddComponent<StaticPassengerJobDefinition>();
-
-            jobDefinition.startingTrack = startTrack;
-            jobDefinition.destinationTracks = destTracks;
-            jobDefinition.destinationYards = destYards;
-            jobDefinition.trainCarsToTransport = consist;
-
-            return jobDefinition;
-        }
-
-        private static StaticPassAssembleJobDefinition CreateConsistAssemblyJob( GameObject jobChainGO, PassAssembleJobData jobData )
-        {
-            if( !(GetYardTrackWithId(jobData.destinationTrackId) is Track destTrack) )
-            {
-                PrintError($"Couldn't find corresponding destination Track with ID: {jobData.destinationTrackId}! Skipping load of this job chain!");
-                return null;
-            }
-
-            List<CarsPerTrack> startingCars;
-            try
-            {
-                startingCars = jobData.carGuidsPerTrackIds.Select(Extensions.GetCarTracksByIds).ToList();
-            }
-            catch( ArgumentException ex )
-            {
-                PrintError($"Couldn't find starting tracks/cars: {ex.Message}. Skipping load of this job chain!");
-                return null;
-            }
-
-            StaticPassAssembleJobDefinition jobDefinition = jobChainGO.AddComponent<StaticPassAssembleJobDefinition>();
-
-            jobDefinition.carsPerStartingTrack = startingCars;
-            jobDefinition.destinationTrack = destTrack;
-
-            return jobDefinition;
-        }
-
-        private static StaticPassDissasembleJobDefinition CreateConsistBreakupJob( GameObject jobChainGO, PassDisassembleJobData jobData )
-        {
-            if( !(GetYardTrackWithId(jobData.startingTrackId) is Track startTrack) )
-            {
-                PrintError($"Couldn't find corresponding destination Track with ID: {jobData.startingTrackId}! Skipping load of this job chain!");
-                return null;
-            }
-
-            List<CarsPerTrack> endingCars;
-            try
-            {
-                endingCars = jobData.carGuidsPerTrackIds.Select(Extensions.GetCarTracksByIds).ToList();
-            }
-            catch( ArgumentException ex )
-            {
-                PrintError($"Couldn't find starting tracks/cars: {ex.Message}. Skipping load of this job chain!");
-                return null;
-            }
-
-            StaticPassDissasembleJobDefinition jobDefinition = jobChainGO.AddComponent<StaticPassDissasembleJobDefinition>();
-            jobDefinition.chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
-
-            jobDefinition.carsPerDestinationTrack = endingCars;
-            jobDefinition.startingTrack = startTrack;
-
-            return jobDefinition;
-        }
-
-        private static StaticPassengerJobDefinition CreateCommuterJob( GameObject jobChainGO, TransportJobDefinitionData jobData )
-        {
-            if( !(GetStationWithId(jobData.stationId) is Station logicStation) )
-            {
-                PrintError($"Couldn't find corresponding Station with ID: {jobData.stationId}! Skipping load of this job chain!");
-                return null;
-            }
-
-            if( jobData.timeLimitForJob < 0f || jobData.initialWage < 0f || 
-                string.IsNullOrEmpty(jobData.originStationId) || string.IsNullOrEmpty(jobData.destinationStationId) )
-            {
-                PrintError("Invalid data! Skipping load of this job chain!");
-                return null;
-            }
-
-            if( !LicenseManager.IsValidForParsingToJobLicense(jobData.requiredLicenses) )
-            {
-                PrintError("Undefined job licenses requirement! Skipping load of this job chain!");
-                return null;
-            }
-
-            if( !(GetYardTrackWithId(jobData.startTrackId) is Track startTrack) )
-            {
-                PrintError($"Couldn't find corresponding start Track with ID: {jobData.startTrackId}! Skipping load of this job chain!");
-                return null;
-            }
-
-            if( !(GetYardTrackWithId(jobData.destinationTrackId) is Track destTrack) )
-            {
-                PrintError($"Couldn't find corresponding destination Track with ID: {jobData.destinationTrackId}! Skipping load of this job chain!");
-                return null;
-            }
-
-            if( !(GetCarsFromCarGuids(jobData.transportCarGuids) is List<Car> cars) )
-            {
-                PrintError("Couldn't find all carsToTransport with transportCarGuids! Skipping load of this job chain!");
-                return null;
-            }
-
-            var jobDefinition = jobChainGO.AddComponent<StaticPassengerJobDefinition>();
-
             var chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);
 
+            jobDefinition.subType = (JobType)jobData.subType;
             jobDefinition.startingTrack = startTrack;
-            jobDefinition.trainCarsToTransport = cars;
             jobDefinition.destinationTrack = destTrack;
-
+            jobDefinition.trainCarsToTransport = consist;
+            
             return jobDefinition;
         }
     }

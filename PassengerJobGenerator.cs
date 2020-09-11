@@ -20,8 +20,8 @@ namespace PassengerJobsMod
         public const int MIN_CARS_EXPRESS = 4;
         public const int MAX_CARS_EXPRESS = 5;
 
-        public const int MIN_CARS_COMMUTE = 1;
-        public const int MAX_CARS_COMMUTE = 2;
+        public const int MIN_CARS_COMMUTE = 2;
+        public const int MAX_CARS_COMMUTE = 3;
 
         public const float BASE_WAGE_SCALE = 0.5f;
         public const float BONUS_TO_BASE_WAGE_RATIO = 2f;
@@ -251,16 +251,22 @@ namespace PassengerJobsMod
             try
             {
                 // Create passenger hauls until >= half the platforms are filled
-                for( int attemptCounter = 2; attemptCounter > 0; attemptCounter-- )
+                int attemptCounter = 2;
+                for( ; attemptCounter > 0; attemptCounter-- )
                 {
                     if( TrackOrg.FilterOutOccupiedTracks(StartingPlatforms).Count == 0 ) break;
                     GenerateNewTransportJob();
                 }
 
                 // Create commuter hauls until >= half of storage tracks are filled
+                var existingChains = Controller.ProceduralJobsController.GetCurrentJobChains();
+                int nExtantCommutes = existingChains.Count(c => c is CommuterChainController);
+
                 double totalTrackSpace = StorageTracks.Select(t => t.length).Sum();
 
-                for( int attemptCounter = 2; attemptCounter > 0; attemptCounter-- )
+                // generate max 3 commuter chains from this station
+                attemptCounter = 3 - nExtantCommutes;
+                for( ; attemptCounter > 0; attemptCounter-- )
                 {
                     double freeTrackSpace = StorageTracks.Select(t => TrackOrg.GetFreeSpaceOnTrack(t)).Sum();
                     if( (freeTrackSpace / totalTrackSpace) <= 0.5d ) break;
@@ -373,7 +379,7 @@ namespace PassengerJobsMod
 
             // scale job payment depending on settings
             float wageScale = PassengerJobs.Settings.UseCustomWages ? BASE_WAGE_SCALE : 1;
-            transportPayment = Mathf.Round(transportPayment * 0.5f * wageScale);
+            transportPayment = Mathf.Round(transportPayment * wageScale);
 
             if( consistInfo == null )
             {
@@ -494,12 +500,12 @@ namespace PassengerJobsMod
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nCars);
 
                 // pick start storage track
-                var availTracks = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(StorageTracks));
+                var availTracks = TrackOrg.FilterOutReservedTracks(StorageTracks);
                 startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(availTracks, trainLength);
 
                 if( startSiding == null )
                 {
-                    PassengerJobs.ModEntry.Logger.Log($"No available siding for new job at {Controller.stationInfo.Name}");
+                    //PassengerJobs.ModEntry.Logger.Log($"No available siding for new job at {Controller.stationInfo.Name}");
                     return null;
                 }
             }
@@ -549,7 +555,7 @@ namespace PassengerJobsMod
             // calculate haul payment
             float haulDistance = JobPaymentCalculator.GetDistanceBetweenStations(Controller, destStation);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
-            float payment = JobPaymentCalculator.CalculateJobPayment(JobType.EmptyHaul, haulDistance, GetJobPaymentData(jobCarTypes));
+            float payment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes));
 
             // create job definition & spawn cars
             StaticPassengerJobDefinition jobDefinition, returnJobDefinition;
@@ -616,15 +622,14 @@ namespace PassengerJobsMod
                 Track = track;
             }
         }
-        
-        #endregion
 
         private static readonly FieldInfo spawnedOverviewsField = AccessTools.Field(typeof(StationController), "spawnedJobOverviews");
 
         public static void PurgePassengerJobChains()
         {
-            foreach( var controller in PassDestinations )
+            foreach( var kvp in PassDestinations )
             {
+                var controller = kvp.Value;
                 var chainList = controller.ProceduralJobsController.GetCurrentJobChains().ToList(); // cache locally since we're modifying the collection
 
                 List<JobOverview> spawnedOverviews = null;
@@ -639,7 +644,7 @@ namespace PassengerJobsMod
 
                 foreach( JobChainController chain in chainList )
                 {
-                    if( chain.currentJobInChain.requiredLicenses.HasFlag(PassLicenses.Passengers1) )
+                    if( (chain is PassengerTransportChainController) || (chain is CommuterChainController) )
                     {
                         PassengerJobs.ModEntry.Logger.Log($"Deleting passenger chaincontroller {chain.jobChainGO?.name}");
                         var cars = chain.trainCarsForJobChain;
