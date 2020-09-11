@@ -8,7 +8,7 @@ namespace PassengerJobsMod
 {
     class StaticPassengerJobDefinition : StaticJobDefinition
     {
-        public JobType subType;
+        public JobType subType = PassJobType.Commuter;
         public List<Car> trainCarsToTransport;
         public Track startingTrack;
         public Track destinationTrack;

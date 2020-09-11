@@ -30,11 +30,11 @@ namespace PassengerJobsMod
     [HarmonyPatch(typeof(InventoryStartingItems), "InstantiateStorageItemsWorld")]
     static class ISI_InstantiateItemsWorld_Patch
     {
-        static void Prefix( List<StorageItemData> storageItemData, ref GameObject __state )
+        static void Prefix( ref List<StorageItemData> storageItemData, ref GameObject __state )
         {
             var bookProps = PassengerLicenseUtil.BookletProperties[PassBookletType.Passengers1License];
 
-            StorageItemData itemData = storageItemData.Find(sid => bookProps.Name == sid.itemPrefabName);
+            StorageItemData itemData = storageItemData.Find(sid => bookProps.Name.Equals(sid.itemPrefabName));
             if( itemData != null )
             {
                 storageItemData.Remove(itemData);
@@ -109,8 +109,7 @@ namespace PassengerJobsMod
     {
         static bool Prefix( Job __instance, ref float __result, float ___initialWage )
         {
-            if( PassengerJobs.Settings.UseCustomWages && 
-                ((__instance.jobType == PassJobType.Express) || (__instance.jobType == PassJobType.Commuter)) )
+            if( PassengerJobs.Settings.UseCustomWages && (__instance.jobType == PassJobType.Express) )
             {
                 // it's a passenger job
                 __result = ___initialWage * PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO;
@@ -126,8 +125,6 @@ namespace PassengerJobsMod
     {
         const string EXPRESS_TYPE = "PE";
         const string COMMUTE_TYPE = "PC";
-        const string ASSEMBLE_TYPE = "PA";
-        const string BREAKUP_TYPE = "PD";
 
         static bool Prefix( JobType jobType, StationsChainData jobStationsInfo, ref string __result, 
             System.Random ___idRng, HashSet<string> ___existingJobIds )

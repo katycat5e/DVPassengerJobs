@@ -159,7 +159,8 @@ namespace PassengerJobsMod
 
                 if( PassengerJobs.Settings.UseCustomWages )
                 {
-                    description += $" (bonus of {PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO}x job price with on-time completion)";
+                    float bonusAmount = Mathf.Round(PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO * job.GetBasePaymentForTheJob());
+                    description += $" (${bonusAmount} bonus with on-time completion)";
                 }
             }
             else description = "Transport a commuter train";
