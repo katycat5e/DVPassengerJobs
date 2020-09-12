@@ -15,14 +15,15 @@ namespace PassengerJobsMod
 
         protected override void OnLastJobInChainCompleted( Job lastJobInChain )
         {
-            if( (jobChain.Last() is StaticTransportJobDefinition previousJob) && (previousJob.job == lastJobInChain) )
+            if( (jobChain.Last() is StaticPassengerJobDefinition previousJob) && (previousJob.job == lastJobInChain) )
             {
                 string currentYardId = previousJob.chainData.chainDestinationYardId;
                 StationController currentStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[currentYardId];
+                var jobConsist = new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain);
 
                 if( PassengerJobGenerator.LinkedGenerators.TryGetValue(currentStation, out var generator) )
                 {
-                    var jobConsist = new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain);
+                    // outbound from city
                     if( generator.GenerateNewCommuterRun(jobConsist) == null )
                     {
                         PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from {jobChainGO?.name}");
@@ -30,6 +31,23 @@ namespace PassengerJobsMod
                     }
 
                     trainCarsForJobChain.Clear();
+                }
+                else
+                {
+                    // inbound to city
+                    string destYardId = previousJob.chainData.chainOriginYardId;
+                    StationController townStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[destYardId];
+
+                    if( PassengerJobGenerator.LinkedGenerators.TryGetValue(townStation, out generator) )
+                    {
+                        if( generator.GenerateCommuterReturnTrip(jobConsist, currentStation) == null )
+                        {
+                            PassengerJobs.ModEntry.Logger.Warning($"Failed to create return trip for cars from {jobChainGO?.name}");
+                            SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCarsForJobChain);
+                        }
+
+                        trainCarsForJobChain.Clear();
+                    }
                 }
             }
             else
