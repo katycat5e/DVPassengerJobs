@@ -209,6 +209,8 @@ namespace PassengerJobsMod
         private bool PlayerWasInGenerateRange = false;
         private bool TrackSignsAreGenerated = false;
 
+        private Coroutine GenerationRoutine = null;
+
         public void Update()
         {
             if( Controller.logicStation == null || !SaveLoadController.carsAndJobsLoadingFinished )
@@ -228,7 +230,7 @@ namespace PassengerJobsMod
             if( playerInGenerateRange && !PlayerWasInGenerateRange )
             {
                 // player entered the zone
-                GeneratePassengerJobs();
+                StartGenerationAsync();
             }
 
             PlayerWasInGenerateRange = playerInGenerateRange;
@@ -244,44 +246,77 @@ namespace PassengerJobsMod
             GenerateTrackIdObjectMethod.Invoke(Controller, new object[] { stationRailTracks });
         }
 
-        public void GeneratePassengerJobs()
+        public void StopGeneration()
+        {
+            if( GenerationRoutine != null )
+            {
+                StopCoroutine(GenerationRoutine);
+                GenerationRoutine = null;
+            }
+        }
+
+        public void StartGenerationAsync()
+        {
+            StopGeneration();
+            GenerationRoutine = StartCoroutine(GeneratePassengerJobs());
+        }
+
+        public System.Collections.IEnumerator GeneratePassengerJobs()
         {
             PassengerJobs.ModEntry.Logger.Log($"Generating jobs at {Controller.stationInfo.Name}");
 
-            try
+            // Create passenger hauls until >= half the platforms are filled
+            int attemptCounter;
+            for( attemptCounter = 2; attemptCounter > 0; attemptCounter-- )
             {
-                // Create passenger hauls until >= half the platforms are filled
-                int attemptCounter = 2;
-                for( ; attemptCounter > 0; attemptCounter-- )
+                // break if there are no more available outbound platforms
+                if( TrackOrg.FilterOutOccupiedTracks(StartingPlatforms).Count == 0 ) break;
+
+                try
                 {
-                    if( TrackOrg.FilterOutOccupiedTracks(StartingPlatforms).Count == 0 ) break;
                     GenerateNewTransportJob();
                 }
-
-                // Create commuter hauls until >= half of storage tracks are filled
-                var existingChains = Controller.ProceduralJobsController.GetCurrentJobChains();
-                int nExtantCommutes = existingChains.Count(c => c is CommuterChainController);
-
-                double totalTrackSpace = StorageTracks.Select(t => t.length).Sum();
-
-                // generate max 3 commuter chains from this station
-                attemptCounter = 3 - nExtantCommutes;
-                PassengerJobs.ModEntry.Logger.Log($"{Controller.stationInfo.YardID} has {nExtantCommutes} commute jobs, generating up to {attemptCounter} additional");
-
-                for( ; attemptCounter > 0; attemptCounter-- )
+                catch( Exception ex )
                 {
-                    double reservedSpace = StorageTracks.Select(t => TrackOrg.GetReservedSpace(t)).Sum();
+                    PassengerJobs.ModEntry.Logger.LogException(ex);
+                }
 
-                    //PassengerJobs.ModEntry.Logger.Log($"Storage space: {Math.Round(reservedSpace, 1)}/{Math.Round(totalTrackSpace, 1)}");
-                    if( (reservedSpace / totalTrackSpace) >= 0.6d ) break;
-                    
-                    GenerateNewCommuterRun();
+                yield return null;
+            }
+
+            // Create commuter hauls until >= half of storage tracks are filled
+            var existingChains = Controller.ProceduralJobsController.GetCurrentJobChains();
+            int nExtantCommutes = existingChains.Count(c => c is CommuterChainController);
+
+            double totalTrackSpace = StorageTracks.Select(t => t.length).Sum();
+
+            // generate max 3 commuter chains from each station
+            int nToGenerate = 3 - nExtantCommutes;
+            PassengerJobs.ModEntry.Logger.Log($"{Controller.stationInfo.YardID} has {nExtantCommutes} commute jobs, generating up to {nToGenerate} additional");
+
+            for( attemptCounter = 5; attemptCounter > 0; attemptCounter-- )
+            {
+                if( nToGenerate <= 0 ) break;
+
+                // break on storage tracks >60% full
+                double reservedSpace = StorageTracks.Select(t => TrackOrg.GetReservedSpace(t)).Sum();
+                if( (reservedSpace / totalTrackSpace) >= 0.6d ) break;
+
+                yield return new WaitForSeconds(0.5f);
+
+                try
+                {
+                    var result = GenerateNewCommuterRun();
+                    if( result != null ) nToGenerate -= 1;
+                }
+                catch( Exception ex )
+                {
+                    PassengerJobs.ModEntry.Logger.LogException(ex);
                 }
             }
-            catch( Exception ex )
-            {
-                PassengerJobs.ModEntry.Logger.LogException(ex);
-            }
+
+            GenerationRoutine = null;
+            yield break;
         }
 
         #endregion
@@ -505,7 +540,7 @@ namespace PassengerJobsMod
 
                 if( startSiding == null )
                 {
-                    PassengerJobs.ModEntry.Logger.Log($"No available siding for new job at {Controller.stationInfo.Name}");
+                    //PassengerJobs.ModEntry.Logger.Log($"No available siding for new job at {Controller.stationInfo.Name}");
                     return null;
                 }
             }
