@@ -26,7 +26,7 @@ namespace PassengerJobsMod
         public const float BASE_WAGE_SCALE = 0.5f;
         public const float BONUS_TO_BASE_WAGE_RATIO = 2f;
 
-        public TrainCarType[] PassCarTypes = new TrainCarType[]
+        public static TrainCarType[] PassCarTypes = new TrainCarType[]
         {
             TrainCarType.PassengerRed, TrainCarType.PassengerGreen, TrainCarType.PassengerBlue
         };
@@ -47,7 +47,7 @@ namespace PassengerJobsMod
             { "CSW", new string[] { "SW", "FRS", "FM", "OWC" } },
             { "FF",  new string[] { "IME", "CM", "IMW" } },
             { "GF",  new string[] { "OWN", "FRC", "SM" } },
-            { "HB",  new string[] { "FRS", "SM" } },
+            { "HB",  new string[] { "FM", "SM" } },
             { "MF",  new string[] { "OWC", "IMW" } }
         };
 
