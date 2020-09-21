@@ -363,14 +363,22 @@ namespace PassengerJobsMod
             }
 
             // Choose a route
-            StationController destStation = PassDestinations.Values.ToList().ChooseOne(Rand);
-
-            // pick ending platform
+            var destPool = PassDestinations.Values.ToList();
             Track destPlatform = null;
-            PassengerJobGenerator destGenerator = null;
+            StationController destStation = null;
 
-            destGenerator = LinkedGenerators[destStation];
-            destPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(destGenerator.PlatformTracks, trainLength);
+            while( (destPlatform == null) && (destPool.Count > 0) )
+            {
+                // search the possible destinations 1 by 1 until we find an opening (or we don't)
+                destStation = destPool.ChooseOne(Rand);
+
+                // pick ending platform
+                PassengerJobGenerator destGenerator = LinkedGenerators[destStation];
+                destPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(destGenerator.PlatformTracks, trainLength);
+
+                // remove this station from the pool
+                destPool.Remove(destStation);
+            }
 
             if( destPlatform == null )
             {
@@ -553,11 +561,15 @@ namespace PassengerJobsMod
                 return null;
             }
 
-            for( int i = 0; (destSiding == null) && (i < 5); i++ )
+            // search through all possible destinations until we find an open siding
+            var destPool = possibleDestinations.ToList();
+            while( (destSiding == null) && (destPool.Count > 0) )
             {
-                string destYard = possibleDestinations.ChooseOne(Rand);
+                string destYard = destPool.ChooseOne(Rand);
                 destStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[destYard];
                 destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(destStation.logicStation.yard.StorageTracks, trainLength);
+
+                destPool.Remove(destYard);
             }
 
             if( destSiding == null )

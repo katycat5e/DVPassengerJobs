@@ -25,8 +25,8 @@ namespace PassengerJobsMod
                 {
                     if( generator.GenerateNewTransportJob(new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain)) == null )
                     {
-                        PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from {jobChainGO?.name}");
-                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCarsForJobChain);
+                        PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from job {lastJobInChain.ID}");
+                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCarsForJobChain, true);
                     }
 
                     trainCarsForJobChain.Clear();
