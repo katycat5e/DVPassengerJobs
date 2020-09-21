@@ -33,14 +33,14 @@ namespace PassengerJobsMod
 
         public static Dictionary<string, StationController> PassDestinations = new Dictionary<string, StationController>();
 
-        public static Dictionary<string, string[]> TransportRoutes = new Dictionary<string, string[]>()
-        {
-            { "CSW", new string[] { "MF", "GF" , "HB" } },
-            { "FF",  new string[] { "MF", "GF", "HB" } },
-            { "GF",  new string[] { "CSW", "HB", "FF" } },
-            { "HB",  new string[] { "CSW", "GF", "FF" } },
-            { "MF",  new string[] { "CSW", "FF" } }
-        };
+        //public static Dictionary<string, string[]> TransportRoutes = new Dictionary<string, string[]>()
+        //{
+        //    { "CSW", new string[] { "MF", "GF" , "HB" } },
+        //    { "FF",  new string[] { "MF", "GF", "HB" } },
+        //    { "GF",  new string[] { "CSW", "HB", "FF" } },
+        //    { "HB",  new string[] { "CSW", "GF", "FF" } },
+        //    { "MF",  new string[] { "CSW", "FF" } }
+        //};
 
         public static Dictionary<string, string[]> CommuterDestinations = new Dictionary<string, string[]>()
         {
@@ -100,7 +100,7 @@ namespace PassengerJobsMod
             { "MF", new HashSet<string>(){ "MF-D-1-LP", "MF-D-2-LP" } },
             { "FF", new HashSet<string>(){ "#Y-#S-168-#T", "#Y-#S-491-#T" } },
             { "HB", new HashSet<string>(){ "HB-F-1-LP" } }, // not enough clearance: "HB-F-2-LP"
-            { "GF", new HashSet<string>(){ "GF-C-2-LP", "GF-C-3-LP" } }
+            { "GF", new HashSet<string>(){ "GF-C-3-LP" } } // reserved for pass-thru: "GF-C-2-LP"
         };
 
         internal static List<Track> GetStorageTracks( StationController station )
@@ -157,19 +157,6 @@ namespace PassengerJobsMod
         public List<Track> StorageTracks;
         public List<Track> PlatformTracks;
 
-        public Track ArrivalTrack
-        {
-            get => PlatformTracks.FirstOrDefault();
-        }
-        public List<Track> StartingPlatforms
-        {
-            get
-            {
-                if( _startingPlatforms == null ) _startingPlatforms = PlatformTracks.Skip(1).ToList();
-                return _startingPlatforms;
-            }
-        }
-        private List<Track> _startingPlatforms = null;
 
         private readonly YardTracksOrganizer TrackOrg;
 
@@ -198,11 +185,15 @@ namespace PassengerJobsMod
                 sb.Append("Coach Storage: ");
                 sb.AppendLine(string.Join(", ", StorageTracks.Select(t => t.ID)));
                 sb.Append("Platforms: ");
-                sb.AppendLine(string.Join(", ", PlatformTracks.Select(t => t.ID)));
+                sb.Append(string.Join(", ", PlatformTracks.Select(t => t.ID)));
 
                 PassengerJobs.ModEntry.Logger.Log(sb.ToString());
 
                 RegisterStation(Controller, this);
+
+                // check if the player is already inside the generation zone
+                float playerDist = StationRange.PlayerSqrDistanceFromStationCenter;
+                PlayerWasInGenerateRange = StationRange.IsPlayerInJobGenerationZone(playerDist);
             }
         }
 
@@ -270,7 +261,7 @@ namespace PassengerJobsMod
             for( attemptCounter = 2; attemptCounter > 0; attemptCounter-- )
             {
                 // break if there are no more available outbound platforms
-                if( TrackOrg.FilterOutOccupiedTracks(StartingPlatforms).Count == 0 ) break;
+                if( TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(PlatformTracks)).Count == 0 ) break;
 
                 try
                 {
@@ -347,7 +338,7 @@ namespace PassengerJobsMod
 
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
 
-                var pool = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(StartingPlatforms));
+                var pool = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(PlatformTracks));
                 if( !(TrackOrg.GetTrackThatHasEnoughFreeSpace(pool, trainLength) is Track startTrack) )
                 {
                     PassengerJobs.ModEntry.Logger.Log($"Couldn't find storage track with enough free space for new job at {Controller.stationInfo.YardID}");
@@ -372,28 +363,19 @@ namespace PassengerJobsMod
             }
 
             // Choose a route
-            if( !TransportRoutes.TryGetValue(Controller.stationInfo.YardID, out string[] possibleDests) || (possibleDests.Length < 1) )
-            {
-                PassengerJobs.ModEntry.Logger.Log($"No potential routes found originating from {Controller.stationInfo.Name}");
-                return null;
-            }
-
-            string destYard = possibleDests.ChooseOne(Rand);
+            StationController destStation = PassDestinations.Values.ToList().ChooseOne(Rand);
 
             // pick ending platform
             Track destPlatform = null;
             PassengerJobGenerator destGenerator = null;
 
-            if( PassDestinations.TryGetValue(destYard, out StationController destStation) )
-            {
-                destGenerator = LinkedGenerators[destStation];
-                destPlatform = destGenerator.ArrivalTrack;
+            destGenerator = LinkedGenerators[destStation];
+            destPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(destGenerator.PlatformTracks, trainLength);
 
-                if( TrackOrg.GetFreeSpaceOnTrack(destPlatform) < trainLength )
-                {
-                    PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
-                    return null;
-                }
+            if( destPlatform == null )
+            {
+                PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
+                return null;
             }
 
             // create job chain controller
@@ -536,7 +518,10 @@ namespace PassengerJobsMod
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nCars);
 
                 // pick start storage track
-                startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, trainLength);
+                var emptyTracks = TrackOrg.FilterOutOccupiedTracks(StorageTracks);
+                startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(emptyTracks, trainLength);
+
+                if( startSiding == null ) startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, trainLength);
 
                 if( startSiding == null )
                 {
@@ -613,7 +598,7 @@ namespace PassengerJobsMod
             if( jobDefinition == null )
             {
                 chainController.DestroyChain();
-                PassengerJobs.ModEntry.Logger.Warning($"Failed to generate commuter haul job at {Controller.stationInfo.Name}");
+                //PassengerJobs.ModEntry.Logger.Warning($"Failed to generate commuter haul job at {Controller.stationInfo.Name}");
                 return null;
             }
             jobDefinition.subType = PassJobType.Commuter;
@@ -671,7 +656,7 @@ namespace PassengerJobsMod
             if( jobDefinition == null )
             {
                 chainController.DestroyChain();
-                PassengerJobs.ModEntry.Logger.Warning($"Failed to generate commuter haul job at {Controller.stationInfo.Name}");
+                PassengerJobs.ModEntry.Logger.Warning($"Failed to generate commuter haul (return) job at {Controller.stationInfo.Name}");
                 return null;
             }
             jobDefinition.subType = PassJobType.Commuter;

@@ -17,7 +17,7 @@ namespace PassengerJobsMod
             string yardId = __instance.stationController.stationInfo.YardID;
             if( !ManagedYards.Contains(yardId) ) return;
 
-            var gen = __instance.GetComponent<PassengerJobGenerator>();
+            var gen = __instance.gameObject.GetComponent<PassengerJobGenerator>();
             if( gen == null )
             {
                 gen = __instance.gameObject.AddComponent<PassengerJobGenerator>();
@@ -178,6 +178,20 @@ namespace PassengerJobsMod
             else if( __instance is CommuterChainController )
             {
                 __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Commuter, __result);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(JobChainController), "OnAnyJobFromChainAbandoned")]
+    static class JCC_OnJobAbandoned_Patch
+    {
+        static void Prefix( JobChainController __instance )
+        {
+            if( (__instance is PassengerTransportChainController) || (__instance is CommuterChainController) )
+            {
+                // force deletion of cars instead of leaving them for the unused car deleter
+                SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(__instance.trainCarsForJobChain, true);
+                __instance.trainCarsForJobChain.Clear();
             }
         }
     }
