@@ -10,7 +10,7 @@ namespace PassengerJobsMod
 {
     static class CM_Constants
     {
-        internal const int N_BUILTIN_LICENSES = 18;
+        internal const int N_BUILTIN_LICENSES = 19;
         internal const int N_PASS_LICENSES = 1;
         internal static FieldInfo nSlotsField = typeof(CareerManagerLicensesScreen).GetField("numberOfSlots", BindingFlags.NonPublic | BindingFlags.Instance);
         internal static FieldInfo licenseEntryField = typeof(CareerManagerLicensesScreen).GetField("licenseEntries", BindingFlags.NonPublic | BindingFlags.Instance);
