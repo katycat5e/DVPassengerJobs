@@ -10,12 +10,12 @@ namespace PassengerJobsMod
 {
     static class CM_Constants
     {
-        internal const int N_BUILTIN_LICENSES = 19;
+        internal static readonly int N_BUILTIN_LICENSES = (int)AccessTools.Field(typeof(CareerManagerLicensesScreen), "EXPECTED_LICENSE_ENTRIES").GetValue(null);
         internal const int N_PASS_LICENSES = 1;
-        internal static FieldInfo nSlotsField = typeof(CareerManagerLicensesScreen).GetField("numberOfSlots", BindingFlags.NonPublic | BindingFlags.Instance);
-        internal static FieldInfo licenseEntryField = typeof(CareerManagerLicensesScreen).GetField("licenseEntries", BindingFlags.NonPublic | BindingFlags.Instance);
-        internal static Type licenseEntryType = typeof(CareerManagerLicensesScreen).GetNestedType("LicenseEntry", BindingFlags.NonPublic);
-        internal static MethodInfo updateLicenseMethod = licenseEntryType.GetMethod("UpdateJobLicenseData", BindingFlags.Public | BindingFlags.Instance);
+        internal static readonly FieldInfo nSlotsField = AccessTools.Field(typeof(CareerManagerLicensesScreen), "numberOfSlots");
+        internal static readonly FieldInfo licenseEntryField = AccessTools.Field(typeof(CareerManagerLicensesScreen), "licenseEntries");
+        internal static readonly Type licenseEntryType = AccessTools.Inner(typeof(CareerManagerLicensesScreen), "LicenseEntry");
+        internal static readonly MethodInfo updateLicenseMethod = AccessTools.Method(licenseEntryType, "UpdateJobLicenseData");
     }
 
     [HarmonyPatch(typeof(CareerManagerLicensesScreen))]
