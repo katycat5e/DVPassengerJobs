@@ -179,7 +179,7 @@ namespace PassengerJobsMod
                     if( jobData is PassengerJobDefinitionData pjData )
                     {
                         jobDefinition = CreateSavedPassengerJob(jobChainGO, pjData);
-                        jobDefinition.ForceJobId(passChainData.firstJobId);
+                        jobDefinition?.ForceJobId(passChainData.firstJobId);
                         chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
                     }
                     else
@@ -218,7 +218,7 @@ namespace PassengerJobsMod
                         if( first )
                         {
                             chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
-                            jobDefinition.ForceJobId(passChainData.firstJobId);
+                            jobDefinition?.ForceJobId(passChainData.firstJobId);
                             first = false;
                         }
                     }
