@@ -55,20 +55,10 @@ namespace PassengerJobsMod
 
             if( Settings.UniformConsists ) SkinManager_Patch.Initialize();
 
-            // Attach coach spawn listener
-            CarSpawner.CarSpawned += OnCarSpawned;
-
             var harmony = HarmonyInstance.Create("com.foxden.passenger_jobs");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
             return true;
-        }
-
-        private static void OnCarSpawned( TrainCar car )
-        {
-            if( !PassengerJobGenerator.PassCarTypes.Contains(car.carType) ) return;
-
-            car.gameObject.AddComponent<CoachCouplerEnstronger>();
         }
 
         #region Settings
