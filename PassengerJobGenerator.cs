@@ -367,6 +367,9 @@ namespace PassengerJobsMod
             Track destPlatform = null;
             StationController destStation = null;
 
+            // this prevents generating jobs like "ChainJob[Passenger]: FF - FF (FF-PE-47)"
+            destPool.Remove(Controller);
+
             while( (destPlatform == null) && (destPool.Count > 0) )
             {
                 // search the possible destinations 1 by 1 until we find an opening (or we don't)
