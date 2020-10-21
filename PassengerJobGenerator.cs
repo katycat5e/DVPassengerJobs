@@ -98,7 +98,7 @@ namespace PassengerJobsMod
         {
             { "CSW",new HashSet<string>(){ "CSW-B-6-LP", "CSW-B-3-LP" } }, // not enough clearance: "CSW-B-4-LP", "CSW-B-5-LP"
             { "MF", new HashSet<string>(){ "MF-D-1-LP", "MF-D-2-LP" } },
-            { "FF", new HashSet<string>(){ "#Y-#S-168-#T", "#Y-#S-491-#T" } },
+            { "FF", new HashSet<string>(){ "#Y-#S-320-#T", "#Y-#S-459-#T" } },
             { "HB", new HashSet<string>(){ "HB-F-1-LP" } }, // not enough clearance: "HB-F-2-LP"
             { "GF", new HashSet<string>(){ "GF-C-3-LP" } } // reserved for pass-thru: "GF-C-2-LP"
         };
@@ -121,11 +121,11 @@ namespace PassengerJobsMod
             // fix track IDs at Food Factory
             foreach( var track in result )
             {
-                if( track.ID.FullDisplayID == "#Y-#S-168-#T" ) // used to be #Y-#S-354-#T
+                if( track.ID.FullDisplayID == "#Y-#S-459-#T" ) // used to be #Y-#S-168-#T
                 {
                     track.OverrideTrackID(new TrackID("FF", "B", "1", TrackID.LOADING_PASSENGER_TYPE));
                 }
-                else if( track.ID.FullDisplayID == "#Y-#S-491-#T" ) // used to be #Y-#S-339-#T
+                else if( track.ID.FullDisplayID == "#Y-#S-320-#T" ) // used to be #Y-#S-491-#T
                 {
                     track.OverrideTrackID(new TrackID("FF", "B", "2", TrackID.LOADING_PASSENGER_TYPE));
                 }
