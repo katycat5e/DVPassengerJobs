@@ -18,10 +18,10 @@ namespace PassengerJobsMod
     class PassengerJobGenerator : MonoBehaviour
     {
         public const int MIN_CARS_EXPRESS = 4;
-        public const int MAX_CARS_EXPRESS = 5;
+        public static int MAX_CARS_EXPRESS = 5;
 
         public const int MIN_CARS_COMMUTE = 2;
-        public const int MAX_CARS_COMMUTE = 3;
+        public static int MAX_CARS_COMMUTE = 3;
 
         public const float BASE_WAGE_SCALE = 0.5f;
         public const float BONUS_TO_BASE_WAGE_RATIO = 2f;

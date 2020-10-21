@@ -17,6 +17,12 @@ namespace PassengerJobsMod
         internal static UnityModManager.ModEntry ModEntry;
         public static PJModSettings Settings { get; private set; }
 
+        internal static UnityModManager.ModEntry SlicedCarsModEntry;
+        internal static bool SmallerCoachesEnabled
+        {
+            get => (SlicedCarsModEntry != null) && SlicedCarsModEntry.Active;
+        }
+
         public static bool Load( UnityModManager.ModEntry modEntry )
         {
             ModEntry = modEntry;
@@ -53,7 +59,18 @@ namespace PassengerJobsMod
             ModEntry.OnGUI = DrawGUI;
             ModEntry.OnSaveGUI = SaveGUI;
 
+            // Find companion mods
             if( Settings.UniformConsists ) SkinManager_Patch.Initialize();
+
+            SlicedCarsModEntry = UnityModManager.FindMod("SlicedPassengerJobs");
+            if( SmallerCoachesEnabled )
+            {
+                // can fit mas cars
+                PassengerJobGenerator.MAX_CARS_COMMUTE += 1;
+                PassengerJobGenerator.MAX_CARS_EXPRESS += 1;
+
+                ModEntry.Logger.Log("Detected coach resize patch, making consists longer");
+            }
 
             var harmony = HarmonyInstance.Create("com.foxden.passenger_jobs");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
