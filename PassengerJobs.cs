@@ -62,7 +62,7 @@ namespace PassengerJobsMod
             // Find companion mods
             if( Settings.UniformConsists ) SkinManager_Patch.Initialize();
 
-            SlicedCarsModEntry = UnityModManager.FindMod("SlicedPassengerJobs");
+            SlicedCarsModEntry = UnityModManager.FindMod("SlicedPassengerCars");
             if( SmallerCoachesEnabled )
             {
                 // can fit mas cars
