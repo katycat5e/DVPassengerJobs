@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using TMPro;
 using UnityEngine;
 
 namespace PassengerJobsMod
@@ -32,15 +33,6 @@ namespace PassengerJobsMod
         };
 
         public static Dictionary<string, StationController> PassDestinations = new Dictionary<string, StationController>();
-
-        //public static Dictionary<string, string[]> TransportRoutes = new Dictionary<string, string[]>()
-        //{
-        //    { "CSW", new string[] { "MF", "GF" , "HB" } },
-        //    { "FF",  new string[] { "MF", "GF", "HB" } },
-        //    { "GF",  new string[] { "CSW", "HB", "FF" } },
-        //    { "HB",  new string[] { "CSW", "GF", "FF" } },
-        //    { "MF",  new string[] { "CSW", "FF" } }
-        //};
 
         public static Dictionary<string, string[]> CommuterDestinations = new Dictionary<string, string[]>()
         {
@@ -78,6 +70,16 @@ namespace PassengerJobsMod
         {
             _AllRailTracks = FindObjectsOfType<RailTrack>().ToList();
             _AllTracks = _AllRailTracks.Select(rt => rt.logicTrack);
+        }
+
+        public static RailTrack FindRTWithId( string id )
+        {
+            return AllRailTracks.FirstOrDefault(rt => id.Equals(rt.logicTrack.ID.ToString()));
+        }
+
+        public static Track FindTrackWithId( string id )
+        {
+            return AllTracks.FirstOrDefault(t => id.Equals(t.ID.ToString()));
         }
 
         private static readonly System.Random Rand = new System.Random(); // seeded with current time
@@ -181,6 +183,9 @@ namespace PassengerJobsMod
                     YardTracksOrganizer.Instance.yardTrackIdToTrack[t.ID.FullID] = t;
                 }
 
+                // create loading machines
+                PlatformManager.CreateMachines(Controller);
+
                 var sb = new StringBuilder($"Created generator for {Controller.stationInfo.Name}:\n");
                 sb.Append("Coach Storage: ");
                 sb.AppendLine(string.Join(", ", StorageTracks.Select(t => t.ID)));
@@ -256,54 +261,45 @@ namespace PassengerJobsMod
         {
             PassengerJobs.ModEntry.Logger.Log($"Generating jobs at {Controller.stationInfo.Name}");
 
-            // Create passenger hauls until >= half the platforms are filled
-            int attemptCounter;
-            for( attemptCounter = 2; attemptCounter > 0; attemptCounter-- )
-            {
-                // break if there are no more available outbound platforms
-                if( TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(PlatformTracks)).Count == 0 ) break;
-
-                try
-                {
-                    GenerateNewTransportJob();
-                }
-                catch( Exception ex )
-                {
-                    PassengerJobs.ModEntry.Logger.LogException(ex);
-                }
-
-                yield return null;
-            }
-
             // Create commuter hauls until >= half of storage tracks are filled
             var existingChains = Controller.ProceduralJobsController.GetCurrentJobChains();
-            int nExtantCommutes = existingChains.Count(c => c is CommuterChainController);
+            //int nExtantCommutes = existingChains.Count(c => c is CommuterChainController);
+            int nChains = existingChains.Count;
 
             double totalTrackSpace = StorageTracks.Select(t => t.length).Sum();
 
             // generate max 3 commuter chains from each station
-            int nToGenerate = 3 - nExtantCommutes;
-            PassengerJobs.ModEntry.Logger.Log($"{Controller.stationInfo.YardID} has {nExtantCommutes} commute jobs, generating up to {nToGenerate} additional");
+            //int nCommToGenerate = 3 - nExtantCommutes;
+            PassengerJobs.ModEntry.Logger.Log($"{Controller.stationInfo.YardID} has {nChains} pax jobs");
 
-            for( attemptCounter = 5; attemptCounter > 0; attemptCounter-- )
+            // alternate express/commuter, starting w/ express
+            bool genExpress = true;
+            for( int attemptCounter = 5; attemptCounter > 0; attemptCounter-- )
             {
-                if( nToGenerate <= 0 ) break;
-
-                // break on storage tracks >60% full
+                // break on storage tracks >70% full
                 double reservedSpace = StorageTracks.Select(t => TrackOrg.GetReservedSpace(t)).Sum();
-                if( (reservedSpace / totalTrackSpace) >= 0.6d ) break;
+                if( (reservedSpace / totalTrackSpace) >= 0.7d ) break;
 
                 yield return new WaitForSeconds(0.2f);
 
                 try
                 {
-                    var result = GenerateNewCommuterRun();
-                    if( result != null ) nToGenerate -= 1;
+                    JobChainController result;
+                    if( genExpress )
+                    {
+                        result = GenerateNewTransportJob();
+                    }
+                    else
+                    {
+                        result = GenerateNewCommuterRun();
+                    }
                 }
                 catch( Exception ex )
                 {
                     PassengerJobs.ModEntry.Logger.LogException(ex);
                 }
+
+                genExpress = !genExpress;
             }
 
             GenerationRoutine = null;
@@ -319,8 +315,9 @@ namespace PassengerJobsMod
             int nTotalCars;
             List<TrainCarType> jobCarTypes;
             float trainLength;
-            Track startPlatform;
+            Track startSiding;
 
+            // Establish the starting consist and its storage location
             if( consistInfo == null )
             {
                 // generate a consist
@@ -338,14 +335,11 @@ namespace PassengerJobsMod
 
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
 
-                var pool = TrackOrg.FilterOutReservedTracks(TrackOrg.FilterOutOccupiedTracks(PlatformTracks));
-                if( !(TrackOrg.GetTrackThatHasEnoughFreeSpace(pool, trainLength) is Track startTrack) )
-                {
-                    PassengerJobs.ModEntry.Logger.Log($"Couldn't find storage track with enough free space for new job at {Controller.stationInfo.YardID}");
-                    return null;
-                }
+                // pick start storage track
+                var emptyTracks = TrackOrg.FilterOutOccupiedTracks(StorageTracks);
+                startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(emptyTracks, trainLength);
 
-                startPlatform = startTrack;
+                if( startSiding == null ) startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, trainLength);
             }
             else
             {
@@ -353,41 +347,47 @@ namespace PassengerJobsMod
                 nTotalCars = consistInfo.cars.Count;
                 jobCarTypes = consistInfo.cars.Select(car => car.carType).ToList();
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
-                startPlatform = consistInfo.track;
+                startSiding = consistInfo.track;
             }
 
-            if( startPlatform == null )
+            if( startSiding == null )
             {
-                PassengerJobs.ModEntry.Logger.Log($"No available platform for new job at {Controller.stationInfo.Name}");
+                //PassengerJobs.ModEntry.Logger.Log($"No available starting siding for express job at {Controller.stationInfo.Name}");
                 return null;
             }
 
+            // Try to find a loading platform to use
+            PlatformDefinition loadingPlatform = PlatformManager.PickPlatform(Controller.stationInfo.YardID);
+
             // Choose a route
             var destPool = PassDestinations.Values.ToList();
-            Track destPlatform = null;
+            Track destSiding = null;
             StationController destStation = null;
 
             // this prevents generating jobs like "ChainJob[Passenger]: FF - FF (FF-PE-47)"
             destPool.Remove(Controller);
 
-            while( (destPlatform == null) && (destPool.Count > 0) )
+            while( (destSiding == null) && (destPool.Count > 0) )
             {
                 // search the possible destinations 1 by 1 until we find an opening (or we don't)
                 destStation = destPool.ChooseOne(Rand);
 
                 // pick ending platform
                 PassengerJobGenerator destGenerator = LinkedGenerators[destStation];
-                destPlatform = TrackOrg.GetTrackThatHasEnoughFreeSpace(destGenerator.PlatformTracks, trainLength);
+                destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(destGenerator.StorageTracks, trainLength);
 
                 // remove this station from the pool
                 destPool.Remove(destStation);
             }
 
-            if( destPlatform == null )
+            if( destSiding == null )
             {
-                PassengerJobs.ModEntry.Logger.Log($"No available destination platform for new job at {Controller.stationInfo.Name}");
+                //PassengerJobs.ModEntry.Logger.Log($"No available destination siding for new job at {Controller.stationInfo.Name}");
                 return null;
             }
+
+            // Try to find an unloading platform
+            PlatformDefinition unloadingPlatform = PlatformManager.PickPlatform(destStation.stationInfo.YardID);
 
             // create job chain controller
             var chainJobObject = new GameObject($"ChainJob[Passenger]: {Controller.logicStation.ID} - {destStation.logicStation.ID}");
@@ -413,7 +413,7 @@ namespace PassengerJobsMod
             if( consistInfo == null )
             {
                 jobDefinition = PopulateTransportJobAndSpawn(
-                    chainController, Controller.logicStation, startPlatform, destPlatform,
+                    chainController, Controller.logicStation, startSiding, destSiding,
                     jobCarTypes, chainData, bonusLimit, transportPayment, true);
             }
             else
@@ -421,7 +421,7 @@ namespace PassengerJobsMod
                 chainController.trainCarsForJobChain = consistInfo.cars;
 
                 jobDefinition = PopulateTransportJobExistingCars(
-                    chainController, Controller.logicStation, startPlatform, destPlatform,
+                    chainController, Controller.logicStation, startSiding, destSiding,
                     consistInfo.LogicCars, chainData, bonusLimit, transportPayment);
             }
 
@@ -432,6 +432,17 @@ namespace PassengerJobsMod
                 return null;
             }
             jobDefinition.subType = PassJobType.Express;
+
+            // Setup any warehouse tasks
+            if( loadingPlatform?.Initialized == true )
+            {
+                jobDefinition.loadMachine = loadingPlatform.Controller.LogicMachine;
+            }
+
+            if( unloadingPlatform?.Initialized == true )
+            {
+                jobDefinition.unloadMachine = unloadingPlatform.Controller.LogicMachine;
+            }
 
             chainController.AddJobDefinitionToChain(jobDefinition);
 
@@ -556,6 +567,9 @@ namespace PassengerJobsMod
                 }
             }
 
+            // Try to find a loading platform to use
+            PlatformDefinition loadingPlatform = PlatformManager.PickPlatform(Controller.stationInfo.YardID);
+
             // pick ending storage track
             Track destSiding = null;
             if( !CommuterDestinations.TryGetValue(Controller.stationInfo.YardID, out string[] possibleDestinations) )
@@ -618,6 +632,12 @@ namespace PassengerJobsMod
             }
             jobDefinition.subType = PassJobType.Commuter;
 
+            // Setup warehouse task
+            if( loadingPlatform?.Initialized == true )
+            {
+                jobDefinition.loadMachine = loadingPlatform.Controller.LogicMachine;
+            }
+
             chainController.AddJobDefinitionToChain(jobDefinition);
 
             chainController.FinalizeSetupAndGenerateFirstJob(false);
@@ -650,6 +670,9 @@ namespace PassengerJobsMod
                 return null;
             }
 
+            // Try to find an unloading platform to use
+            PlatformDefinition unloadPlatform = PlatformManager.PickPlatform(Controller.stationInfo.YardID);
+
             // create job chain controller
             var chainData = new StationsChainData(sourceStation.stationInfo.YardID, Controller.stationInfo.YardID);
             var chainJobObject = new GameObject($"ChainJob[Commuter]: {sourceStation.logicStation.ID} - {Controller.logicStation.ID}");
@@ -675,6 +698,12 @@ namespace PassengerJobsMod
                 return null;
             }
             jobDefinition.subType = PassJobType.Commuter;
+
+            // Setup warehouse task
+            if( unloadPlatform?.Initialized == true )
+            {
+                jobDefinition.unloadMachine = unloadPlatform.Controller.LogicMachine;
+            }
 
             chainController.AddJobDefinitionToChain(jobDefinition);
 

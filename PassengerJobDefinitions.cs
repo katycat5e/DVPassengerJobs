@@ -13,6 +13,9 @@ namespace PassengerJobsMod
         public Track startingTrack;
         public Track destinationTrack;
 
+        public WarehouseMachine loadMachine = null;
+        public WarehouseMachine unloadMachine = null;
+
         public override JobDefinitionDataBase GetJobDefinitionSaveData()
         {
             string[] guidsFromCars = GetGuidsFromCars(trainCarsToTransport);
@@ -23,7 +26,8 @@ namespace PassengerJobsMod
 
             return new PassengerJobDefinitionData(
                 timeLimitForJob, initialWage, logicStation.ID, chainData.chainOriginYardId, chainData.chainDestinationYardId, 
-                (int)requiredLicenses, guidsFromCars, startingTrack.ID.FullID, destinationTrack.ID.FullID, (int)subType);
+                (int)requiredLicenses, guidsFromCars, startingTrack.ID.FullID, destinationTrack.ID.FullID, (int)subType,
+                loadMachine?.WarehouseTrack.ID.FullID, unloadMachine?.WarehouseTrack.ID.FullID);
         }
 
         public override List<TrackReservation> GetRequiredTrackReservations()
@@ -46,21 +50,62 @@ namespace PassengerJobsMod
                 trainCarsToTransport = null;
                 startingTrack = null;
                 destinationTrack = null;
+                return;
             }
 
             // Force cargo state
+            float totalCapacity = 0;
             foreach( var car in trainCarsToTransport )
             {
                 car.DumpCargo();
-                car.LoadCargo(car.capacity, CargoType.Passengers);
+                totalCapacity += car.capacity;
             }
 
-            // Initialize tasks
+            Track departTrack = startingTrack;
+            Track arriveTrack = destinationTrack;
+            var taskList = new List<Task>();
+
+            // Check for loading task
+            if( loadMachine != null )
+            {
+                departTrack = loadMachine.WarehouseTrack;
+
+                Task stageCarsTask = JobsGenerator.CreateTransportTask(trainCarsToTransport, departTrack, startingTrack);
+                taskList.Add(stageCarsTask);
+
+                Task loadTask = new WarehouseTask(trainCarsToTransport, WarehouseTaskType.Loading, loadMachine, CargoType.Passengers, totalCapacity);
+                taskList.Add(loadTask);
+            }
+            else
+            {
+                foreach( var car in trainCarsToTransport )
+                {
+                    car.LoadCargo(car.capacity, CargoType.Passengers);
+                }
+            }
+
+            if( unloadMachine != null ) arriveTrack = unloadMachine.WarehouseTrack;
+
+            // actual move between stations
             Task transportTask = JobsGenerator.CreateTransportTask(
-                trainCarsToTransport, destinationTrack, startingTrack,
+                trainCarsToTransport, arriveTrack, departTrack,
                 Enumerable.Repeat(CargoType.Passengers, trainCarsToTransport.Count).ToList());
 
-            job = new Job(transportTask, subType, jobTimeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
+            taskList.Add(transportTask);
+
+            // check for unloading task
+            if( unloadMachine != null )
+            {
+                Task unloadTask = new WarehouseTask(trainCarsToTransport, WarehouseTaskType.Unloading, unloadMachine, CargoType.Passengers, totalCapacity);
+                taskList.Add(unloadTask);
+
+                Task storeCarsTask = JobsGenerator.CreateTransportTask(trainCarsToTransport, destinationTrack, arriveTrack);
+                taskList.Add(storeCarsTask);
+            }
+
+            Task superTask = new SequentialTasks(taskList);
+
+            job = new Job(superTask, subType, jobTimeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
             jobOriginStation.AddJobToStation(job);
         }
     }
@@ -72,15 +117,21 @@ namespace PassengerJobsMod
         public string startingTrack;
         public string destinationTrack;
 
+        public string loadingTrackId;
+        public string unloadingTrackId;
+
         public PassengerJobDefinitionData( 
             float timeLimitForJob, float initialWage, string stationId, string originStationId, string destinationStationId, int requiredLicenses,
-            string[] transportCarGuids, string startTrackId, string destTrackId, int jobType) :
+            string[] transportCarGuids, string startTrackId, string destTrackId, int jobType, string loadTrack, string unloadTrack) :
             base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationId, requiredLicenses)
         {
             trainCarGuids = transportCarGuids;
             startingTrack = startTrackId;
             destinationTrack = destTrackId;
             subType = jobType;
+
+            loadingTrackId = loadTrack;
+            unloadingTrackId = unloadTrack;
         }
     }
 }

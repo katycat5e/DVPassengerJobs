@@ -250,14 +250,53 @@ namespace PassengerJobsMod
 
         static List<TemplatePaperData> GetTransportBookletData( Job job )
         {
-            var tasks = job.GetJobData();
-            TaskData transportTask = tasks.First();
-
             var pages = new List<TemplatePaperData>();
             int pageNum = 1;
             int totalPages = 6;
 
-            var carsInfo = PassBookletUtil.GetCarsInfo(transportTask.cars);
+            TaskData superTask = job.GetJobData().FirstOrDefault();
+            if( superTask == null ) return pages;
+
+            TaskData stageTask = null;
+            TaskData loadTask = null;
+            TaskData transportTask = null;
+            TaskData unloadTask = null;
+            TaskData storeTask = null;
+
+            if( superTask.type == TaskType.Sequential )
+            {
+                TaskData[] tasks = superTask.nestedTasks.Select(t => t.GetTaskData()).ToArray();
+                loadTask = tasks.FirstOrDefault(td => td.warehouseTaskType == WarehouseTaskType.Loading);
+                unloadTask = tasks.FirstOrDefault(td => td.warehouseTaskType == WarehouseTaskType.Unloading);
+
+                int offset = 0;
+                if( loadTask != null )
+                {
+                    stageTask = tasks[0];
+                    offset = 2;
+                    totalPages += 1; // add load page
+                }
+
+                transportTask = tasks[offset];
+
+                if( unloadTask != null )
+                {
+                    storeTask = tasks[2 + offset];
+                    totalPages += 1; // add unload page
+                }
+            }
+            else if( superTask.type == TaskType.Transport )
+            {
+                transportTask = superTask;
+            }
+            else
+            {
+                PassengerJobs.ModEntry.Logger.Warning($"Invalid tasks in job {job.ID}");
+                return pages;
+            }
+
+            List<Tuple<TrainCarType, string>> carsInfo;
+            carsInfo = PassBookletUtil.GetCarsInfo(transportTask.cars);
 
             // Cover page
             var coverPage = new CoverPageTemplatePaperData(job.ID, PassBookletUtil.EXPRESS_JOB_TITLE, pageNum.ToString(), totalPages.ToString());
@@ -276,42 +315,84 @@ namespace PassengerJobsMod
             int taskNum = 1;
 
             // initial coupling
+            Track pickupTrack = stageTask?.startTrack ?? transportTask.startTrack;
+
             var couplePage = PassBookletUtil.CreateCoupleTaskData(
-                taskNum, startStation.YardID, startStation.StationColor, transportTask.startTrack.ID.TrackPartOnly,
-                carsInfo, transportTask.cargoTypePerCar,
-                pageNum, totalPages);
+                taskNum, startStation.YardID, startStation.StationColor, pickupTrack.ID.TrackPartOnly,
+                carsInfo, null, pageNum, totalPages);
 
             pages.Add(couplePage);
             pageNum += 1;
             taskNum += 1;
+
+            // passenger loading
+            if( loadTask != null )
+            {
+                const string LOAD_TASK_TYPE = "LOAD";
+                const string LOAD_TASK_DESC = "Load train at station platform:";
+
+                string platformName = loadTask.destinationTrack.ID.TrackPartOnly;
+
+                var loadPage = new TaskTemplatePaperData(
+                    taskNum.ToString(), LOAD_TASK_TYPE, LOAD_TASK_DESC,
+                    startStation.YardID, startStation.StationColor, platformName, TRACK_COLOR,
+                    "", "", TemplatePaperData.NOT_USED_COLOR,
+                    carsInfo, null, pageNum.ToString(), totalPages.ToString());
+
+                pages.Add(loadPage);
+                pageNum += 1;
+                taskNum += 1;
+            }
 
             // transport leg
             var destYard = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[job.chainData.chainDestinationYardId];
             string destTrackName = transportTask.destinationTrack.ID.TrackPartOnly;
 
             const string HAUL_TASK_TYPE = "HAUL";
-            const string HAUL_TASK_DESC = "Haul train to the following station platform:";
+            const string HAUL_TASK_DESC = "Haul train to the following station/track:";
 
             var taskPage = new TaskTemplatePaperData(
                 taskNum.ToString(), HAUL_TASK_TYPE, HAUL_TASK_DESC,
                 destYard.stationInfo.YardID, destYard.stationInfo.StationColor, destTrackName, TRACK_COLOR,
                 "", "", TemplatePaperData.NOT_USED_COLOR,
-                carsInfo, transportTask.cargoTypePerCar,
+                carsInfo, null,
                 pageNum.ToString(), totalPages.ToString());
 
             pages.Add(taskPage);
             pageNum += 1;
             taskNum += 1;
 
+            // unload at destination
+            if( unloadTask != null )
+            {
+                const string UNLOAD_TASK_TYPE = "UNLOAD";
+                const string UNLOAD_TASK_DESC = "Unload train at station platform:";
+
+                string platformName = unloadTask.destinationTrack.ID.TrackPartOnly;
+
+                var unloadPage = new TaskTemplatePaperData(
+                    taskNum.ToString(), UNLOAD_TASK_TYPE, UNLOAD_TASK_DESC,
+                    endStation.YardID, endStation.StationColor, platformName, TRACK_COLOR,
+                    "", "", TemplatePaperData.NOT_USED_COLOR,
+                    carsInfo, null, pageNum.ToString(), totalPages.ToString());
+
+                pages.Add(unloadPage);
+                pageNum += 1;
+                taskNum += 1;
+            }
+
             // final uncoupling
+            Track dropoffTrack = storeTask?.destinationTrack ?? transportTask.destinationTrack;
+
             var uncouplePage = PassBookletUtil.CreateUncoupleTaskData(
-                taskNum, endStation.YardID, endStation.StationColor, transportTask.destinationTrack.ID.TrackPartOnly,
-                carsInfo, transportTask.cargoTypePerCar,
+                taskNum, endStation.YardID, endStation.StationColor, dropoffTrack.ID.TrackPartOnly,
+                carsInfo, null,
                 pageNum, totalPages);
 
             pages.Add(uncouplePage);
             pageNum += 1;
             taskNum += 1;
+
             pages.Add(new ValidateJobTaskTemplatePaperData(taskNum.ToString(), pageNum.ToString(), totalPages.ToString()));
 
             return pages;
@@ -319,14 +400,53 @@ namespace PassengerJobsMod
 
         static List<TemplatePaperData> GetCommuterBookletData( Job job )
         {
-            var tasks = job.GetJobData();
-            TaskData startTaskData = tasks.First();
-
             var pages = new List<TemplatePaperData>();
             int pageNum = 1;
             int totalPages = 6;
 
-            var carsInfo = PassBookletUtil.GetCarsInfo(startTaskData.cars);
+            TaskData superTask = job.GetJobData().FirstOrDefault();
+            if( superTask == null ) return pages;
+
+            TaskData stageTask = null;
+            TaskData loadTask = null;
+            TaskData transportTask = null;
+            TaskData unloadTask = null;
+            TaskData storeTask = null;
+
+            if( superTask.type == TaskType.Sequential )
+            {
+                TaskData[] tasks = superTask.nestedTasks.Select(t => t.GetTaskData()).ToArray();
+                loadTask = tasks.FirstOrDefault(td => td.warehouseTaskType == WarehouseTaskType.Loading);
+                unloadTask = tasks.FirstOrDefault(td => td.warehouseTaskType == WarehouseTaskType.Unloading);
+
+                int offset = 0;
+                if( loadTask != null )
+                {
+                    stageTask = tasks[0];
+                    offset = 2;
+                    totalPages += 1; // add load page
+                }
+
+                transportTask = tasks[offset];
+
+                if( unloadTask != null )
+                {
+                    storeTask = tasks[2 + offset];
+                    totalPages += 1; // add unload page
+                }
+            }
+            else if( superTask.type == TaskType.Transport )
+            {
+                transportTask = superTask;
+            }
+            else
+            {
+                PassengerJobs.ModEntry.Logger.Warning($"Invalid tasks in job {job.ID}");
+                return pages;
+            }
+
+            var carsInfo = PassBookletUtil.GetCarsInfo(transportTask.cars);
+
             StationInfo startStation = PassBookletUtil.ExtractStationFromId(job.chainData.chainOriginYardId);
             StationInfo endStation = PassBookletUtil.ExtractStationFromId(job.chainData.chainDestinationYardId);
 
@@ -336,7 +456,7 @@ namespace PassengerJobsMod
             pageNum += 1;
 
             // Description page
-            var descriptionPage = PassBookletUtil.CreateTransportDescriptionData(job, startTaskData.cars, carsInfo, pageNum, totalPages);
+            var descriptionPage = PassBookletUtil.CreateTransportDescriptionData(job, transportTask.cars, carsInfo, pageNum, totalPages);
             pages.Add(descriptionPage);
             pageNum += 1;
 
@@ -344,31 +464,72 @@ namespace PassengerJobsMod
             int taskNum = 1;
 
             // initial coupling
+            Track pickupTrack = stageTask?.startTrack ?? transportTask.startTrack;
+
             var couplePage = PassBookletUtil.CreateCoupleTaskData(
-                taskNum, startStation.YardID, startStation.StationColor, startTaskData.startTrack.ID.TrackPartOnly,
-                carsInfo, startTaskData.cargoTypePerCar,
+                taskNum, startStation.YardID, startStation.StationColor, pickupTrack.ID.TrackPartOnly,
+                carsInfo, null,
                 pageNum, totalPages);
 
             pages.Add(couplePage);
             pageNum += 1;
             taskNum += 1;
 
+            // passenger loading
+            if( loadTask != null )
+            {
+                const string LOAD_TASK_TYPE = "LOAD";
+                const string LOAD_TASK_DESC = "Load train at station platform:";
+
+                string platformName = loadTask.destinationTrack.ID.TrackPartOnly;
+
+                var loadPage = new TaskTemplatePaperData(
+                    taskNum.ToString(), LOAD_TASK_TYPE, LOAD_TASK_DESC,
+                    startStation.YardID, startStation.StationColor, platformName, TRACK_COLOR,
+                    "", "", TemplatePaperData.NOT_USED_COLOR,
+                    carsInfo, null, pageNum.ToString(), totalPages.ToString());
+
+                pages.Add(loadPage);
+                pageNum += 1;
+                taskNum += 1;
+            }
+
             // Transport task
             const string TASK_DESC = "Haul train to the following location:";
             var haulPage = new TaskTemplatePaperData(
                 taskNum.ToString(), "HAUL", TASK_DESC, "", TemplatePaperData.NOT_USED_COLOR, "", TemplatePaperData.NOT_USED_COLOR,
                 endStation.Name, endStation.Type, endStation.StationColor,
-                carsInfo, startTaskData.cargoTypePerCar, pageNum.ToString(), totalPages.ToString());
+                carsInfo, null, pageNum.ToString(), totalPages.ToString());
 
             pages.Add(haulPage);
             taskNum += 1;
             pageNum += 1;
 
+            // unload at destination
+            if( unloadTask != null )
+            {
+                const string UNLOAD_TASK_TYPE = "UNLOAD";
+                const string UNLOAD_TASK_DESC = "Unload train at station platform:";
+
+                string platformName = unloadTask.destinationTrack.ID.TrackPartOnly;
+
+                var unloadPage = new TaskTemplatePaperData(
+                    taskNum.ToString(), UNLOAD_TASK_TYPE, UNLOAD_TASK_DESC,
+                    endStation.YardID, endStation.StationColor, platformName, TRACK_COLOR,
+                    "", "", TemplatePaperData.NOT_USED_COLOR,
+                    carsInfo, null, pageNum.ToString(), totalPages.ToString());
+
+                pages.Add(unloadPage);
+                pageNum += 1;
+                taskNum += 1;
+            }
+
             // uncouple at destination task
+            Track dropoffTrack = storeTask?.destinationTrack ?? transportTask.destinationTrack;
+
             var uncouplePage = PassBookletUtil.CreateUncoupleTaskData(
-                taskNum, endStation.YardID, endStation.StationColor, startTaskData.destinationTrack.ID.TrackPartOnly,
-                carsInfo, startTaskData.cargoTypePerCar, 
-                pageNum, totalPages);
+                taskNum, endStation.YardID, endStation.StationColor, dropoffTrack.ID.TrackPartOnly,
+                carsInfo, null, pageNum, totalPages);
 
             pages.Add(uncouplePage);
             pageNum += 1;
@@ -405,7 +566,15 @@ namespace PassengerJobsMod
 
             // Express or branch service
             var startTask = job.GetJobData().First();
-            var carsInfo = PassBookletUtil.GetCarsInfo(startTask.cars);
+            List<Tuple<TrainCarType, string>> carsInfo;
+
+            if( startTask.type == TaskType.Sequential )
+            {
+                startTask = startTask.nestedTasks.First().GetTaskData();
+            }
+
+            carsInfo = PassBookletUtil.GetCarsInfo(startTask.cars);
+
             TemplatePaperData overviewPage = PassBookletUtil.CreateTransportDescriptionData(job, startTask.cars, carsInfo);
             
             __result = new List<TemplatePaperData>() { overviewPage };

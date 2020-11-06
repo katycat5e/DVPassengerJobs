@@ -289,6 +289,26 @@ namespace PassengerJobsMod
                 return null;
             }
 
+            // loading platform
+            WarehouseMachine loadMachine = null;
+            if( !string.IsNullOrEmpty(jobData.loadingTrackId) )
+            {
+                if( PlatformManager.GetPlatformByTrackId(jobData.loadingTrackId) is PlatformDefinition pd )
+                {
+                    loadMachine = pd.Controller.LogicMachine;
+                }
+            }
+
+            // unloading platform
+            WarehouseMachine unloadMachine = null;
+            if( !string.IsNullOrEmpty(jobData.unloadingTrackId) )
+            {
+                if( PlatformManager.GetPlatformByTrackId(jobData.unloadingTrackId) is PlatformDefinition pd )
+                {
+                    unloadMachine = pd.Controller.LogicMachine;
+                }
+            }
+
             StaticPassengerJobDefinition jobDefinition = jobChainGO.AddComponent<StaticPassengerJobDefinition>();
             var chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);
@@ -297,6 +317,8 @@ namespace PassengerJobsMod
             jobDefinition.startingTrack = startTrack;
             jobDefinition.destinationTrack = destTrack;
             jobDefinition.trainCarsToTransport = consist;
+            jobDefinition.loadMachine = loadMachine;
+            jobDefinition.unloadMachine = unloadMachine;
             
             return jobDefinition;
         }
