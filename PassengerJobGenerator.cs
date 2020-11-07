@@ -406,6 +406,25 @@ namespace PassengerJobsMod
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
             float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
 
+            // calculate additional payment for shunting
+            const float shuntDistance = 500f;
+            PaymentCalculationData emptyPaymentData = GetJobPaymentData(jobCarTypes, true);
+            float platformBonusTime = JobPaymentCalculator.CalculateShuntingBonusTimeLimit(1) * 0.7f + PlatformController.START_XFER_DELAY;
+
+            if( loadingPlatform?.Initialized == true )
+            {
+                float loadPayment = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingLoad, shuntDistance, emptyPaymentData);
+                transportPayment += loadPayment;
+                bonusLimit += platformBonusTime;
+            }
+
+            if( unloadingPlatform?.Initialized == true )
+            {
+                float unloadPayment = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingUnload, shuntDistance, emptyPaymentData);
+                transportPayment += unloadPayment;
+                bonusLimit += platformBonusTime;
+            }
+
             // scale job payment depending on settings
             float wageScale = PassengerJobs.Settings.UseCustomWages ? BASE_WAGE_SCALE : 1;
             transportPayment = Mathf.Round(transportPayment * wageScale);
@@ -453,7 +472,7 @@ namespace PassengerJobsMod
             return chainController;
         }
 
-        private static PaymentCalculationData GetJobPaymentData( IEnumerable<TrainCarType> carTypes )
+        private static PaymentCalculationData GetJobPaymentData( IEnumerable<TrainCarType> carTypes, bool empty = false )
         {
             var carTypeCount = new Dictionary<TrainCarType, int>();
             int totalCars = 0;
@@ -469,7 +488,15 @@ namespace PassengerJobsMod
                 totalCars += 1;
             }
 
-            Dictionary<CargoType, int> cargoTypeDict = new Dictionary<CargoType, int>(1) { { CargoType.Passengers, totalCars } };
+            Dictionary<CargoType, int> cargoTypeDict;
+            if( empty )
+            {
+                cargoTypeDict = new Dictionary<CargoType, int>(0);
+            }
+            else
+            {
+                cargoTypeDict = new Dictionary<CargoType, int>(1) { { CargoType.Passengers, totalCars } };
+            }
 
             return new PaymentCalculationData(carTypeCount, cargoTypeDict);
         }
@@ -606,6 +633,18 @@ namespace PassengerJobsMod
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
             float payment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes));
 
+            // calculate additional payment for shunting
+            const float shuntDistance = 350f;
+            PaymentCalculationData emptyPaymentData = GetJobPaymentData(jobCarTypes, true);
+            float platformBonusTime = JobPaymentCalculator.CalculateShuntingBonusTimeLimit(1) * 0.7f + PlatformController.START_XFER_DELAY;
+
+            if( loadingPlatform?.Initialized == true )
+            {
+                float loadPayment = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingLoad, shuntDistance, emptyPaymentData);
+                payment += loadPayment;
+                bonusLimit += platformBonusTime;
+            }
+
             // create job definition & spawn cars
             StaticPassengerJobDefinition jobDefinition;
             if( consistInfo != null )
@@ -683,6 +722,18 @@ namespace PassengerJobsMod
             float haulDistance = JobPaymentCalculator.GetDistanceBetweenStations(sourceStation, Controller);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
             float payment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, GetJobPaymentData(jobCarTypes));
+
+            // calculate additional payment for shunting
+            const float shuntDistance = 350f;
+            PaymentCalculationData emptyPaymentData = GetJobPaymentData(jobCarTypes, true);
+            float platformBonusTime = JobPaymentCalculator.CalculateShuntingBonusTimeLimit(1) * 0.7f + PlatformController.START_XFER_DELAY;
+
+            if( unloadPlatform?.Initialized == true )
+            {
+                float unloadPayment = JobPaymentCalculator.CalculateJobPayment(JobType.ShuntingUnload, shuntDistance, emptyPaymentData);
+                payment += unloadPayment;
+                bonusLimit += platformBonusTime;
+            }
 
             // create job definition & use existing cars
             chainController.trainCarsForJobChain = consistInfo.cars;

@@ -12,11 +12,12 @@ namespace PassengerJobsMod
 
     public class PlatformController : MonoBehaviour
     {
+        public const int START_XFER_DELAY = 5;
+
         private static readonly List<CargoType> SUPPORTED_CARGO = new List<CargoType>() { CargoType.Passengers };
         private const float TRAIN_CHECK_INTERVAL = 1f;
         private const float LOAD_DELAY = 1f;
         private const float ERROR_DISPLAY_TIME = 5f;
-        private const int START_XFER_DELAY = 5;
 
         private static AudioClip LoadCompletedSound = null;
 
@@ -42,8 +43,8 @@ namespace PassengerJobsMod
         {
             if( LoadCompletedSound == null )
             {
-                LoadCompletedSound = Resources.Load<AudioClip>("watch_ring");
-                if( LoadCompletedSound != null ) PassengerJobs.ModEntry.Logger.Log("Got bell sound");
+                LoadCompletedSound = PocketWatchManager.Instance.alarmAudio;
+                if( LoadCompletedSound != null ) PassengerJobs.ModEntry.Logger.Log("Grabbed pocket watch bell sound");
             }
 
             PlatformTrack = track;
@@ -265,7 +266,8 @@ namespace PassengerJobsMod
 
             if( completedTransfer && (LoadCompletedSound != null) )
             {
-                LoadCompletedSound.Play(PlatformTrack.transform.position);
+                Transform playerTform = PlayerManager.PlayerCamera.transform;
+                LoadCompletedSound.Play(playerTform.position, parent: playerTform);
             }
 
             loading = unloading = false;

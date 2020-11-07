@@ -120,16 +120,16 @@ namespace PassengerJobsMod
             {
                 foreach( PlatformDefinition def in defList )
                 {
-                    PassengerJobs.ModEntry.Logger.Log("Creating platform controller for " + def.TrackId);
+                    //PassengerJobs.ModEntry.Logger.Log("Creating platform controller for " + def.Name);
 
                     if( PassengerJobGenerator.FindRTWithId(def.TrackId) is RailTrack pTrack )
                     {
                         def.PlatformTrack = pTrack.logicTrack;
-                        PassengerJobs.ModEntry.Logger.Log("Set track");
+                        //PassengerJobs.ModEntry.Logger.Log("Set track");
                     }
                     else
                     {
-                        PassengerJobs.ModEntry.Logger.Log("Couldn't find track");
+                        PassengerJobs.ModEntry.Logger.Warning("Couldn't find platform track for " + def.Name);
                         return;
                     }
 
@@ -142,7 +142,7 @@ namespace PassengerJobsMod
 
                     TrackToPlatformMap.Add(def.PlatformTrack.ID.FullID, def);
 
-                    PassengerJobs.ModEntry.Logger.Log("Successfully created platform controller for " + def.TrackId);
+                    PassengerJobs.ModEntry.Logger.Log("Successfully created platform controller for track " + def.TrackId);
                     
                     def.Initialized = true;
                 }
