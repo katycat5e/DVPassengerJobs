@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -62,6 +63,11 @@ namespace PassengerJobsMod
             }
 
             return new CarsPerTrack(track, cars);
+        }
+
+        internal static bool IsTrackReserved( this YardTracksOrganizer yto, Track track )
+        {
+            return yto.GetReservedSpace(track) > 40.5f;
         }
     }
 }
