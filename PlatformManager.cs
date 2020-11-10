@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using DV.Logic.Job;
@@ -57,6 +58,19 @@ namespace PassengerJobsMod
                 }
             }
         };
+
+        public static readonly Dictionary<string, float[][]> SignLocations = new Dictionary<string, float[][]>()
+        {
+            { "GF-C-3-LP", new float[][]
+                {
+                    new float[] { 734.7f, 146.5f, 437.84f, -0.88f, 0, -0.47f }, // loop side
+                    new float[] { 651.86f, 146.5f, 393.50f, -0.88f, 0, -0.47f } // entry side
+                }
+            }
+        };
+
+        private static GameObject SignPrefab = null;
+        private static bool SignLoadFailed = false;
 
         private static readonly Dictionary<string, PlatformDefinition> TrackToPlatformMap = new Dictionary<string, PlatformDefinition>();
 
@@ -142,9 +156,62 @@ namespace PassengerJobsMod
 
                     TrackToPlatformMap.Add(def.PlatformTrack.ID.FullID, def);
 
+                    CreatePlatformSigns(def.TrackId, def.Controller);
+
                     PassengerJobs.ModEntry.Logger.Log("Successfully created platform controller for track " + def.TrackId);
                     
                     def.Initialized = true;
+                }
+            }
+        }
+
+        private static bool TryLoadSignPrefab()
+        {
+            string bundlePath = Path.Combine(PassengerJobs.ModEntry.Path, "passengerjobs");
+            PassengerJobs.ModEntry.Logger.Log("Attempting to load platform sign prefab");
+
+            var bytes = File.ReadAllBytes(bundlePath);
+            var bundle = AssetBundle.LoadFromMemory(bytes);
+
+            if( bundle != null )
+            {
+                SignPrefab = bundle.LoadAsset<GameObject>("Assets/StationSign.prefab");
+                if( SignPrefab == null )
+                {
+                    PassengerJobs.ModEntry.Logger.Error("Failed to load platform sign prefab from asset bundle");
+                    SignLoadFailed = true;
+                    return false;
+                }
+            }
+            else
+            {
+                PassengerJobs.ModEntry.Logger.Error("Failed to load asset bundle");
+                SignLoadFailed = true;
+                return false;
+            }
+
+            PassengerJobs.ModEntry.Logger.Log("Loaded sign prefab");
+            return true;
+        }
+
+        private static void CreatePlatformSigns( string trackId, PlatformController controller )
+        {
+            if( SignLoadFailed ) return;
+            if( (SignPrefab == null) && !TryLoadSignPrefab() ) return; // failed to load
+
+            if( SignLocations.TryGetValue(trackId, out float[][] signList) )
+            {
+                foreach( float[] props in signList )
+                {
+                    Vector3 position = new Vector3(props[0], props[1], props[2]);
+                    Vector3 normal = new Vector3(props[3], props[4], props[5]);
+                    Quaternion rotation = Quaternion.FromToRotation(Vector3.forward, normal);
+
+                    var newObj = GameObject.Instantiate(SignPrefab, position, rotation);
+                    if( newObj != null )
+                    {
+                        controller.AddSign(newObj);
+                    }
                 }
             }
         }

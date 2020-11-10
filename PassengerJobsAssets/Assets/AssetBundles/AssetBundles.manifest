@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 360939192
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: passengerjobs
+      Dependencies: {}
