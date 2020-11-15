@@ -28,6 +28,33 @@ namespace PassengerJobsMod
         }
     }
 
+    [HarmonyPatch(typeof(BookletCreator), "GetMissingLicenseTemplateData")]
+    static class BC_GetMissingLicenseData_Patch
+    {
+        static bool Prefix( Job job, ref List<TemplatePaperData> __result )
+        {
+            if( (job.jobType == PassJobType.Commuter) || (job.jobType == PassJobType.Express) )
+            {
+                var licensePrintData = new MissingLicensesPageTemplatePaperData.LicensePrintData(
+                    PassengerLicenseUtil.PASS1_LICENSE_NAME, PassengerLicenseUtil.Pass1Sprite, false);
+
+                var printDataList = new List<MissingLicensesPageTemplatePaperData.LicensePrintData>() { licensePrintData };
+
+                const string JOB_TYPE = "PASSENGER";
+                string subType = (job.jobType == PassJobType.Commuter) ? "COMMUTER" : "EXPRESS";
+
+                var paperData = new MissingLicensesPageTemplatePaperData(
+                    JOB_TYPE, subType, job.ID, PassBookletUtil.PASS_JOB_COLOR, printDataList);
+
+                __result = new List<TemplatePaperData>() { paperData };
+
+                return false;
+            }
+
+            return true;
+        }
+    }
+
     // FrontPageTemplatePaper.DisplayRequiredLicenses
     [HarmonyPatch(typeof(FrontPageTemplatePaper), "DisplayRequiredLicenses")]
     class FPTP_DisplayLicenses_Patch
