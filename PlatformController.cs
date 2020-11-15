@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using DV.Logic.Job;
+using Harmony12;
+using TMPro;
 using UnityEngine;
 
 namespace PassengerJobsMod
@@ -24,6 +27,8 @@ namespace PassengerJobsMod
         public WarehouseMachine LogicMachine { get; protected set; }
         public RailTrack PlatformTrack { get; protected set; }
         public string PlatformName { get; protected set; }
+
+        public List<TextMeshPro> Signs = new List<TextMeshPro>();
 
         private Coroutine DelayedLoadUnloadRoutine = null;
         private Coroutine MessageDequeueRoutine = null;
@@ -51,6 +56,40 @@ namespace PassengerJobsMod
             LogicMachine = new WarehouseMachine(track.logicTrack, SUPPORTED_CARGO);
             PlatformName = name;
             enabled = true;
+        }
+
+        public void AddSign( GameObject signObject )
+        {
+            bool failed = false;
+            if( signObject.transform.Find("FrontText")?.GetComponent<TextMeshPro>() is TextMeshPro frontText )
+            {
+                Signs.Add(frontText);
+            }
+            else failed = true;
+
+            if( signObject.transform.Find("RearText")?.GetComponent<TextMeshPro>() is TextMeshPro rearText )
+            {
+                Signs.Add(rearText);
+            }
+            else failed = true;
+
+            if( failed ) PassengerJobs.ModEntry.Logger.Warning("Couldn't find 1 or more text component in station sign object");
+        }
+
+        public void SetSignsText( string text )
+        {
+            foreach( TextMeshPro tmp in Signs )
+            {
+                tmp.text = text;
+            }
+        }
+
+        public void SetSignState( bool en )
+        {
+            foreach( TextMeshPro tmp in Signs )
+            {
+                tmp.transform.root.gameObject.SetActive(en);
+            }
         }
 
         void OnEnable()
@@ -123,6 +162,8 @@ namespace PassengerJobsMod
             }
         }
 
+        private static readonly FieldInfo CurrentTasksField = AccessTools.Field(typeof(WarehouseMachine), "currentTasks");
+
         private System.Collections.IEnumerator CheckForTrains()
         {
             while( true )
@@ -171,6 +212,46 @@ namespace PassengerJobsMod
                 {
                     // !unloadInRange
                     unloadCountdown = START_XFER_DELAY;
+                }
+
+                // set sign display
+                if( !(loading || unloading) )
+                {
+                    if( CurrentTasksField.GetValue(LogicMachine) is List<WarehouseTask> tasks )
+                    {
+                        var sb = new StringBuilder();
+                        bool first = true;
+                        for( int i = 0; (i < tasks.Count) && (i < 2); i++ )
+                        {
+                            if( !first ) sb.AppendLine();
+
+                            WarehouseTask task = tasks[i];
+
+                            char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
+
+                            string jobId = tasks[i].Job.ID;
+                            int lastDashIdx = jobId.LastIndexOf('-');
+                            string trainNum = jobId.Substring(lastDashIdx + 1);
+
+                            sb.Append($"Train {jobTypeChar}{trainNum}");
+
+                            if( task.warehouseTaskType == WarehouseTaskType.Loading )
+                            {
+                                string dest = task.Job.chainData.chainDestinationYardId;
+                                sb.Append($" to {dest}");
+                            }
+                            else
+                            {
+                                // unloading
+                                string src = task.Job.chainData.chainOriginYardId;
+                                sb.Append($" from {src}");
+                            }
+
+                            first = false;
+                        }
+
+                        SetSignsText(sb.ToString());
+                    }
                 }
             }
         }

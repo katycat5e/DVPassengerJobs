@@ -1,0 +1,48 @@
+ManifestFileVersion: 0
+CRC: 2231000423
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: a49227c6afeb82973b788a929a2da2ad
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 24016cc4344a1226bf2b770e8c0987f4
+HashAppended: 0
+ClassTypes:
+- Class: 1
+  Script: {instanceID: 0}
+- Class: 4
+  Script: {instanceID: 0}
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 23
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 33
+  Script: {instanceID: 0}
+- Class: 43
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+- Class: 128
+  Script: {instanceID: 0}
+- Class: 222
+  Script: {instanceID: 0}
+- Class: 224
+  Script: {instanceID: 0}
+Assets:
+- Assets/StationSign.prefab
+- Assets/SignBaseMat_d.png
+- Assets/SmolStationSign.prefab
+- Assets/SignBaseMat_s.png
+- Assets/SignHousingMat.mat
+- Assets/SignBaseMat_n.png
+- Assets/LiberationSans SDF.asset
+Dependencies: []
