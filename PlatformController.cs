@@ -84,6 +84,14 @@ namespace PassengerJobsMod
             }
         }
 
+        public void SetSignState( bool en )
+        {
+            foreach( TextMeshPro tmp in Signs )
+            {
+                tmp.transform.root.gameObject.SetActive(en);
+            }
+        }
+
         void OnEnable()
         {
             StartCoroutine(CheckForTrains());
@@ -217,10 +225,27 @@ namespace PassengerJobsMod
                         {
                             if( !first ) sb.AppendLine();
 
-                            sb.Append(tasks[i].Job.ID);
-                            string dest = tasks[i].Job.chainData.chainDestinationYardId;
-                            sb.Append(" to ");
-                            sb.Append(dest);
+                            WarehouseTask task = tasks[i];
+
+                            char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
+
+                            string jobId = tasks[i].Job.ID;
+                            int lastDashIdx = jobId.LastIndexOf('-');
+                            string trainNum = jobId.Substring(lastDashIdx + 1);
+
+                            sb.Append($"Train {jobTypeChar}{trainNum}");
+
+                            if( task.warehouseTaskType == WarehouseTaskType.Loading )
+                            {
+                                string dest = task.Job.chainData.chainDestinationYardId;
+                                sb.Append($" to {dest}");
+                            }
+                            else
+                            {
+                                // unloading
+                                string src = task.Job.chainData.chainOriginYardId;
+                                sb.Append($" from {src}");
+                            }
 
                             first = false;
                         }

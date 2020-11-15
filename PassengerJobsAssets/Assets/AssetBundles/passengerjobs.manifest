@@ -1,9 +1,9 @@
 ManifestFileVersion: 0
-CRC: 4132211906
+CRC: 2231000423
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 53cfea4cc227f8a0e42ba9c30e831fb6
+    Hash: a49227c6afeb82973b788a929a2da2ad
   TypeTreeHash:
     serializedVersion: 2
     Hash: 24016cc4344a1226bf2b770e8c0987f4
@@ -40,6 +40,7 @@ ClassTypes:
 Assets:
 - Assets/StationSign.prefab
 - Assets/SignBaseMat_d.png
+- Assets/SmolStationSign.prefab
 - Assets/SignBaseMat_s.png
 - Assets/SignHousingMat.mat
 - Assets/SignBaseMat_n.png

@@ -204,6 +204,7 @@ namespace PassengerJobsMod
 
         private bool PlayerWasInGenerateRange = false;
         private bool TrackSignsAreGenerated = false;
+        private bool PlatformSignsActive = true; // all enabled at startup
 
         private Coroutine GenerationRoutine = null;
 
@@ -227,6 +228,17 @@ namespace PassengerJobsMod
             {
                 // player entered the zone
                 StartGenerationAsync();
+            }
+
+            if( playerInGenerateRange && !PlatformSignsActive )
+            {
+                PlatformManager.SetSignStates(Controller.stationInfo.YardID, true);
+                PlatformSignsActive = true;
+            }
+            else if( !playerInGenerateRange && PlatformSignsActive )
+            {
+                PlatformManager.SetSignStates(Controller.stationInfo.YardID, false);
+                PlatformSignsActive = false;
             }
 
             PlayerWasInGenerateRange = playerInGenerateRange;
