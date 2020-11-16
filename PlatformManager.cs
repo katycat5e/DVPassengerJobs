@@ -80,6 +80,8 @@ namespace PassengerJobsMod
             }
         };
 
+        private static readonly Dictionary<string, int> NextPlatformChoice = new Dictionary<string, int>();
+
         public static readonly Dictionary<string, SignDefinition[]> SignLocations = new Dictionary<string, SignDefinition[]>()
         {
             { "CSW-B-6-LP", new SignDefinition[]
@@ -142,11 +144,11 @@ namespace PassengerJobsMod
 
         private static readonly Dictionary<string, PlatformDefinition> TrackToPlatformMap = new Dictionary<string, PlatformDefinition>();
 
-        public static IEnumerable<PlatformDefinition> GetAvailablePlatforms( string yard )
+        public static List<PlatformDefinition> GetAvailablePlatforms( string yard )
         {
             if( PlatformDefs.TryGetValue(yard, out var defList) )
             {
-                return defList;
+                return new List<PlatformDefinition>(defList.Where(p => p.Initialized));
             }
             return null;
         }
@@ -157,20 +159,13 @@ namespace PassengerJobsMod
             var platformList = GetAvailablePlatforms(yard);
             if( platformList != null )
             {
-                foreach( PlatformDefinition def in platformList )
-                {
-                    if( def.Initialized && !YardTracksOrganizer.Instance.IsTrackReserved(def.PlatformTrack) )
-                    {
-                        loadingPlatform = def;
-                        break;
-                    }
-                }
+                int nextIdx = NextPlatformChoice[yard];
+                loadingPlatform = platformList[nextIdx];
 
-                // no un-reserved available
-                if( loadingPlatform == null )
-                {
-                    loadingPlatform = platformList.FirstOrDefault(d => d.Initialized);
-                }
+                nextIdx += 1;
+                if( nextIdx >= platformList.Count ) nextIdx = 0;
+
+                NextPlatformChoice[yard] = nextIdx;
             }
             return loadingPlatform;
         }
@@ -200,6 +195,8 @@ namespace PassengerJobsMod
         {
             if( PlatformDefs.TryGetValue(station.stationInfo.YardID, out var defList) )
             {
+                NextPlatformChoice[station.stationInfo.YardID] = 0;
+
                 foreach( PlatformDefinition def in defList )
                 {
                     //PassengerJobs.ModEntry.Logger.Log("Creating platform controller for " + def.Name);
