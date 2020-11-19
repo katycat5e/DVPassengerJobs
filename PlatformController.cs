@@ -28,7 +28,9 @@ namespace PassengerJobsMod
         public RailTrack PlatformTrack { get; protected set; }
         public string PlatformName { get; protected set; }
 
+        public List<GameObject> SignObjects = new List<GameObject>();
         public List<TextMeshPro> Signs = new List<TextMeshPro>();
+        public bool SignsActive = false;
 
         private Coroutine DelayedLoadUnloadRoutine = null;
         private Coroutine MessageDequeueRoutine = null;
@@ -61,6 +63,9 @@ namespace PassengerJobsMod
         public void AddSign( GameObject signObject )
         {
             bool failed = false;
+
+            SignObjects.Add(signObject);
+
             if( signObject.transform.Find("FrontText")?.GetComponent<TextMeshPro>() is TextMeshPro frontText )
             {
                 Signs.Add(frontText);
@@ -72,6 +77,8 @@ namespace PassengerJobsMod
                 Signs.Add(rearText);
             }
             else failed = true;
+
+            signObject.SetActive(SignsActive);
 
             if( failed ) PassengerJobs.ModEntry.Logger.Warning("Couldn't find 1 or more text component in station sign object");
         }
@@ -86,9 +93,11 @@ namespace PassengerJobsMod
 
         public void SetSignState( bool en )
         {
-            foreach( TextMeshPro tmp in Signs )
+            SignsActive = en;
+
+            foreach( GameObject s in SignObjects )
             {
-                tmp.transform.root.gameObject.SetActive(en);
+                s.SetActive(en);
             }
         }
 

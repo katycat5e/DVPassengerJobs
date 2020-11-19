@@ -294,7 +294,12 @@ namespace PassengerJobsMod
             {
                 foreach( PlatformDefinition p in platforms )
                 {
-                    if( p.Initialized ) p.Controller.SetSignState(newState);
+                    if( p.Initialized && (p.Controller.SignsActive != newState) )
+                    {
+                        string stateStr = newState ? "On" : "Off";
+                        PassengerJobs.ModEntry.Logger.Log($"Setting signs at {p.Name} to {stateStr}");
+                        p.Controller.SetSignState(newState);
+                    }
                 }
             }
         }
