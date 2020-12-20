@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DV.Logic.Job;
-using Harmony12;
+using HarmonyLib;
 using UnityEngine;
 
 namespace PassengerJobsMod
@@ -84,7 +84,8 @@ namespace PassengerJobsMod
 
         private delegate void InitJobBookletDelegate( Job job );
         private static readonly InitJobBookletDelegate InitializeCorrespondingJobBooklet =
-            AccessTools.Method("JobSaveManager:InitializeCorrespondingJobBooklet")?.CreateDelegate(typeof(InitJobBookletDelegate)) as InitJobBookletDelegate;
+            AccessTools.Method("JobSaveManager:InitializeCorrespondingJobBooklet")?
+                .CreateDelegate(typeof(InitJobBookletDelegate), SingletonBehaviour<JobSaveManager>.Instance) as InitJobBookletDelegate;
 
 
         static bool Prefix( JobChainSaveData chainSaveData, ref GameObject __result )

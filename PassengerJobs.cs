@@ -1,5 +1,5 @@
 ﻿using DV.Logic.Job;
-using Harmony12;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -72,7 +72,7 @@ namespace PassengerJobsMod
                 ModEntry.Logger.Log("Detected coach resize patch, making consists longer");
             }
 
-            var harmony = HarmonyInstance.Create("com.foxden.passenger_jobs");
+            var harmony = new Harmony("com.foxden.passenger_jobs");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
             return true;
