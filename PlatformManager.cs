@@ -191,7 +191,7 @@ namespace PassengerJobsMod
             return null;
         }
 
-        public static void CreateMachines( StationController station )
+        public static void CreateMachines( StationController station, bool signsEnabled )
         {
             if( PlatformDefs.TryGetValue(station.stationInfo.YardID, out var defList) )
             {
@@ -221,6 +221,7 @@ namespace PassengerJobsMod
 
                     TrackToPlatformMap.Add(def.PlatformTrack.ID.FullID, def);
 
+                    def.Controller.SignsActive = signsEnabled;
                     CreatePlatformSigns(def.TrackId, def.Controller);
 
                     PassengerJobs.ModEntry.Logger.Log("Successfully created platform controller for track " + def.TrackId);

@@ -183,8 +183,12 @@ namespace PassengerJobsMod
                     YardTracksOrganizer.Instance.yardTrackIdToTrack[t.ID.FullID] = t;
                 }
 
+                // check if the player is already inside the generation zone
+                float playerDist = StationRange.PlayerSqrDistanceFromStationCenter;
+                PlayerWasInGenerateRange = StationRange.IsPlayerInJobGenerationZone(playerDist);
+
                 // create loading machines
-                PlatformManager.CreateMachines(Controller);
+                PlatformManager.CreateMachines(Controller, PlayerWasInGenerateRange);
 
                 var sb = new StringBuilder($"Created generator for {Controller.stationInfo.Name}:\n");
                 sb.Append("Coach Storage: ");
@@ -195,10 +199,6 @@ namespace PassengerJobsMod
                 PassengerJobs.ModEntry.Logger.Log(sb.ToString());
 
                 RegisterStation(Controller, this);
-
-                // check if the player is already inside the generation zone
-                float playerDist = StationRange.PlayerSqrDistanceFromStationCenter;
-                PlayerWasInGenerateRange = StationRange.IsPlayerInJobGenerationZone(playerDist);
             }
         }
 
