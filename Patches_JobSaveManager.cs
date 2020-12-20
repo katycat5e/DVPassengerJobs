@@ -84,7 +84,8 @@ namespace PassengerJobsMod
 
         private delegate void InitJobBookletDelegate( Job job );
         private static readonly InitJobBookletDelegate InitializeCorrespondingJobBooklet =
-            AccessTools.Method("JobSaveManager:InitializeCorrespondingJobBooklet")?.CreateDelegate(typeof(InitJobBookletDelegate)) as InitJobBookletDelegate;
+            AccessTools.Method("JobSaveManager:InitializeCorrespondingJobBooklet")?
+                .CreateDelegate(typeof(InitJobBookletDelegate), SingletonBehaviour<JobSaveManager>.Instance) as InitJobBookletDelegate;
 
 
         static bool Prefix( JobChainSaveData chainSaveData, ref GameObject __result )
