@@ -55,7 +55,7 @@ namespace PassengerJobsMod
             var cars = new List<Car>();
             foreach( string guid in carsPerTrack.carGuids )
             {
-                if( !Car.carGuidToCar.TryGetValue(guid, out Car car) )
+                if( !SingletonBehaviour<IdGenerator>.Instance.carGuidToCar.TryGetValue(guid, out Car car) )
                 {
                     throw new ArgumentException($"No Car corresponding to GUID: {guid}");
                 }

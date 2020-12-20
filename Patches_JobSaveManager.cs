@@ -40,7 +40,7 @@ namespace PassengerJobsMod
             var result = new List<Car>();
             for( int i = 0; i < carGuids.Length; i++ )
             {
-                if( !Car.carGuidToCar.TryGetValue(carGuids[i], out Car car) )
+                if( !SingletonBehaviour<IdGenerator>.Instance.carGuidToCar.TryGetValue(carGuids[i], out Car car) )
                 {
                     Debug.LogError("Couldn't find corresponding Car for carGuid:" + carGuids[i] + "!");
                     return null;
@@ -62,13 +62,13 @@ namespace PassengerJobsMod
 
             foreach( string guid in carGuids )
             {
-                if( !Car.carGuidToCar.TryGetValue(guid, out Car car) || car == null )
+                if( !SingletonBehaviour<IdGenerator>.Instance.carGuidToCar.TryGetValue(guid, out Car car) || car == null )
                 {
                     PrintError($"Couldn't find corresponding Car for carGuid:{guid}!");
                     return null;
                 }
 
-                if( !TrainCar.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) || !(trainCar != null) )
+                if( !SingletonBehaviour<IdGenerator>.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) || !(trainCar != null) )
                 {
                     PrintError($"Couldn't find corresponding TrainCar for Car: {car.ID} with carGuid:{guid}!");
                     return null;
