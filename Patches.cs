@@ -1,5 +1,5 @@
 ﻿using DV.Logic.Job;
-using Harmony12;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,7 +62,8 @@ namespace PassengerJobsMod
 
                 if( !string.IsNullOrEmpty(itemData.carGuid) )
                 {
-                    var car = TrainCar.GetTrainCarByCarGuid(itemData.carGuid);
+                    var idGenerator = SingletonBehaviour<IdGenerator>.Instance;
+                    var car = idGenerator.logicCarToTrainCar[idGenerator.carGuidToCar[itemData.carGuid]];
                     if( car )
                     {
                         if( car.GetComponent<TrainPhysicsLod>() is TrainPhysicsLod carPhysics )
@@ -126,7 +127,7 @@ namespace PassengerJobsMod
         const string EXPRESS_TYPE = "PE";
         const string COMMUTE_TYPE = "PC";
 
-        static bool Prefix( JobType jobType, StationsChainData jobStationsInfo, ref string __result, 
+        static bool Prefix( IdGenerator __instance, JobType jobType, StationsChainData jobStationsInfo, ref string __result, 
             System.Random ___idRng, HashSet<string> ___existingJobIds )
         {
             if( (jobType != PassJobType.Express) &&
@@ -151,7 +152,7 @@ namespace PassengerJobsMod
 
                 if( !___existingJobIds.Contains(idStr) )
                 {
-                    IdGenerator.RegisterJobId(idStr);
+                    __instance.RegisterJobId(idStr);
                     __result = idStr;
                     return false;
                 }

@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using DV.Logic.Job;
-using Harmony12;
+using HarmonyLib;
 using TMPro;
 using UnityEngine;
 
@@ -52,30 +52,32 @@ namespace PassengerJobsMod
         {
             { "CSW",new PlatformDefinition[]
                 {
-                    new PlatformDefinition("CSW-B-3-LP", "CSW Platform 3"),
-                    new PlatformDefinition("CSW-B-6-LP", "CSW Platform 6")
-                } // not enough clearance: "CSW-B-4-LP", "CSW-B-5-LP"
+                    new PlatformDefinition("CSW-B3LP", "CSW Platform 3"),
+                    new PlatformDefinition("CSW-B4LP", "CSW Platform 4"),
+                    new PlatformDefinition("CSW-B5LP", "CSW Platform 5"),
+                    new PlatformDefinition("CSW-B6LP", "CSW Platform 6")
+                }
             },
             { "MF", new PlatformDefinition[]
                 {
-                    new PlatformDefinition("MF-D-1-LP", "MF Platform 1"),
-                    new PlatformDefinition("MF-D-2-LP", "MF Platform 2")
+                    new PlatformDefinition("MF-D1LP", "MF Platform 1"),
+                    new PlatformDefinition("MF-D2LP", "MF Platform 2")
                 }
             },
             { "FF", new PlatformDefinition[]
                 {
-                    new PlatformDefinition("FF-B-1-LP", "FF Platform 1"),
-                    new PlatformDefinition("FF-B-2-LP", "FF Platform 2")
+                    new PlatformDefinition("FF-B1LP", "FF Platform 1"),
+                    new PlatformDefinition("FF-B2LP", "FF Platform 2")
                 }
             },
             { "HB", new PlatformDefinition[]
                 {
-                    new PlatformDefinition("HB-F-1-LP", "HB Platform 1")
+                    new PlatformDefinition("HB-F1LP", "HB Platform 1")
                 } // not enough clearance: "HB-F-2-LP"
             },
             { "GF", new PlatformDefinition[]
                 {
-                    new PlatformDefinition("GF-C-3-LP", "GF Platform 3")
+                    new PlatformDefinition("GF-C3LP", "GF Platform 3")
                 }
             }
         };
@@ -84,52 +86,64 @@ namespace PassengerJobsMod
 
         public static readonly Dictionary<string, SignDefinition[]> SignLocations = new Dictionary<string, SignDefinition[]>()
         {
-            { "CSW-B-6-LP", new SignDefinition[]
+            { "CSW-B6LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 39.23f, 129.07f, 402.07f, 0.686f, 0.728f), // building side
                     new SignDefinition(StationSignType.Normal, 147.6f, 129.07f, 517.05f, 0.686f, 0.728f) // exit side
                 }
             },
-            { "CSW-B-3-LP", new SignDefinition[]
+            { "CSW-B5LP", new SignDefinition[]
+                {
+                    new SignDefinition(StationSignType.Normal, 42.42f, 129.07f, 399.06f, -0.686f, -0.728f), // building side
+                    new SignDefinition(StationSignType.Normal, 150.79f, 129.07f, 514.04f, -0.686f, -0.728f) // exit side
+                }
+            },
+            { "CSW-B4LP", new SignDefinition[]
+                {
+                    new SignDefinition(StationSignType.Small, 47.69f, 127.06f, 388.6f, 0.686f, 0.728f), // building side
+                    new SignDefinition(StationSignType.Small, 156.05f, 127.06f, 503.58f, 0.686f, 0.728f) // exit side
+                }
+            },
+            { "CSW-B3LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Small, 50.31f, 127.06f, 386.13f, -0.686f, -0.728f), // building side
                     new SignDefinition(StationSignType.Small, 158.67f, 127.06f, 501.11f, -0.686f, -0.728f) // exit side
                 }
             },
             // MF
-            { "MF-D-1-LP", new SignDefinition[]
+            { "MF-D1LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 645.07f, 165.63f, 232.8f, 0.028f, 1.0f), // north
                     new SignDefinition(StationSignType.Normal, 640.8f, 165.63f, 82.86f, 0.028f, 1.0f) // south
                 }
             },
-            { "MF-D-2-LP", new SignDefinition[]
+            { "MF-D2LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 649.47f, 165.63f, 232.67f, -0.028f, -1.0f), // north
                     new SignDefinition(StationSignType.Normal, 645.2f, 165.63f, 82.73f, -0.028f, -1.0f) // south
                 }
             },
             // FF
-            { "FF-B-1-LP", new SignDefinition[]
+            { "FF-B1LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 432.47f, 125.65f, 245.54f, -0.359f, -0.934f), // south
                     new SignDefinition(StationSignType.Normal, 443.92f, 125.65f, 275.42f, -0.359f, -0.934f) // north
                 }
             },
-            { "FF-B-2-LP", new SignDefinition[]
+            { "FF-B2LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 428.36f, 125.65f, 247.12f, 0.359f, 0.934f), // south
                     new SignDefinition(StationSignType.Normal, 439.82f, 125.65f, 277.0f, 0.359f, 0.934f) // north
                 }
             },
             // HB
-            { "HB-F-1-LP", new SignDefinition[]
+            { "HB-F1LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 322.57f, 119.89f, 269.16f, 0.999f, -0.05f), // west
                     new SignDefinition(StationSignType.Normal, 456.39f, 119.89f, 262.24f, 0.999f, -0.05f) // east
                 }
             },
-            { "GF-C-3-LP", new SignDefinition[]
+            { "GF-C3LP", new SignDefinition[]
                 {
                     new SignDefinition(StationSignType.Normal, 734.72f, 146.55f, 437.86f, 0.88f, 0.47f), // loop side
                     new SignDefinition(StationSignType.Normal, 651.85f, 146.55f, 393.49f, 0.88f, 0.47f) // entry side
@@ -191,7 +205,7 @@ namespace PassengerJobsMod
             return null;
         }
 
-        public static void CreateMachines( StationController station )
+        public static void CreateMachines( StationController station, bool signsEnabled )
         {
             if( PlatformDefs.TryGetValue(station.stationInfo.YardID, out var defList) )
             {
@@ -221,6 +235,7 @@ namespace PassengerJobsMod
 
                     TrackToPlatformMap.Add(def.PlatformTrack.ID.FullID, def);
 
+                    def.Controller.SignsActive = signsEnabled;
                     CreatePlatformSigns(def.TrackId, def.Controller);
 
                     PassengerJobs.ModEntry.Logger.Log("Successfully created platform controller for track " + def.TrackId);

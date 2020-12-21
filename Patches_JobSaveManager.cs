@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DV.Logic.Job;
-using Harmony12;
+using HarmonyLib;
 using UnityEngine;
 
 namespace PassengerJobsMod
@@ -40,7 +40,7 @@ namespace PassengerJobsMod
             var result = new List<Car>();
             for( int i = 0; i < carGuids.Length; i++ )
             {
-                if( !Car.carGuidToCar.TryGetValue(carGuids[i], out Car car) )
+                if( !SingletonBehaviour<IdGenerator>.Instance.carGuidToCar.TryGetValue(carGuids[i], out Car car) )
                 {
                     Debug.LogError("Couldn't find corresponding Car for carGuid:" + carGuids[i] + "!");
                     return null;
@@ -62,13 +62,13 @@ namespace PassengerJobsMod
 
             foreach( string guid in carGuids )
             {
-                if( !Car.carGuidToCar.TryGetValue(guid, out Car car) || car == null )
+                if( !SingletonBehaviour<IdGenerator>.Instance.carGuidToCar.TryGetValue(guid, out Car car) || car == null )
                 {
                     PrintError($"Couldn't find corresponding Car for carGuid:{guid}!");
                     return null;
                 }
 
-                if( !TrainCar.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) || !(trainCar != null) )
+                if( !SingletonBehaviour<IdGenerator>.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) || !(trainCar != null) )
                 {
                     PrintError($"Couldn't find corresponding TrainCar for Car: {car.ID} with carGuid:{guid}!");
                     return null;
@@ -84,7 +84,8 @@ namespace PassengerJobsMod
 
         private delegate void InitJobBookletDelegate( Job job );
         private static readonly InitJobBookletDelegate InitializeCorrespondingJobBooklet =
-            AccessTools.Method("JobSaveManager:InitializeCorrespondingJobBooklet")?.CreateDelegate(typeof(InitJobBookletDelegate)) as InitJobBookletDelegate;
+            AccessTools.Method("JobSaveManager:InitializeCorrespondingJobBooklet")?
+                .CreateDelegate(typeof(InitJobBookletDelegate), SingletonBehaviour<JobSaveManager>.Instance) as InitJobBookletDelegate;
 
 
         static bool Prefix( JobChainSaveData chainSaveData, ref GameObject __result )

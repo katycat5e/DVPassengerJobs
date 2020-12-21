@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using DV.Logic.Job;
-using Harmony12;
+using HarmonyLib;
 using TMPro;
 using UnityEngine;
 
@@ -296,7 +296,7 @@ namespace PassengerJobsMod
                     {
                         foreach( Car car in task.cars )
                         {
-                            if( TrainCar.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) )
+                            if( SingletonBehaviour<IdGenerator>.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) )
                             {
                                 if( trainCar.GetForwardSpeed() > 0.3f )
                                 {
