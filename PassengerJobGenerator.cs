@@ -89,20 +89,20 @@ namespace PassengerJobsMod
 
         public static readonly Dictionary<string, HashSet<string>> StorageTrackNames = new Dictionary<string, HashSet<string>>()
         {
-            { "CSW",new HashSet<string>(){ "CSW-B-2-SP", "CSW-B-1-SP" } },
-            { "MF", new HashSet<string>(){ "MF-D-4-SP" } },
-            { "FF", new HashSet<string>(){ "FF-B-3-SP", "FF-B-5-SP", "FF-B-4-SP" } },
-            { "HB", new HashSet<string>(){ "HB-F-4-SP", "HB-F-3-SP" } },
-            { "GF", new HashSet<string>(){ "GF-C-1-SP" } }
+            { "CSW",new HashSet<string>(){ "CSW-B2SP", "CSW-B1SP" } },
+            { "MF", new HashSet<string>(){ "MF-D4SP" } },
+            { "FF", new HashSet<string>(){ "FF-B3SP", "FF-B5SP", "FF-B4SP" } },
+            { "HB", new HashSet<string>(){ "HB-F4SP", "HB-F3SP" } },
+            { "GF", new HashSet<string>(){ "GF-C1SP" } }
         };
 
         public static readonly Dictionary<string, HashSet<string>> PlatformTrackNames = new Dictionary<string, HashSet<string>>()
         {
-            { "CSW",new HashSet<string>(){ "CSW-B-6-LP", "CSW-B-3-LP" } }, // not enough clearance: "CSW-B-4-LP", "CSW-B-5-LP"
-            { "MF", new HashSet<string>(){ "MF-D-1-LP", "MF-D-2-LP" } },
-            { "FF", new HashSet<string>(){ "#Y-#S-320-#T", "#Y-#S-459-#T" } },
-            { "HB", new HashSet<string>(){ "HB-F-1-LP" } }, // not enough clearance: "HB-F-2-LP"
-            { "GF", new HashSet<string>(){ "GF-C-3-LP" } } // reserved for pass-thru: "GF-C-2-LP"
+            { "CSW",new HashSet<string>(){ "CSW-B6LP", "CSW-B5LP", "CSW-B4LP", "CSW-B3LP" } },
+            { "MF", new HashSet<string>(){ "MF-D1LP", "MF-D2LP" } },
+            { "FF", new HashSet<string>(){ "#Y-#S320#T", "#Y-#S459#T" } },
+            { "HB", new HashSet<string>(){ "HB-F1LP" } }, // not enough clearance: "HB-F-2-LP"
+            { "GF", new HashSet<string>(){ "GF-C3LP" } } // reserved for pass-thru: "GF-C-2-LP"
         };
 
         internal static List<Track> GetStorageTracks( StationController station )
@@ -123,11 +123,11 @@ namespace PassengerJobsMod
             // fix track IDs at Food Factory
             foreach( var track in result )
             {
-                if( track.ID.FullDisplayID == "#Y-#S-459-#T" ) // used to be #Y-#S-168-#T
+                if( track.ID.FullDisplayID == "#Y-#S459#T" )
                 {
                     track.OverrideTrackID(new TrackID("FF", "B", "1", TrackID.LOADING_PASSENGER_TYPE));
                 }
-                else if( track.ID.FullDisplayID == "#Y-#S-320-#T" ) // used to be #Y-#S-491-#T
+                else if( track.ID.FullDisplayID == "#Y-#S320#T" )
                 {
                     track.OverrideTrackID(new TrackID("FF", "B", "2", TrackID.LOADING_PASSENGER_TYPE));
                 }
