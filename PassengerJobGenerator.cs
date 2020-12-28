@@ -100,7 +100,7 @@ namespace PassengerJobsMod
         {
             { "CSW",new HashSet<string>(){ "CSW-B6LP", "CSW-B5LP", "CSW-B4LP", "CSW-B3LP" } },
             { "MF", new HashSet<string>(){ "MF-D1LP", "MF-D2LP" } },
-            { "FF", new HashSet<string>(){ "#Y-#S320#T", "#Y-#S459#T" } },
+            { "FF", new HashSet<string>(){ "FF-B1LP", "FF-B2LP" } },
             { "HB", new HashSet<string>(){ "HB-F1LP" } }, // not enough clearance: "HB-F-2-LP"
             { "GF", new HashSet<string>(){ "GF-C3LP" } } // reserved for pass-thru: "GF-C-2-LP"
         };
@@ -119,19 +119,6 @@ namespace PassengerJobsMod
             var trackNames = PlatformTrackNames[station.stationInfo.YardID];
 
             var result = AllTracks.Where(t => trackNames.Contains(t.ID.ToString())).ToList();
-
-            // fix track IDs at Food Factory
-            foreach( var track in result )
-            {
-                if( track.ID.FullDisplayID == "#Y-#S459#T" )
-                {
-                    track.OverrideTrackID(new TrackID("FF", "B", "1", TrackID.LOADING_PASSENGER_TYPE));
-                }
-                else if( track.ID.FullDisplayID == "#Y-#S320#T" )
-                {
-                    track.OverrideTrackID(new TrackID("FF", "B", "2", TrackID.LOADING_PASSENGER_TYPE));
-                }
-            }
 
             return result;
         }
