@@ -88,65 +88,65 @@ namespace PassengerJobsMod
         {
             { "CSW-B6LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 39.23f, 129.07f, 402.07f, 0.686f, 0.728f), // building side
-                    new SignDefinition(StationSignType.Normal, 147.6f, 129.07f, 517.05f, 0.686f, 0.728f) // exit side
+                    new SignDefinition(StationSignType.Normal, 1685.22f, 129.07f, 5340.07f, 0.686f, 0.728f), // building side
+                    new SignDefinition(StationSignType.Normal, 1793.59f, 129.07f, 5455.05f, 0.686f, 0.728f) // exit side
                 }
             },
             { "CSW-B5LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 42.42f, 129.07f, 399.06f, -0.686f, -0.728f), // building side
-                    new SignDefinition(StationSignType.Normal, 150.79f, 129.07f, 514.04f, -0.686f, -0.728f) // exit side
+                    new SignDefinition(StationSignType.Normal, 1688.43f, 129.07f, 5337.05f, -0.686f, -0.728f), // building side
+                    new SignDefinition(StationSignType.Normal, 1796.80f, 129.07f, 5452.03f, -0.686f, -0.728f) // exit side
                 }
             },
             { "CSW-B4LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Small, 47.69f, 127.06f, 388.6f, 0.686f, 0.728f), // building side
-                    new SignDefinition(StationSignType.Small, 156.05f, 127.06f, 503.58f, 0.686f, 0.728f) // exit side
+                    new SignDefinition(StationSignType.Small, 1693.69f, 127.06f, 5326.60f, 0.686f, 0.728f), // building side
+                    new SignDefinition(StationSignType.Small, 1802.05f, 127.06f, 5441.58f, 0.686f, 0.728f) // exit side
                 }
             },
             { "CSW-B3LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Small, 50.31f, 127.06f, 386.13f, -0.686f, -0.728f), // building side
-                    new SignDefinition(StationSignType.Small, 158.67f, 127.06f, 501.11f, -0.686f, -0.728f) // exit side
+                    new SignDefinition(StationSignType.Small, 1696.31f, 127.06f, 5324.13f, -0.686f, -0.728f), // building side
+                    new SignDefinition(StationSignType.Small, 1804.67f, 127.06f, 5439.11f, -0.686f, -0.728f) // exit side
                 }
             },
             // MF
             { "MF-D1LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 645.07f, 165.63f, 232.8f, 0.028f, 1.0f), // north
-                    new SignDefinition(StationSignType.Normal, 640.8f, 165.63f, 82.86f, 0.028f, 1.0f) // south
+                    new SignDefinition(StationSignType.Normal, 2291.08f, 165.63f, 10931.79f, 0.028f, 1.0f), // north
+                    new SignDefinition(StationSignType.Normal, 2286.80f, 165.63f, 10781.85f, 0.028f, 1.0f) // south
                 }
             },
             { "MF-D2LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 649.47f, 165.63f, 232.67f, -0.028f, -1.0f), // north
-                    new SignDefinition(StationSignType.Normal, 645.2f, 165.63f, 82.73f, -0.028f, -1.0f) // south
+                    new SignDefinition(StationSignType.Normal, 2295.48f, 165.63f, 10931.67f, -0.028f, -1.0f), // north
+                    new SignDefinition(StationSignType.Normal, 2291.20f, 165.63f, 10781.73f, -0.028f, -1.0f) // south
                 }
             },
             // FF
             { "FF-B1LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 432.47f, 125.65f, 245.54f, -0.359f, -0.934f), // south
-                    new SignDefinition(StationSignType.Normal, 443.92f, 125.65f, 275.42f, -0.359f, -0.934f) // north
+                    new SignDefinition(StationSignType.Normal, 9485.47f, 125.65f, 13413.54f, -0.359f, -0.934f), // south
+                    new SignDefinition(StationSignType.Normal, 9496.94f, 125.65f, 13443.41f, -0.359f, -0.934f) // north
                 }
             },
             { "FF-B2LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 428.36f, 125.65f, 247.12f, 0.359f, 0.934f), // south
-                    new SignDefinition(StationSignType.Normal, 439.82f, 125.65f, 277.0f, 0.359f, 0.934f) // north
+                    new SignDefinition(StationSignType.Normal, 9481.36f, 125.65f, 13415.12f, 0.359f, 0.934f), // south
+                    new SignDefinition(StationSignType.Normal, 9492.83f, 125.65f, 13444.99f, 0.359f, 0.934f) // north
                 }
             },
             // HB
             { "HB-F1LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 322.57f, 119.89f, 269.16f, 0.999f, -0.05f), // west
-                    new SignDefinition(StationSignType.Normal, 456.39f, 119.89f, 262.24f, 0.999f, -0.05f) // east
+                    new SignDefinition(StationSignType.Normal, 13624.38f, 119.89f, 3554.24f, 0.999f, -0.05f), // west
+                    new SignDefinition(StationSignType.Normal, 13490.56f, 119.89f, 3561.14f, 0.999f, -0.05f) // east
                 }
             },
             { "GF-C3LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 734.72f, 146.55f, 437.86f, 0.88f, 0.47f), // loop side
-                    new SignDefinition(StationSignType.Normal, 651.85f, 146.55f, 393.49f, 0.88f, 0.47f) // entry side
+                    new SignDefinition(StationSignType.Normal, 13079.73f, 146.55f, 11136.85f, 0.88f, 0.47f), // loop side
+                    new SignDefinition(StationSignType.Normal, 12996.85f, 146.55f, 11092.48f, 0.88f, 0.47f) // entry side
                 }
             }
         };
@@ -294,9 +294,12 @@ namespace PassengerJobsMod
                 {
                     GameObject proto = (sign.SignType == StationSignType.Small) ? SmallSignPrefab : SignPrefab;
 
-                    var newObj = GameObject.Instantiate(proto, sign.Position, sign.Rotation);
+                    Vector3 relativePos = sign.Position + WorldMover.currentMove;
+
+                    var newObj = GameObject.Instantiate(proto, relativePos, sign.Rotation);
                     if( newObj != null )
                     {
+                        SingletonBehaviour<WorldMover>.Instance.AddObjectToMove(newObj.transform);
                         controller.AddSign(newObj);
                     }
                 }
