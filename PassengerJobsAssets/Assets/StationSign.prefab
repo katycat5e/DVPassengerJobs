@@ -450,6 +450,7 @@ GameObject:
   - component: {fileID: 8235662727139225250}
   - component: {fileID: 643930545418332605}
   - component: {fileID: 5026726082294293366}
+  - component: {fileID: 4627532371726713754}
   m_Layer: 0
   m_Name: SignGeo
   m_TagString: Untagged
@@ -517,3 +518,16 @@ MeshRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+--- !u!65 &4627532371726713754
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4747905821398277889}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 3.1999998, y: 1.1, z: 0.40000004}
+  m_Center: {x: 0, y: 0.24999996, z: -0.000000007450581}
