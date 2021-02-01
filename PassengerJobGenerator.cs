@@ -299,7 +299,7 @@ namespace PassengerJobsMod
 
         #region Transport Job Generation
 
-        public PassengerTransportChainController GenerateNewTransportJob( TrainCarsPerLogicTrack consistInfo = null )
+        public PassengerTransportChainController GenerateNewTransportJob( TrainCarsPerLogicTrack consistInfo = null, SpecialTrain prevSpecial = null )
         {
             int nTotalCars;
             List<TrainCarType> jobCarTypes = null;
@@ -392,6 +392,11 @@ namespace PassengerJobsMod
                         jobCarTypes = PassCarTypes.ChooseMany(Rand, nTotalCars);
                     }
                 }
+            }
+            else
+            {
+                // extant consist, use existing special (if it exists)
+                specialInfo = prevSpecial;
             }
 
             // Try to find an unloading platform

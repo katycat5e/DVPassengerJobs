@@ -23,7 +23,10 @@ namespace PassengerJobsMod
                 
                 if( PassengerJobGenerator.LinkedGenerators.TryGetValue(currentStation, out var generator) )
                 {
-                    if( generator.GenerateNewTransportJob(new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain)) == null )
+                    var newChain = generator.GenerateNewTransportJob(
+                        new TrainCarsPerLogicTrack(previousJob.destinationTrack, trainCarsForJobChain), previousJob.specialDefinition);
+
+                    if( newChain == null )
                     {
                         PassengerJobs.ModEntry.Logger.Warning($"Failed to create new chain with cars from job {lastJobInChain.ID}");
                         SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCarsForJobChain, true);
