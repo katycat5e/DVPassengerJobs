@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommuterChainController.cs" />
+    <Compile Include="SpecialConsistManager.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectDumper.cs" />
     <Compile Include="PassengerTransportChainController.cs" />
@@ -73,6 +74,7 @@
     <Compile Include="PlatformController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PassengerJobDefinitions.cs" />
+    <Compile Include="SpecialTrainConfig.cs" />
     <Compile Include="TrainCarsPerLogicTrack.cs" />
     <Compile Include="PlatformManager.cs" />
   </ItemGroup>
