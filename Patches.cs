@@ -127,8 +127,12 @@ namespace PassengerJobsMod
         const string EXPRESS_TYPE = "PE";
         const string COMMUTE_TYPE = "PC";
 
-        static bool Prefix( IdGenerator __instance, JobType jobType, StationsChainData jobStationsInfo, ref string __result, 
-            System.Random ___idRng, HashSet<string> ___existingJobIds )
+        private static readonly System.Random idRNG = new System.Random();
+
+        private static readonly HashSet<string> existingJobIds = 
+            AccessTools.Field(typeof(IdGenerator), "existingJobIds")?.GetValue(IdGenerator.Instance) as HashSet<string>;
+
+        static bool Prefix( IdGenerator __instance, JobType jobType, StationsChainData jobStationsInfo, ref string __result )
         {
             if( (jobType != PassJobType.Express) &&
                 (jobType != PassJobType.Commuter) )
@@ -143,27 +147,55 @@ namespace PassengerJobsMod
             }
 
             string typeStr = (jobType == PassJobType.Express) ? EXPRESS_TYPE : COMMUTE_TYPE;
+            string idStr = FindUnusedID(typeStr, yardId);
 
-            int idNum = ___idRng.Next(0, 100);
+            if( idStr != null )
+            {
+                __instance.RegisterJobId(idStr);
+                __result = idStr;
+            }
+            else
+            {
+                PassengerJobs.ModEntry.Logger.Warning($"Couldn't find free jobId for job type: {typeStr}! Using 0 for jobId number!");
+                __result = (yardId != null) ? $"{yardId}-{typeStr}-{0:D2}" : $"{typeStr}-{0:D2}";
+            }
+
+            return false;
+        }
+
+        private static string FindUnusedID( string typeStr, string yardId = null )
+        {
+            int idNum = idRNG.Next(0, 100);
 
             for( int attemptNum = 0; attemptNum < 99; attemptNum++ )
             {
                 string idStr = (yardId != null) ? $"{yardId}-{typeStr}-{idNum:D2}" : $"{typeStr}-{idNum:D2}";
 
-                if( !___existingJobIds.Contains(idStr) )
+                if( !existingJobIds.Contains(idStr) )
                 {
-                    __instance.RegisterJobId(idStr);
-                    __result = idStr;
-                    return false;
+                    return idStr;
                 }
 
                 idNum = (idNum >= 99) ? 0 : (idNum + 1);
             }
 
-            PassengerJobs.ModEntry.Logger.Warning($"Couldn't find free jobId for job type: {typeStr}! Using 0 for jobId number!");
-            __result = (yardId != null) ? $"{yardId}-{typeStr}-{0:D2}" : $"{typeStr}-{0:D2}";
+            return null;
+        }
 
-            return false;
+        public static string GetNamedExpressId( SpecialTrain special )
+        {
+            string idStr = FindUnusedID(special.IDAbbrev);
+
+            if( idStr != null )
+            {
+                IdGenerator.Instance.RegisterJobId(idStr);
+                return idStr;
+            }
+            else
+            {
+                PassengerJobs.ModEntry.Logger.Warning($"Couldn't find free jobId for express special: {special.IDAbbrev}! Using 0 for jobId number!");
+                return $"{special.IDAbbrev}-{0:D2}";
+            }
         }
     }
 

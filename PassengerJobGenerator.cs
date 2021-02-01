@@ -302,7 +302,7 @@ namespace PassengerJobsMod
         public PassengerTransportChainController GenerateNewTransportJob( TrainCarsPerLogicTrack consistInfo = null )
         {
             int nTotalCars;
-            List<TrainCarType> jobCarTypes;
+            List<TrainCarType> jobCarTypes = null;
             float trainLength;
             Track startSiding;
 
@@ -312,17 +312,8 @@ namespace PassengerJobsMod
                 // generate a consist
                 nTotalCars = Rand.Next(MIN_CARS_EXPRESS, MAX_CARS_EXPRESS + 1);
 
-                if( PassengerJobs.Settings.UniformConsists )
-                {
-                    TrainCarType carType = PassCarTypes.ChooseOne(Rand);
-                    jobCarTypes = Enumerable.Repeat(carType, nTotalCars).ToList();
-                }
-                else
-                {
-                    jobCarTypes = PassCarTypes.ChooseMany(Rand, nTotalCars);
-                }
-
-                trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
+                float singleCarLength = TrackOrg.GetCarTypeLength(TrainCarType.PassengerRed);
+                trainLength = (singleCarLength * nTotalCars) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
 
                 // pick start storage track
                 var emptyTracks = TrackOrg.FilterOutOccupiedTracks(StorageTracks);
@@ -373,6 +364,34 @@ namespace PassengerJobsMod
             {
                 //PassengerJobs.ModEntry.Logger.Log($"No available destination siding for new job at {Controller.stationInfo.Name}");
                 return null;
+            }
+
+            // we found a route :D
+            // if we're creating a new consist, check if it can be a special train
+            // let's try 2/3 chance of special train, 1/3 normal gen
+            SpecialTrain specialInfo = null;
+            if( consistInfo == null )
+            {
+                // 67% chance (if there is a special available)
+                if( (Rand.Next(3) > 0) && 
+                    (SpecialConsistManager.GetTrainForRoute(Controller.stationInfo.YardID, destStation.stationInfo.YardID) is SpecialTrain special) )
+                {
+                    specialInfo = special;
+                    jobCarTypes = Enumerable.Repeat(special.CarType, nTotalCars).ToList();
+                }
+                else
+                {
+                    // normal consist generation
+                    if( PassengerJobs.Settings.UniformConsists )
+                    {
+                        TrainCarType carType = PassCarTypes.ChooseOne(Rand);
+                        jobCarTypes = Enumerable.Repeat(carType, nTotalCars).ToList();
+                    }
+                    else
+                    {
+                        jobCarTypes = PassCarTypes.ChooseMany(Rand, nTotalCars);
+                    }
+                }
             }
 
             // Try to find an unloading platform
@@ -440,6 +459,7 @@ namespace PassengerJobsMod
                 return null;
             }
             jobDefinition.subType = PassJobType.Express;
+            jobDefinition.specialDefinition = specialInfo;
 
             // Setup any warehouse tasks
             if( loadingPlatform?.Initialized == true )

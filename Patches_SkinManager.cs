@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using UnityModManagerNet;
 
 namespace PassengerJobsMod
 {
@@ -37,6 +38,8 @@ namespace PassengerJobsMod
                     {
                         Enabled = true;
                         PassengerJobs.ModEntry.Logger.Log("SkinManager integration enabled");
+
+                        SearchForNamedTrains();
                     }
                 }
                 else
@@ -51,6 +54,25 @@ namespace PassengerJobsMod
             catch( Exception ex )
             {
                 PassengerJobs.ModEntry.Logger.Log($"Error while trying to connect with SkinManager:\n{ex.Message}");
+            }
+        }
+
+        private static void SearchForNamedTrains()
+        {
+            string smFolder = UnityModManager.FindMod("SkinManagerMod").Path;
+            string skinsFolderPath = Path.Combine(smFolder, "Skins");
+            var skinsDir = new DirectoryInfo(skinsFolderPath);
+
+            foreach( var passCarFolder in skinsDir.GetDirectories("CarPassenger*") )
+            {
+                foreach( var carSkinFolder in passCarFolder.GetDirectories() )
+                {
+                    string configPath = Path.Combine(carSkinFolder.FullName, "pj_specials.xml");
+                    if( File.Exists(configPath) )
+                    {
+                        SpecialConsistManager.LoadConfig(configPath);
+                    }
+                }
             }
         }
 

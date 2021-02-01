@@ -13,6 +13,8 @@ namespace PassengerJobsMod
 
         private static readonly XmlSerializer serializer = new XmlSerializer(typeof(SpecialTrainConfig));
 
+        public static readonly Dictionary<string, SpecialTrain> JobToSpecialMap = new Dictionary<string, SpecialTrain>();
+
         public static void LoadConfig( string path )
         {
             using( var fileStream = new FileStream(path, FileMode.Open) )
@@ -24,6 +26,7 @@ namespace PassengerJobsMod
                         if( train.CheckValidity(out string result) )
                         {
                             TrainDefinitions.Add(train);
+                            PassengerJobs.ModEntry.Logger.Log($"Found named train definition {train.Name}");
                         }
                         else
                         {

@@ -1,6 +1,7 @@
 ﻿using DV.Logic.Job;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Serialization;
 
 namespace PassengerJobsMod
@@ -13,8 +14,14 @@ namespace PassengerJobsMod
 
     public class SpecialTrain
     {
+        [XmlAttribute("Name")]
         public string Name = null;
+
+        [XmlAttribute("Skin")]
         public string Skin = null;
+
+        [XmlAttribute("IDAbbrev")]
+        public string IDAbbrev = null;
 
         [XmlAttribute("CarType")]
         public string CarTypeString = null;
@@ -76,7 +83,29 @@ namespace PassengerJobsMod
         public bool CheckValidity( out string message )
         {
             const StringComparison comp = StringComparison.CurrentCultureIgnoreCase;
-            message = null;
+
+            // must have a name
+            if( string.IsNullOrWhiteSpace(Name) )
+            {
+                message = "No name given";
+                return false;
+            }
+
+            // ensure we have a job ID abbreviation
+            if( string.IsNullOrWhiteSpace(IDAbbrev) )
+            {
+                // no ID specified, use name
+                string[] nameWords = Name.Split(' ');
+                if( nameWords.Length == 1 )
+                {
+                    IDAbbrev = $"P{char.ToUpper(nameWords[0][0])}";
+                }
+                else
+                {
+                    // first letter of each word in name
+                    IDAbbrev = string.Concat(nameWords.Select(word => char.ToUpper(word[0])));
+                }
+            }
 
             // cartype must be red, green, or blue
             if( "red".Equals(CarTypeString, comp) )
@@ -111,6 +140,7 @@ namespace PassengerJobsMod
                 return false;
             }
 
+            message = null;
             return true;
         }
     }
