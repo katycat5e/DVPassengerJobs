@@ -328,7 +328,7 @@ namespace PassengerJobsMod
             if( SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
             {
                 coverTitle = special.Name.ToUpper();
-                trainName = $"a {special.Name} express train";
+                trainName = $"a {special.Name} train";
             }
             else
             {
@@ -618,7 +618,7 @@ namespace PassengerJobsMod
             string trainName;
             if( (job.jobType == PassJobType.Express) && SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
             {
-                trainName = $"a {special.Name} express train";
+                trainName = $"a {special.Name} train";
             }
             else
             {

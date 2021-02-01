@@ -441,7 +441,7 @@ namespace PassengerJobsMod
             {
                 jobDefinition = PopulateTransportJobAndSpawn(
                     chainController, Controller.logicStation, startSiding, destSiding,
-                    jobCarTypes, chainData, bonusLimit, transportPayment, true);
+                    jobCarTypes, chainData, bonusLimit, transportPayment, true, specialInfo);
             }
             else
             {
@@ -514,7 +514,7 @@ namespace PassengerJobsMod
         private static StaticPassengerJobDefinition PopulateTransportJobAndSpawn(
             JobChainController chainController, Station startStation,
             Track startTrack, Track destTrack, List<TrainCarType> carTypes,
-            StationsChainData chainData, float timeLimit, float initialPay, bool unifyConsist = false )
+            StationsChainData chainData, float timeLimit, float initialPay, bool unifyConsist = false, SpecialTrain special = null )
         {
             // Spawn the cars
             RailTrack startRT = SingletonBehaviour<LogicController>.Instance.LogicToRailTrack[startTrack];
@@ -531,7 +531,11 @@ namespace PassengerJobsMod
                 return null;
             }
 
-            if( unifyConsist && SkinManager_Patch.Enabled )
+            if( (special != null) && SkinManager_Patch.Enabled )
+            {
+                SkinManager_Patch.SetConsistSkin(spawnedCars, special.Skin);
+            }
+            else if( unifyConsist && SkinManager_Patch.Enabled )
             {
                 SkinManager_Patch.UnifyConsist(spawnedCars);
             }

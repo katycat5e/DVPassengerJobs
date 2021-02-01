@@ -91,5 +91,14 @@ namespace PassengerJobsMod
                 }
             }
         }
+
+        public static void SetConsistSkin( List<TrainCar> consist, string skinName )
+        {
+            foreach( TrainCar car in consist )
+            {
+                CarStates[car.CarGUID] = skinName;
+                SM_ReplaceTexture(car);
+            }
+        }
     }
 }

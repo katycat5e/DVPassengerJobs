@@ -17,27 +17,35 @@ namespace PassengerJobsMod
 
         public static void LoadConfig( string path )
         {
-            using( var fileStream = new FileStream(path, FileMode.Open) )
+            try
             {
-                if( serializer.Deserialize(fileStream) is SpecialTrainConfig fileData )
+                using( var fileStream = new FileStream(path, FileMode.Open) )
                 {
-                    foreach( var train in fileData.Trains )
+                    if( serializer.Deserialize(fileStream) is SpecialTrainConfig fileData )
                     {
-                        if( train.CheckValidity(out string result) )
+                        foreach( var train in fileData.Trains )
                         {
-                            TrainDefinitions.Add(train);
-                            PassengerJobs.ModEntry.Logger.Log($"Found named train definition {train.Name}");
-                        }
-                        else
-                        {
-                            PassengerJobs.ModEntry.Logger.Warning($"Error in special train config: {result}, in {path}");
+                            if( train.CheckValidity(out string result) )
+                            {
+                                TrainDefinitions.Add(train);
+                                PassengerJobs.ModEntry.Logger.Log($"Found named train definition {train.Name}");
+                            }
+                            else
+                            {
+                                PassengerJobs.ModEntry.Logger.Warning($"Error in special train config: {result}, in {path}");
+                            }
                         }
                     }
+                    else
+                    {
+                        PassengerJobs.ModEntry.Logger.Warning("Failed to load special train config " + path);
+                    }
                 }
-                else
-                {
-                    PassengerJobs.ModEntry.Logger.Warning("Failed to load special train config " + path);
-                }
+            }
+            catch( Exception ex )
+            {
+                PassengerJobs.ModEntry.Logger.Warning("Failed to load special train config " + path);
+                PassengerJobs.ModEntry.Logger.Warning(ex.Message);
             }
         }
 
