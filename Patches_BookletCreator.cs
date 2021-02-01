@@ -175,14 +175,14 @@ namespace PassengerJobsMod
         public static readonly GetShuntingInfoDelegate GetShuntingDropOffsText =
             AccessTools.Method("BookletCreator:GetShuntingDropOffsText")?.CreateDelegate(typeof(GetShuntingInfoDelegate)) as GetShuntingInfoDelegate;
 
-        public static TemplatePaperData CreateTransportDescriptionData( Job job, List<Car> jobCars, List<Tuple<TrainCarType, string>> carsInfo, int pageNum = 0, int totalPages = 0 )
+        public static TemplatePaperData CreateTransportDescriptionData( Job job, string trainName, List<Car> jobCars, List<Tuple<TrainCarType, string>> carsInfo, int pageNum = 0, int totalPages = 0 )
         {
             string jobTitle = (job.jobType == PassJobType.Express) ? EXPRESS_JOB_TITLE : COMMUTE_JOB_TITLE;
 
             string description;
             if( job.jobType == PassJobType.Express )
             {
-                description = "Transport a regional express train";
+                description = $"Transport {trainName}";
 
                 if( PassengerJobs.Settings.UseCustomWages )
                 {
@@ -322,11 +322,25 @@ namespace PassengerJobsMod
                 return pages;
             }
 
+            // check for speciality
+            string coverTitle;
+            string trainName;
+            if( SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
+            {
+                coverTitle = special.Name.ToUpper();
+                trainName = $"a {special.Name} train";
+            }
+            else
+            {
+                coverTitle = PassBookletUtil.EXPRESS_JOB_TITLE;
+                trainName = "a regional express train";
+            }
+
             List<Tuple<TrainCarType, string>> carsInfo;
             carsInfo = PassBookletUtil.GetCarsInfo(transportTask.cars);
 
             // Cover page
-            var coverPage = new CoverPageTemplatePaperData(job.ID, PassBookletUtil.EXPRESS_JOB_TITLE, pageNum.ToString(), totalPages.ToString());
+            var coverPage = new CoverPageTemplatePaperData(job.ID, coverTitle, pageNum.ToString(), totalPages.ToString());
             pages.Add(coverPage);
             pageNum += 1;
 
@@ -334,7 +348,7 @@ namespace PassengerJobsMod
             StationInfo startStation = PassBookletUtil.ExtractStationFromId(job.chainData.chainOriginYardId);
             StationInfo endStation = PassBookletUtil.ExtractStationFromId(job.chainData.chainDestinationYardId);
 
-            var descriptionPage = PassBookletUtil.CreateTransportDescriptionData(job, transportTask.cars, carsInfo, pageNum, totalPages);
+            var descriptionPage = PassBookletUtil.CreateTransportDescriptionData(job, trainName, transportTask.cars, carsInfo, pageNum, totalPages);
             pages.Add(descriptionPage);
             pageNum += 1;
 
@@ -483,7 +497,7 @@ namespace PassengerJobsMod
             pageNum += 1;
 
             // Description page
-            var descriptionPage = PassBookletUtil.CreateTransportDescriptionData(job, transportTask.cars, carsInfo, pageNum, totalPages);
+            var descriptionPage = PassBookletUtil.CreateTransportDescriptionData(job, PassBookletUtil.COMMUTE_JOB_TITLE, transportTask.cars, carsInfo, pageNum, totalPages);
             pages.Add(descriptionPage);
             pageNum += 1;
 
@@ -600,9 +614,21 @@ namespace PassengerJobsMod
                 startTask = startTask.nestedTasks.First().GetTaskData();
             }
 
+            // check for special
+            string trainName;
+            if( (job.jobType == PassJobType.Express) && SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
+            {
+                trainName = $"a {special.Name} train";
+            }
+            else
+            {
+                trainName = "a regional express train";
+            }
+            // if jobtype is commuter then the name is ignored
+
             carsInfo = PassBookletUtil.GetCarsInfo(startTask.cars);
 
-            TemplatePaperData overviewPage = PassBookletUtil.CreateTransportDescriptionData(job, startTask.cars, carsInfo);
+            TemplatePaperData overviewPage = PassBookletUtil.CreateTransportDescriptionData(job, trainName, startTask.cars, carsInfo);
             
             __result = new List<TemplatePaperData>() { overviewPage };
 

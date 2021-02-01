@@ -310,6 +310,13 @@ namespace PassengerJobsMod
                 }
             }
 
+            // Named train
+            SpecialTrain special = null;
+            if( !string.IsNullOrWhiteSpace(jobData.specialName) )
+            {
+                special = SpecialConsistManager.TrainDefinitions.Find(train => string.Equals(train.Name, jobData.specialName));
+            }
+
             StaticPassengerJobDefinition jobDefinition = jobChainGO.AddComponent<StaticPassengerJobDefinition>();
             var chainData = new StationsChainData(jobData.originStationId, jobData.destinationStationId);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);
@@ -320,6 +327,7 @@ namespace PassengerJobsMod
             jobDefinition.trainCarsToTransport = consist;
             jobDefinition.loadMachine = loadMachine;
             jobDefinition.unloadMachine = unloadMachine;
+            jobDefinition.specialDefinition = special;
             
             return jobDefinition;
         }

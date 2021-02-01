@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using HarmonyLib;
+using UnityModManagerNet;
 
 namespace PassengerJobsMod
 {
@@ -37,6 +38,8 @@ namespace PassengerJobsMod
                     {
                         Enabled = true;
                         PassengerJobs.ModEntry.Logger.Log("SkinManager integration enabled");
+
+                        SearchForNamedTrains();
                     }
                 }
                 else
@@ -54,6 +57,25 @@ namespace PassengerJobsMod
             }
         }
 
+        private static void SearchForNamedTrains()
+        {
+            string smFolder = UnityModManager.FindMod("SkinManagerMod").Path;
+            string skinsFolderPath = Path.Combine(smFolder, "Skins");
+            var skinsDir = new DirectoryInfo(skinsFolderPath);
+
+            foreach( var passCarFolder in skinsDir.GetDirectories("CarPassenger*") )
+            {
+                foreach( var carSkinFolder in passCarFolder.GetDirectories() )
+                {
+                    string configPath = Path.Combine(carSkinFolder.FullName, "pj_specials.xml");
+                    if( File.Exists(configPath) )
+                    {
+                        SpecialConsistManager.LoadConfig(configPath);
+                    }
+                }
+            }
+        }
+
         public static void UnifyConsist( List<TrainCar> consist )
         {
             if( consist.Count <= 1 ) return;
@@ -67,6 +89,15 @@ namespace PassengerJobsMod
                     CarStates[consist[i].CarGUID] = skinName;
                     SM_ReplaceTexture(consist[i]);
                 }
+            }
+        }
+
+        public static void SetConsistSkin( List<TrainCar> consist, string skinName )
+        {
+            foreach( TrainCar car in consist )
+            {
+                CarStates[car.CarGUID] = skinName;
+                SM_ReplaceTexture(car);
             }
         }
     }

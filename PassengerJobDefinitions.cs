@@ -16,6 +16,8 @@ namespace PassengerJobsMod
         public WarehouseMachine loadMachine = null;
         public WarehouseMachine unloadMachine = null;
 
+        public SpecialTrain specialDefinition = null;
+
         public override JobDefinitionDataBase GetJobDefinitionSaveData()
         {
             string[] guidsFromCars = GetGuidsFromCars(trainCarsToTransport);
@@ -27,7 +29,7 @@ namespace PassengerJobsMod
             return new PassengerJobDefinitionData(
                 timeLimitForJob, initialWage, logicStation.ID, chainData.chainOriginYardId, chainData.chainDestinationYardId, 
                 (int)requiredLicenses, guidsFromCars, startingTrack.ID.FullID, destinationTrack.ID.FullID, (int)subType,
-                loadMachine?.WarehouseTrack.ID.FullID, unloadMachine?.WarehouseTrack.ID.FullID);
+                loadMachine?.WarehouseTrack.ID.FullID, unloadMachine?.WarehouseTrack.ID.FullID, specialDefinition?.Name);
         }
 
         public override List<TrackReservation> GetRequiredTrackReservations()
@@ -105,7 +107,20 @@ namespace PassengerJobsMod
 
             Task superTask = new SequentialTasks(taskList);
 
+            // check if we should generate a special job ID
+            if( string.IsNullOrEmpty(forcedJobId) && (specialDefinition != null) )
+            {
+                forcedJobId = IG_GenerateJobId_Patch.GetNamedExpressId(specialDefinition);
+            }
+
             job = new Job(superTask, subType, jobTimeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
+
+            // track the job if it's a special, for booklet info etc
+            if( specialDefinition != null )
+            {
+                SpecialConsistManager.JobToSpecialMap.Add(job.ID, specialDefinition);
+            }
+
             jobOriginStation.AddJobToStation(job);
         }
     }
@@ -120,9 +135,11 @@ namespace PassengerJobsMod
         public string loadingTrackId;
         public string unloadingTrackId;
 
+        public string specialName;
+
         public PassengerJobDefinitionData( 
             float timeLimitForJob, float initialWage, string stationId, string originStationId, string destinationStationId, int requiredLicenses,
-            string[] transportCarGuids, string startTrackId, string destTrackId, int jobType, string loadTrack, string unloadTrack) :
+            string[] transportCarGuids, string startTrackId, string destTrackId, int jobType, string loadTrack, string unloadTrack, string special) :
             base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationId, requiredLicenses)
         {
             trainCarGuids = transportCarGuids;
@@ -132,6 +149,8 @@ namespace PassengerJobsMod
 
             loadingTrackId = loadTrack;
             unloadingTrackId = unloadTrack;
+
+            specialName = special;
         }
     }
 }
