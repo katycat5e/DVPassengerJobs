@@ -231,7 +231,7 @@ namespace PassengerJobsMod
                     dummyObj.transform.SetParent(station.gameObject.transform, false);
 
                     def.Controller = dummyObj.AddComponent<PlatformController>();
-                    def.Controller.Initialize(pTrack, def.Name);
+                    def.Controller.Initialize(pTrack, def.Name, station.stationInfo.YardID);
 
                     TrackToPlatformMap.Add(def.PlatformTrack.ID.FullID, def);
 
@@ -255,7 +255,7 @@ namespace PassengerJobsMod
 
             if( bundle != null )
             {
-                SignPrefab = bundle.LoadAsset<GameObject>("Assets/StationSign.prefab");
+                SignPrefab = bundle.LoadAsset<GameObject>("Assets/FlatscreenSign.prefab");
                 if( SignPrefab == null )
                 {
                     PassengerJobs.ModEntry.Logger.Error("Failed to load platform sign prefab from asset bundle");

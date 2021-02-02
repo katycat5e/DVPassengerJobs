@@ -366,6 +366,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: StationSign
       objectReference: {fileID: 0}
+    - target: {fileID: 2696847424892297707, guid: 58ef585058eec6b4eab33c203fc29b85,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2831437695899747593, guid: 58ef585058eec6b4eab33c203fc29b85,
         type: 3}
       propertyPath: m_Mesh
@@ -373,6 +378,95 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 58ef585058eec6b4eab33c203fc29b85, type: 3}
+--- !u!1001 &3262367549668674501
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1074654948451861424, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 1402747107902579838, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_Name
+      value: FlatscreenSign
+      objectReference: {fileID: 0}
+    - target: {fileID: 5717261319088615845, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 6149970142529424308, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 7609252231431941227, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9177821105688206499, guid: b7cb2068d718e59409e138adedd29c74,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b7cb2068d718e59409e138adedd29c74, type: 3}
 --- !u!1001 &5455085841605511761
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -384,6 +478,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: SmolStationSign
+      objectReference: {fileID: 0}
+    - target: {fileID: 2418951410210749305, guid: af4b59f26dcdf734080f8bb7ef9fd17a,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3356926466844635645, guid: af4b59f26dcdf734080f8bb7ef9fd17a,
         type: 3}
