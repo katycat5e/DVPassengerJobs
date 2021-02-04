@@ -27,10 +27,15 @@ namespace PassengerJobsMod
         public WarehouseMachine LogicMachine { get; protected set; }
         public RailTrack PlatformTrack { get; protected set; }
         public string PlatformName { get; protected set; }
+        public string YardId { get; protected set; }
 
         public List<GameObject> SignObjects = new List<GameObject>();
-        public List<TextMeshPro> Signs = new List<TextMeshPro>();
         public bool SignsActive = false;
+
+        public List<TextMeshPro> TrainPanels = new List<TextMeshPro>();
+        public List<TextMeshPro> InfoPanels = null;
+        public List<TextMeshPro> JobIdPanels = null;
+        public List<TextMeshPro> DestPanels = null;
 
         private Coroutine DelayedLoadUnloadRoutine = null;
         private Coroutine MessageDequeueRoutine = null;
@@ -46,7 +51,7 @@ namespace PassengerJobsMod
 
         private readonly Queue<string> StatusMessages = new Queue<string>();
 
-        public void Initialize( RailTrack track, string name )
+        public void Initialize( RailTrack track, string name, string yardId )
         {
             if( LoadCompletedSound == null )
             {
@@ -57,6 +62,7 @@ namespace PassengerJobsMod
             PlatformTrack = track;
             LogicMachine = new WarehouseMachine(track.logicTrack, SUPPORTED_CARGO);
             PlatformName = name;
+            YardId = yardId;
             enabled = true;
         }
 
@@ -66,17 +72,38 @@ namespace PassengerJobsMod
 
             SignObjects.Add(signObject);
 
+            // Job displays
             if( signObject.transform.Find("FrontText")?.GetComponent<TextMeshPro>() is TextMeshPro frontText )
             {
-                Signs.Add(frontText);
+                TrainPanels.Add(frontText);
             }
             else failed = true;
 
             if( signObject.transform.Find("RearText")?.GetComponent<TextMeshPro>() is TextMeshPro rearText )
             {
-                Signs.Add(rearText);
+                TrainPanels.Add(rearText);
             }
             else failed = true;
+
+            // Search for station info/time components of flatscreen sign
+            string trackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
+            if( signObject.transform.Find("FrontInfo")?.GetComponent<TextMeshPro>() is TextMeshPro frontInfo )
+            {
+                if( InfoPanels == null ) InfoPanels = new List<TextMeshPro>();
+                InfoPanels.Add(frontInfo);
+
+                frontInfo.text = $"{YardId}\n{trackId}\n12:00";
+            }
+
+            if( signObject.transform.Find("RearInfo")?.GetComponent<TextMeshPro>() is TextMeshPro rearInfo )
+            {
+                if( InfoPanels == null ) InfoPanels = new List<TextMeshPro>();
+                InfoPanels.Add(rearInfo);
+
+                rearInfo.text = $"{YardId}\n{trackId}\n12:00";
+            }
+
+            // Search for 
 
             signObject.SetActive(SignsActive);
 
@@ -85,9 +112,21 @@ namespace PassengerJobsMod
 
         public void SetSignsText( string text )
         {
-            foreach( TextMeshPro tmp in Signs )
+            foreach( TextMeshPro tmp in TrainPanels )
             {
                 tmp.text = text;
+            }
+        }
+
+        public void UpdateInfoText( string timeString )
+        {
+            if( InfoPanels == null ) return;
+
+            string trackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
+            string fullText = $"{YardId}\n{trackId}\n{timeString}";
+            foreach( TextMeshPro tmp in InfoPanels )
+            {
+                tmp.text = fullText;
             }
         }
 
@@ -236,13 +275,22 @@ namespace PassengerJobsMod
 
                             WarehouseTask task = tasks[i];
 
-                            char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
+                            if( SpecialConsistManager.JobToSpecialMap.TryGetValue(tasks[i].Job.ID, out SpecialTrain special) )
+                            {
+                                // Named Train
+                                sb.Append(special.Name);
+                            }
+                            else
+                            {
+                                // Ordinary boring train
+                                char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
 
-                            string jobId = tasks[i].Job.ID;
-                            int lastDashIdx = jobId.LastIndexOf('-');
-                            string trainNum = jobId.Substring(lastDashIdx + 1);
+                                string jobId = tasks[i].Job.ID;
+                                int lastDashIdx = jobId.LastIndexOf('-');
+                                string trainNum = jobId.Substring(lastDashIdx + 1);
 
-                            sb.Append($"Train {jobTypeChar}{trainNum}");
+                                sb.Append($"Train {jobTypeChar}{trainNum}");
+                            }
 
                             if( task.warehouseTaskType == WarehouseTaskType.Loading )
                             {

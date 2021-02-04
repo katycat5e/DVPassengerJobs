@@ -1,9 +1,9 @@
 ManifestFileVersion: 0
-CRC: 2045460726
+CRC: 1187346873
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: f19dc0d29fbf5e281a519e33ee9215ff
+    Hash: 2cd77bc1618604fc21fc601ac7c0d17e
   TypeTreeHash:
     serializedVersion: 2
     Hash: 4b1f30d4b4d10f1df0369804ba5c6a3c
@@ -41,10 +41,21 @@ ClassTypes:
   Script: {instanceID: 0}
 Assets:
 - Assets/StationSign.prefab
+- Assets/LillyDisplay_s.png
 - Assets/SignBaseMat_d.png
+- Assets/Flatscreen_n.png
+- Assets/LillyDisplayMat.mat
+- Assets/Flatscreen_d.png
+- Assets/LillyDisplay_n.png
 - Assets/SmolStationSign.prefab
+- Assets/FlatscreenMat.mat
 - Assets/SignBaseMat_s.png
+- Assets/LillyDisplay_d.png
 - Assets/SignHousingMat.mat
+- Assets/Flatscreen_s.png
+- Assets/FlatscreenSign.prefab
+- Assets/Flatscreen_e.png
+- Assets/LillySign.prefab
 - Assets/SignBaseMat_n.png
 - Assets/LiberationSans SDF.asset
 Dependencies: []
