@@ -54,6 +54,8 @@ namespace PassengerJobsMod
                 return false;
             }
 
+            PlatformManager.TryLoadSignLocations();
+
             // Initialize settings
             Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
             ModEntry.OnGUI = DrawGUI;

@@ -343,6 +343,12 @@ namespace PassengerJobsMod
                 }
 
                 LillySignPrefab = bundle.LoadAsset<GameObject>("Assets/LillySign.prefab");
+                if( LillySignPrefab == null )
+                {
+                    PassengerJobs.ModEntry.Logger.Error("Failed to load small platform sign prefab from asset bundle");
+                    SignLoadFailed = true;
+                    return false;
+                }
             }
             else
             {
@@ -365,7 +371,22 @@ namespace PassengerJobsMod
             {
                 foreach( SignDefinition sign in signList )
                 {
-                    GameObject proto = (sign.SignType == StationSignType.Small) ? SmallSignPrefab : SignPrefab;
+                    GameObject proto;
+                    switch( sign.SignType )
+                    {
+                        case StationSignType.Small:
+                            proto = SmallSignPrefab;
+                            break;
+
+                        case StationSignType.Lillys:
+                            proto = LillySignPrefab;
+                            break;
+
+                        default:
+                        case StationSignType.Flatscreen:
+                            proto = SignPrefab;
+                            break;
+                    }
 
                     Vector3 relativePos = sign.Position + WorldMover.currentMove;
 
@@ -374,6 +395,12 @@ namespace PassengerJobsMod
                     {
                         SingletonBehaviour<WorldMover>.Instance.AddObjectToMove(newObj.transform);
                         controller.AddSign(newObj);
+
+                        PassengerJobs.ModEntry.Logger.Log($"Created sign {sign.SignType} at {trackId}");
+                    }
+                    else
+                    {
+                        PassengerJobs.ModEntry.Logger.Warning($"Failed to create sign {sign.SignType} at {trackId}");
                     }
                 }
             }

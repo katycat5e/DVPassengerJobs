@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 1187346873
+CRC: 2081269066
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 2cd77bc1618604fc21fc601ac7c0d17e
+    Hash: d92c1e2a3f15cdfeae144d5805bde7d2
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 4b1f30d4b4d10f1df0369804ba5c6a3c
+    Hash: f39e91e5e682ef3f7d98ac55b8a9e6d1
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -28,6 +28,8 @@ ClassTypes:
 - Class: 65
   Script: {instanceID: 0}
 - Class: 114
+  Script: {fileID: -2071393119, guid: 3c9aeda3c7af4634699ec24c52fe811f, type: 3}
+- Class: 114
   Script: {fileID: 11500000, guid: 71c1514a6bd24e1e882cebbe1904ce04, type: 3}
 - Class: 114
   Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
@@ -40,7 +42,6 @@ ClassTypes:
 - Class: 224
   Script: {instanceID: 0}
 Assets:
-- Assets/StationSign.prefab
 - Assets/LillyDisplay_s.png
 - Assets/SignBaseMat_d.png
 - Assets/Flatscreen_n.png

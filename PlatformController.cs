@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using DV.Logic.Job;
 using HarmonyLib;
 using TMPro;
@@ -32,10 +31,7 @@ namespace PassengerJobsMod
         public List<GameObject> SignObjects = new List<GameObject>();
         public bool SignsActive = false;
 
-        public List<TextMeshPro> TrainPanels = new List<TextMeshPro>();
-        public List<TextMeshPro> InfoPanels = null;
-        public List<TextMeshPro> JobIdPanels = null;
-        public List<TextMeshPro> DestPanels = null;
+        public List<SignPrinter> DisplayComponents = new List<SignPrinter>();
 
         private Coroutine DelayedLoadUnloadRoutine = null;
         private Coroutine MessageDequeueRoutine = null;
@@ -68,65 +64,27 @@ namespace PassengerJobsMod
 
         public void AddSign( GameObject signObject )
         {
-            bool failed = false;
-
             SignObjects.Add(signObject);
 
             // Job displays
-            if( signObject.transform.Find("FrontText")?.GetComponent<TextMeshPro>() is TextMeshPro frontText )
+            if( signObject.GetComponent<SignPrinter>() is SignPrinter newDisplay )
             {
-                TrainPanels.Add(frontText);
+                DisplayComponents.Add(newDisplay);
+                newDisplay.UpdateDisplay(new SignData(PlatformTrack.logicTrack.ID.TrackPartOnly, "12:00"));
             }
-            else failed = true;
-
-            if( signObject.transform.Find("RearText")?.GetComponent<TextMeshPro>() is TextMeshPro rearText )
+            else
             {
-                TrainPanels.Add(rearText);
+                PassengerJobs.ModEntry.Logger.Warning("Couldn't find SignPrinter component in station sign object");
             }
-            else failed = true;
-
-            // Search for station info/time components of flatscreen sign
-            string trackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
-            if( signObject.transform.Find("FrontInfo")?.GetComponent<TextMeshPro>() is TextMeshPro frontInfo )
-            {
-                if( InfoPanels == null ) InfoPanels = new List<TextMeshPro>();
-                InfoPanels.Add(frontInfo);
-
-                frontInfo.text = $"{YardId}\n{trackId}\n12:00";
-            }
-
-            if( signObject.transform.Find("RearInfo")?.GetComponent<TextMeshPro>() is TextMeshPro rearInfo )
-            {
-                if( InfoPanels == null ) InfoPanels = new List<TextMeshPro>();
-                InfoPanels.Add(rearInfo);
-
-                rearInfo.text = $"{YardId}\n{trackId}\n12:00";
-            }
-
-            // Search for 
 
             signObject.SetActive(SignsActive);
-
-            if( failed ) PassengerJobs.ModEntry.Logger.Warning("Couldn't find 1 or more text component in station sign object");
         }
 
-        public void SetSignsText( string text )
+        public void UpdateSignsText( SignData data )
         {
-            foreach( TextMeshPro tmp in TrainPanels )
+            foreach( var printer in DisplayComponents )
             {
-                tmp.text = text;
-            }
-        }
-
-        public void UpdateInfoText( string timeString )
-        {
-            if( InfoPanels == null ) return;
-
-            string trackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
-            string fullText = $"{YardId}\n{trackId}\n{timeString}";
-            foreach( TextMeshPro tmp in InfoPanels )
-            {
-                tmp.text = fullText;
+                printer.UpdateDisplay(data);
             }
         }
 
@@ -267,47 +225,55 @@ namespace PassengerJobsMod
                 {
                     if( CurrentTasksField.GetValue(LogicMachine) is List<WarehouseTask> tasks )
                     {
-                        var sb = new StringBuilder();
-                        bool first = true;
-                        for( int i = 0; (i < tasks.Count) && (i < 2); i++ )
+                        var signData = new SignData(PlatformTrack.logicTrack.ID.TrackPartOnly, "12:00");
+
+                        //var sb = new StringBuilder();
+                        //bool first = true;
+                        if( tasks.Count > 0 )
                         {
-                            if( !first ) sb.AppendLine();
+                            int nJobs = (tasks.Count >= 2) ? 2 : 1;
+                            signData.Jobs = new SignData.JobInfo[nJobs];
 
-                            WarehouseTask task = tasks[i];
-
-                            if( SpecialConsistManager.JobToSpecialMap.TryGetValue(tasks[i].Job.ID, out SpecialTrain special) )
+                            for( int i = 0; i < nJobs; i++ )
                             {
-                                // Named Train
-                                sb.Append(special.Name);
-                            }
-                            else
-                            {
-                                // Ordinary boring train
-                                char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
+                                WarehouseTask task = tasks[i];
+                                SignData.JobInfo jobInfo = signData.Jobs[i];
 
-                                string jobId = tasks[i].Job.ID;
-                                int lastDashIdx = jobId.LastIndexOf('-');
-                                string trainNum = jobId.Substring(lastDashIdx + 1);
+                                jobInfo.ID = task.Job.ID;
 
-                                sb.Append($"Train {jobTypeChar}{trainNum}");
-                            }
+                                if( SpecialConsistManager.JobToSpecialMap.TryGetValue(task.Job.ID, out SpecialTrain special) )
+                                {
+                                    // Named Train
+                                    jobInfo.Name = special.Name;
+                                }
+                                else
+                                {
+                                    // Ordinary boring train
+                                    char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
 
-                            if( task.warehouseTaskType == WarehouseTaskType.Loading )
-                            {
-                                string dest = task.Job.chainData.chainDestinationYardId;
-                                sb.Append($" to {dest}");
-                            }
-                            else
-                            {
-                                // unloading
-                                string src = task.Job.chainData.chainOriginYardId;
-                                sb.Append($" from {src}");
-                            }
+                                    string jobId = tasks[i].Job.ID;
+                                    int lastDashIdx = jobId.LastIndexOf('-');
+                                    string trainNum = jobId.Substring(lastDashIdx + 1);
 
-                            first = false;
+                                    jobInfo.Name = $"Train {jobTypeChar}{trainNum}";
+                                }
+
+                                if( task.warehouseTaskType == WarehouseTaskType.Loading )
+                                {
+                                    // This is an outgoing train
+                                    jobInfo.Incoming = false;
+                                    jobInfo.Dest = task.Job.chainData.chainDestinationYardId;
+                                }
+                                else
+                                {
+                                    // unloading
+                                    jobInfo.Incoming = true;
+                                    jobInfo.Src = task.Job.chainData.chainOriginYardId;
+                                }
+                            }
                         }
 
-                        SetSignsText(sb.ToString());
+                        UpdateSignsText(signData);
                     }
                 }
             }

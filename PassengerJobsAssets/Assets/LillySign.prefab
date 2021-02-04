@@ -1126,6 +1126,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2602679404373424562}
+  - component: {fileID: 3023738878319834735}
   m_Layer: 0
   m_Name: LillySign
   m_TagString: Untagged
@@ -1154,6 +1155,31 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3023738878319834735
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8853456489780487494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -2071393119, guid: 3c9aeda3c7af4634699ec24c52fe811f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Signs:
+  - TextRenderer: {fileID: 7011187974031277499}
+    Type: 0
+  - TextRenderer: {fileID: 3017565899610802920}
+    Type: 0
+  - TextRenderer: {fileID: 5278999030839018261}
+    Type: 3
+  - TextRenderer: {fileID: 9075261906999383723}
+    Type: 3
+  - TextRenderer: {fileID: 5519892265631997666}
+    Type: 1
+  - TextRenderer: {fileID: 5063561813645388608}
+    Type: 1
 --- !u!1 &8909788623214649387
 GameObject:
   m_ObjectHideFlags: 0
