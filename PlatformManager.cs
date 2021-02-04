@@ -1,10 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using DV.Logic.Job;
-using HarmonyLib;
-using TMPro;
 using UnityEngine;
 
 namespace PassengerJobsMod
@@ -27,8 +25,9 @@ namespace PassengerJobsMod
 
     enum StationSignType
     {
-        Normal,
-        Small
+        Flatscreen,
+        Small,
+        Lillys
     }
 
     class SignDefinition
@@ -84,18 +83,19 @@ namespace PassengerJobsMod
 
         private static readonly Dictionary<string, int> NextPlatformChoice = new Dictionary<string, int>();
 
-        public static readonly Dictionary<string, SignDefinition[]> SignLocations = new Dictionary<string, SignDefinition[]>()
+        public static readonly Dictionary<string, List<SignDefinition>> SignLocations = new Dictionary<string, List<SignDefinition>>();
+        /*
         {
             { "CSW-B6LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 1685.22f, 129.07f, 5340.07f, 0.686f, 0.728f), // building side
-                    new SignDefinition(StationSignType.Normal, 1793.59f, 129.07f, 5455.05f, 0.686f, 0.728f) // exit side
+                    new SignDefinition( StationSignType.Flatscreen, 1685.22f, 129.07f, 5340.07f, 0.686f, 0.728f), // building side
+                    new SignDefinition( StationSignType.Flatscreen, 1793.59f, 129.07f, 5455.05f, 0.686f, 0.728f) // exit side
                 }
             },
             { "CSW-B5LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 1688.43f, 129.07f, 5337.05f, -0.686f, -0.728f), // building side
-                    new SignDefinition(StationSignType.Normal, 1796.80f, 129.07f, 5452.03f, -0.686f, -0.728f) // exit side
+                    new SignDefinition(StationSignType.Flatscreen, 1688.43f, 129.07f, 5337.05f, -0.686f, -0.728f), // building side
+                    new SignDefinition(StationSignType.Flatscreen, 1796.80f, 129.07f, 5452.03f, -0.686f, -0.728f) // exit side
                 }
             },
             { "CSW-B4LP", new SignDefinition[]
@@ -113,50 +113,121 @@ namespace PassengerJobsMod
             // MF
             { "MF-D1LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 2291.08f, 165.63f, 10931.79f, 0.028f, 1.0f), // north
-                    new SignDefinition(StationSignType.Normal, 2286.80f, 165.63f, 10781.85f, 0.028f, 1.0f) // south
+                    new SignDefinition(StationSignType.Flatscreen, 2291.08f, 165.63f, 10931.79f, 0.028f, 1.0f), // north
+                    new SignDefinition(StationSignType.Flatscreen, 2286.80f, 165.63f, 10781.85f, 0.028f, 1.0f) // south
                 }
             },
             { "MF-D2LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 2295.48f, 165.63f, 10931.67f, -0.028f, -1.0f), // north
-                    new SignDefinition(StationSignType.Normal, 2291.20f, 165.63f, 10781.73f, -0.028f, -1.0f) // south
+                    new SignDefinition(StationSignType.Flatscreen, 2295.48f, 165.63f, 10931.67f, -0.028f, -1.0f), // north
+                    new SignDefinition(StationSignType.Flatscreen, 2291.20f, 165.63f, 10781.73f, -0.028f, -1.0f) // south
                 }
             },
             // FF
             { "FF-B1LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 9485.47f, 125.65f, 13413.54f, -0.359f, -0.934f), // south
-                    new SignDefinition(StationSignType.Normal, 9496.94f, 125.65f, 13443.41f, -0.359f, -0.934f) // north
+                    new SignDefinition(StationSignType.Flatscreen, 9485.47f, 125.65f, 13413.54f, -0.359f, -0.934f), // south
+                    new SignDefinition(StationSignType.Flatscreen, 9496.94f, 125.65f, 13443.41f, -0.359f, -0.934f) // north
                 }
             },
             { "FF-B2LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 9481.36f, 125.65f, 13415.12f, 0.359f, 0.934f), // south
-                    new SignDefinition(StationSignType.Normal, 9492.83f, 125.65f, 13444.99f, 0.359f, 0.934f) // north
+                    new SignDefinition(StationSignType.Flatscreen, 9481.36f, 125.65f, 13415.12f, 0.359f, 0.934f), // south
+                    new SignDefinition(StationSignType.Flatscreen, 9492.83f, 125.65f, 13444.99f, 0.359f, 0.934f) // north
                 }
             },
             // HB
             { "HB-F1LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 13624.38f, 119.89f, 3554.24f, 0.999f, -0.05f), // west
-                    new SignDefinition(StationSignType.Normal, 13490.56f, 119.89f, 3561.14f, 0.999f, -0.05f) // east
+                    new SignDefinition(StationSignType.Flatscreen, 13624.38f, 119.89f, 3554.24f, 0.999f, -0.05f), // west
+                    new SignDefinition(StationSignType.Flatscreen, 13490.56f, 119.89f, 3561.14f, 0.999f, -0.05f) // east
                 }
             },
             { "GF-C3LP", new SignDefinition[]
                 {
-                    new SignDefinition(StationSignType.Normal, 13079.73f, 146.55f, 11136.85f, 0.88f, 0.47f), // loop side
-                    new SignDefinition(StationSignType.Normal, 12996.85f, 146.55f, 11092.48f, 0.88f, 0.47f) // entry side
+                    new SignDefinition(StationSignType.Flatscreen, 13079.73f, 146.55f, 11136.85f, 0.88f, 0.47f), // loop side
+                    new SignDefinition(StationSignType.Flatscreen, 12996.85f, 146.55f, 11092.48f, 0.88f, 0.47f) // entry side
                 }
             }
         };
+        */
 
         private static GameObject SignPrefab = null;
         private static GameObject SmallSignPrefab = null;
+        private static GameObject LillySignPrefab = null;
+
         private static bool SignLoadAttempted = false;
         private static bool SignLoadFailed = false;
 
         private static readonly Dictionary<string, PlatformDefinition> TrackToPlatformMap = new Dictionary<string, PlatformDefinition>();
+
+        public static void TryLoadSignLocations()
+        {
+            string configFilePath = Path.Combine(PassengerJobs.ModEntry.Path, "platform_signs.csv");
+            if( File.Exists(configFilePath) )
+            {
+                try
+                {
+                    using( var configFile = new StreamReader(configFilePath) )
+                    {
+                        int lineNum = 1;
+
+                        while( !configFile.EndOfStream )
+                        {
+                            string line = configFile.ReadLine().Trim();
+                            
+                            // check for blank or comment
+                            if( string.IsNullOrWhiteSpace(line) || line.StartsWith("#") ) continue;
+
+                            string[] columns = line.Split(',');
+                            if( string.IsNullOrWhiteSpace(columns[0]) ) continue;
+                            if( columns.Length < 7 )
+                            {
+                                PassengerJobs.ModEntry.Logger.Error($"Missing columns on line {lineNum} of platform_signs.csv");
+                                continue;
+                            }
+
+                            if( !Enum.TryParse(columns[1], out StationSignType signType) )
+                            {
+                                PassengerJobs.ModEntry.Logger.Error($"Invalid sign type \"{columns[1]}\" on line {lineNum} of platform_signs.csv");
+                                continue;
+                            }
+
+                            float[] fVals = new float[5];
+                            for( int colIdx = 0; colIdx < 5; colIdx++ )
+                            {
+                                if( float.TryParse(columns[colIdx + 2], out float fVal) )
+                                {
+                                    fVals[colIdx] = fVal;
+                                }
+                                else
+                                {
+                                    PassengerJobs.ModEntry.Logger.Error($"Invalid coordinate on line {lineNum} of platform_signs.csv");
+                                    continue;
+                                }
+                            }
+
+                            var newSign = new SignDefinition(signType,
+                                fVals[0], fVals[1], fVals[2],
+                                fVals[3], fVals[4]);
+
+                            if( !SignLocations.TryGetValue(columns[0], out List<SignDefinition> signList) )
+                            {
+                                signList = new List<SignDefinition>();
+                                SignLocations.Add(columns[0], signList);
+                            }
+                            signList.Add(newSign);
+
+                            lineNum += 1;
+                        }
+                    }
+                }
+                catch( Exception ex )
+                {
+                    PassengerJobs.ModEntry.Logger.Error("Failed to open sign locations file: " + ex.Message);
+                }
+            }
+        }
 
         public static List<PlatformDefinition> GetAvailablePlatforms( string yard )
         {
@@ -245,7 +316,7 @@ namespace PassengerJobsMod
             }
         }
 
-        private static bool TryLoadSignPrefab()
+        private static bool TryLoadSignPrefabs()
         {
             string bundlePath = Path.Combine(PassengerJobs.ModEntry.Path, "passengerjobs");
             PassengerJobs.ModEntry.Logger.Log("Attempting to load platform sign prefab");
@@ -270,6 +341,8 @@ namespace PassengerJobsMod
                     SignLoadFailed = true;
                     return false;
                 }
+
+                LillySignPrefab = bundle.LoadAsset<GameObject>("Assets/LillySign.prefab");
             }
             else
             {
@@ -286,9 +359,9 @@ namespace PassengerJobsMod
         private static void CreatePlatformSigns( string trackId, PlatformController controller )
         {
             if( SignLoadFailed ) return;
-            if( !SignLoadAttempted && !TryLoadSignPrefab() ) return; // failed to load
+            if( !SignLoadAttempted && !TryLoadSignPrefabs() ) return; // failed to load
 
-            if( SignLocations.TryGetValue(trackId, out SignDefinition[] signList) )
+            if( SignLocations.TryGetValue(trackId, out List<SignDefinition> signList) )
             {
                 foreach( SignDefinition sign in signList )
                 {

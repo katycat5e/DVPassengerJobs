@@ -30,10 +30,12 @@ namespace PassengerJobsMod
         public string YardId { get; protected set; }
 
         public List<GameObject> SignObjects = new List<GameObject>();
-        public List<TextMeshPro> Signs = new List<TextMeshPro>();
         public bool SignsActive = false;
 
+        public List<TextMeshPro> TrainPanels = new List<TextMeshPro>();
         public List<TextMeshPro> InfoPanels = null;
+        public List<TextMeshPro> JobIdPanels = null;
+        public List<TextMeshPro> DestPanels = null;
 
         private Coroutine DelayedLoadUnloadRoutine = null;
         private Coroutine MessageDequeueRoutine = null;
@@ -73,23 +75,24 @@ namespace PassengerJobsMod
             // Job displays
             if( signObject.transform.Find("FrontText")?.GetComponent<TextMeshPro>() is TextMeshPro frontText )
             {
-                Signs.Add(frontText);
+                TrainPanels.Add(frontText);
             }
             else failed = true;
 
             if( signObject.transform.Find("RearText")?.GetComponent<TextMeshPro>() is TextMeshPro rearText )
             {
-                Signs.Add(rearText);
+                TrainPanels.Add(rearText);
             }
             else failed = true;
 
             // Search for station info/time components of flatscreen sign
+            string trackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
             if( signObject.transform.Find("FrontInfo")?.GetComponent<TextMeshPro>() is TextMeshPro frontInfo )
             {
                 if( InfoPanels == null ) InfoPanels = new List<TextMeshPro>();
                 InfoPanels.Add(frontInfo);
 
-                frontInfo.text = $"{YardId}\n12:00";
+                frontInfo.text = $"{YardId}\n{trackId}\n12:00";
             }
 
             if( signObject.transform.Find("RearInfo")?.GetComponent<TextMeshPro>() is TextMeshPro rearInfo )
@@ -97,8 +100,10 @@ namespace PassengerJobsMod
                 if( InfoPanels == null ) InfoPanels = new List<TextMeshPro>();
                 InfoPanels.Add(rearInfo);
 
-                rearInfo.text = $"{YardId}\n12:00";
+                rearInfo.text = $"{YardId}\n{trackId}\n12:00";
             }
+
+            // Search for 
 
             signObject.SetActive(SignsActive);
 
@@ -107,7 +112,7 @@ namespace PassengerJobsMod
 
         public void SetSignsText( string text )
         {
-            foreach( TextMeshPro tmp in Signs )
+            foreach( TextMeshPro tmp in TrainPanels )
             {
                 tmp.text = text;
             }
@@ -117,7 +122,8 @@ namespace PassengerJobsMod
         {
             if( InfoPanels == null ) return;
 
-            string fullText = $"{YardId}\n{timeString}";
+            string trackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
+            string fullText = $"{YardId}\n{trackId}\n{timeString}";
             foreach( TextMeshPro tmp in InfoPanels )
             {
                 tmp.text = fullText;
