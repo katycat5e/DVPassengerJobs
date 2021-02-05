@@ -372,8 +372,10 @@ namespace PassengerJobsMod
             SpecialTrain specialInfo = null;
             if( consistInfo == null )
             {
-                // 67% chance (if there is a special available)
-                if( (Rand.Next(3) > 0) && 
+                // default 67% chance, or as configured (if there is a special available)
+                double choice = Rand.NextDouble();
+
+                if( (choice <= PassengerJobs.Settings.NamedTrainProbability) && 
                     (SpecialConsistManager.GetTrainForRoute(Controller.stationInfo.YardID, destStation.stationInfo.YardID) is SpecialTrain special) )
                 {
                     specialInfo = special;

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UnityModManagerNet;
 
 namespace PassengerJobsMod
@@ -14,6 +13,9 @@ namespace PassengerJobsMod
 
         [Draw("Generate passenger trains with uniform car type")]
         public bool UniformConsists = true;
+
+        [Draw("Special/named train generation probability", Min = 0, Max = 1)]
+        public float NamedTrainProbability = 0.6f;
 
         [Draw("Perform data purge for uninstall (see log for results)")]
         public bool DoPurge = false;
