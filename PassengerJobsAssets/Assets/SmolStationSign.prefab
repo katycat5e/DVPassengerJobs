@@ -52,7 +52,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_ReflectionProbeUsage: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -139,12 +139,12 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 3.55
+  m_fontSize: 2.3
   m_fontSizeBase: 10
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 1
-  m_fontSizeMax: 72
+  m_fontSizeMax: 2.3
   m_fontStyle: 0
   m_textAlignment: 514
   m_characterSpacing: 0
@@ -255,7 +255,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_ReflectionProbeUsage: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -342,12 +342,12 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 3.55
+  m_fontSize: 2.3
   m_fontSizeBase: 10
   m_fontWeight: 400
   m_enableAutoSizing: 1
   m_fontSizeMin: 1
-  m_fontSizeMax: 72
+  m_fontSizeMax: 2.3
   m_fontStyle: 0
   m_textAlignment: 514
   m_characterSpacing: 0
@@ -415,7 +415,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6479168856444139874}
-  - component: {fileID: 8673957780380210760}
   m_Layer: 0
   m_Name: SmolStationSign
   m_TagString: Untagged
@@ -440,23 +439,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8673957780380210760
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2418951410210749305}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -2071393119, guid: 3c9aeda3c7af4634699ec24c52fe811f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Signs:
-  - TextRenderer: {fileID: 3356926466844635645}
-    Type: 2
-  - TextRenderer: {fileID: 4193761856604468036}
-    Type: 2
 --- !u!1 &3254188387645268826
 GameObject:
   m_ObjectHideFlags: 0

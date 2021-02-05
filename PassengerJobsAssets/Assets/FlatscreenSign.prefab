@@ -52,7 +52,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_ReflectionProbeUsage: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -214,7 +214,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9177821105688206499}
-  - component: {fileID: 1816253586382393431}
   m_Layer: 0
   m_Name: FlatscreenSign
   m_TagString: Untagged
@@ -241,27 +240,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1816253586382393431
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1402747107902579838}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -2071393119, guid: 3c9aeda3c7af4634699ec24c52fe811f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Signs:
-  - TextRenderer: {fileID: 5774893810021817962}
-    Type: 0
-  - TextRenderer: {fileID: 1187070257534918220}
-    Type: 0
-  - TextRenderer: {fileID: 2490951945666525269}
-    Type: 2
-  - TextRenderer: {fileID: 5286876400064205771}
-    Type: 2
 --- !u!1 &2071440632652693665
 GameObject:
   m_ObjectHideFlags: 0
@@ -314,7 +292,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_ReflectionProbeUsage: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -613,7 +591,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_ReflectionProbeUsage: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -818,7 +796,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
+  m_ReflectionProbeUsage: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:

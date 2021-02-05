@@ -62,19 +62,22 @@ namespace PassengerJobsMod
             enabled = true;
         }
 
-        public void AddSign( GameObject signObject )
+        public void AddSign( GameObject signObject, StationSignType signType )
         {
             SignObjects.Add(signObject);
 
             // Job displays
-            if( signObject.GetComponent<SignPrinter>() is SignPrinter newDisplay )
+            SignPrinter newDisplay = signObject.AddComponent<SignPrinter>();
+
+            if( newDisplay != null )
             {
-                DisplayComponents.Add(newDisplay);
+                newDisplay.Initialize(signType);
                 newDisplay.UpdateDisplay(new SignData(PlatformTrack.logicTrack.ID.TrackPartOnly, "12:00"));
+                DisplayComponents.Add(newDisplay);
             }
             else
             {
-                PassengerJobs.ModEntry.Logger.Warning("Couldn't find SignPrinter component in station sign object");
+                PassengerJobs.ModEntry.Logger.Warning("Couldn't add SignPrinter component to station sign object");
             }
 
             signObject.SetActive(SignsActive);
@@ -227,8 +230,6 @@ namespace PassengerJobsMod
                     {
                         var signData = new SignData(PlatformTrack.logicTrack.ID.TrackPartOnly, "12:00");
 
-                        //var sb = new StringBuilder();
-                        //bool first = true;
                         if( tasks.Count > 0 )
                         {
                             int nJobs = (tasks.Count >= 2) ? 2 : 1;
@@ -237,7 +238,8 @@ namespace PassengerJobsMod
                             for( int i = 0; i < nJobs; i++ )
                             {
                                 WarehouseTask task = tasks[i];
-                                SignData.JobInfo jobInfo = signData.Jobs[i];
+                                SignData.JobInfo jobInfo = new SignData.JobInfo();
+                                signData.Jobs[i] = jobInfo;
 
                                 jobInfo.ID = task.Job.ID;
 

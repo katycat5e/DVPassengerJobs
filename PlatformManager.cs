@@ -23,7 +23,7 @@ namespace PassengerJobsMod
         }
     }
 
-    enum StationSignType
+    public enum StationSignType
     {
         Flatscreen,
         Small,
@@ -394,7 +394,7 @@ namespace PassengerJobsMod
                     if( newObj != null )
                     {
                         SingletonBehaviour<WorldMover>.Instance.AddObjectToMove(newObj.transform);
-                        controller.AddSign(newObj);
+                        controller.AddSign(newObj, sign.SignType);
 
                         PassengerJobs.ModEntry.Logger.Log($"Created sign {sign.SignType} at {trackId}");
                     }

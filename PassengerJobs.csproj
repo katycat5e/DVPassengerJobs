@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommuterChainController.cs" />
+    <Compile Include="SignPrinter.cs" />
     <Compile Include="SpecialConsistManager.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectDumper.cs" />
@@ -77,12 +78,6 @@
     <Compile Include="SpecialTrainConfig.cs" />
     <Compile Include="TrainCarsPerLogicTrack.cs" />
     <Compile Include="PlatformManager.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="PassJobsScripts\PassJobsScripts.csproj">
-      <Project>{d1f00b8e-ca34-4fab-86d7-a32946ab0ff0}</Project>
-      <Name>PassJobsScripts</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
