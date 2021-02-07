@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 4263566040
+CRC: 70335686
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 703285c68ea211016d1d21ebd67fc30c
+    Hash: fdf028b5c34372b0e6397fa04292167a
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 4b1f30d4b4d10f1df0369804ba5c6a3c
+    Hash: 0067371e8b635aaf0d08cb222837b325
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -33,28 +33,27 @@ ClassTypes:
   Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
 - Class: 115
   Script: {instanceID: 0}
-- Class: 128
-  Script: {instanceID: 0}
 - Class: 222
   Script: {instanceID: 0}
 - Class: 224
   Script: {instanceID: 0}
 Assets:
 - Assets/LillyDisplay_s.png
-- Assets/SignBaseMat_d.png
 - Assets/Flatscreen_n.png
+- Assets/SmallLCDSign_s.png
 - Assets/LillyDisplayMat.mat
 - Assets/Flatscreen_d.png
 - Assets/LillyDisplay_n.png
 - Assets/SmolStationSign.prefab
+- Assets/subway_SDF.asset
 - Assets/FlatscreenMat.mat
-- Assets/SignBaseMat_s.png
 - Assets/LillyDisplay_d.png
-- Assets/SignHousingMat.mat
+- Assets/SmallLCDSignMat.mat
 - Assets/Flatscreen_s.png
+- Assets/SmallLCDSign_d.png
 - Assets/FlatscreenSign.prefab
 - Assets/Flatscreen_e.png
+- Assets/LiberationSans Smooth SDF.asset
+- Assets/SmallLCDSign_n.png
 - Assets/LillySign.prefab
-- Assets/SignBaseMat_n.png
-- Assets/LiberationSans SDF.asset
 Dependencies: []

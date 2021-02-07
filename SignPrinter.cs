@@ -20,7 +20,9 @@ namespace PassengerJobsMod
                     new SignComp[]
                     {
                         new SignComp("FrontText", TextRegionType.CompactDesc),
-                        new SignComp("RearText", TextRegionType.CompactDesc)
+                        new SignComp("RearText", TextRegionType.CompactDesc),
+                        new SignComp("FrontInfo", TextRegionType.PlatformInfo),
+                        new SignComp("RearInfo", TextRegionType.PlatformInfo)
                     }
                 },
                 {
@@ -80,12 +82,14 @@ namespace PassengerJobsMod
 
         private static string CompactFormat( SignData d )
         {
+            // [ID] to/from [station]
             if( d.Jobs == null || d.Jobs.Length == 0 ) return string.Empty;
             return string.Join("\n", d.Jobs.Take(2).Select(j => (j.Incoming) ? $"{j.ID} from {j.Src}" : $"{j.ID} to {j.Dest}"));
         }
 
         private static string TrainDescFormat( SignData d )
         {
+            // [Name] to/from [station]
             if( d.Jobs == null || d.Jobs.Length == 0 ) return string.Empty;
             return string.Join("\n", d.Jobs.Take(2).Select(j => (j.Incoming) ? $"{j.Name} from {j.Src}" : $"{j.Name} to {j.Dest}"));
         }
