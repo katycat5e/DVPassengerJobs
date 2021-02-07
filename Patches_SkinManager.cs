@@ -92,11 +92,12 @@ namespace PassengerJobsMod
             }
         }
 
-        public static void SetConsistSkin( List<TrainCar> consist, string skinName )
+        public static void SetConsistSkin( List<TrainCar> consist, string[] skinNames )
         {
+            var rand = new System.Random();
             foreach( TrainCar car in consist )
             {
-                CarStates[car.CarGUID] = skinName;
+                CarStates[car.CarGUID] = skinNames.ChooseOne(rand);
                 SM_ReplaceTexture(car);
             }
         }

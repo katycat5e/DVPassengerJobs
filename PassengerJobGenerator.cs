@@ -540,7 +540,7 @@ namespace PassengerJobsMod
 
             if( (special != null) && SkinManager_Patch.Enabled )
             {
-                SkinManager_Patch.SetConsistSkin(spawnedCars, special.Skin);
+                SkinManager_Patch.SetConsistSkin(spawnedCars, special.Skins);
             }
             else if( unifyConsist && SkinManager_Patch.Enabled )
             {

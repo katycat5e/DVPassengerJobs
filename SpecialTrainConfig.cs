@@ -18,7 +18,10 @@ namespace PassengerJobsMod
         public string Name = null;
 
         [XmlAttribute("Skin")]
-        public string Skin = null;
+        public string SkinListString = null;
+
+        [XmlIgnore]
+        public string[] Skins;
 
         [XmlAttribute("IDAbbrev")]
         public string IDAbbrev = null;
@@ -127,11 +130,14 @@ namespace PassengerJobsMod
             }
 
             // check that a skin is given
-            if( string.IsNullOrWhiteSpace(Skin) )
+            if( string.IsNullOrWhiteSpace(SkinListString) )
             {
                 message = "No skin specified";
                 return false;
             }
+
+            // process skin list
+            Skins = SkinListString.Split(',').Select(s => s.Trim()).ToArray();
 
             // check that the routes are okay
             if( !ParseRoutes() )
