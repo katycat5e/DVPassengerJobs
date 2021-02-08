@@ -577,4 +577,4 @@ InitTestScene*.unity
 
 # End of https://www.toptal.com/developers/gitignore/api/unity,csharp,visualstudio
 
-Assets/Dependencies/
+Assets/AssetBundles/
