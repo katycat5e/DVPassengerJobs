@@ -38,6 +38,22 @@ namespace PassengerJobsMod
             return result;
         }
 
+        internal static void AddToFront<T>( this IList<T> source, T newItem )
+        {
+            if( source.Count == 0 )
+            {
+                source.Add(newItem);
+                return;
+            }
+
+            source.Add(source[source.Count - 1]);
+            for( int i = source.Count - 1; i > 0; i-- )
+            {
+                source[i] = source[i - 1];
+            }
+            source[0] = newItem;
+        }
+
         internal static CarGuidsPerTrackId GetIdData( this CarsPerTrack carsPerTrack )
         {
             return new CarGuidsPerTrackId(

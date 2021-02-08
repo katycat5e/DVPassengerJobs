@@ -74,38 +74,40 @@ namespace PassengerJobsMod
             }
         }
 
-        private static string JobIdFormat( SignData d )
+        private static string JobIdFormat( SignData d, string t )
         {
             if( d.Jobs == null || d.Jobs.Length == 0 ) return string.Empty;
             return string.Join("\n", d.Jobs.Take(2).Select(j => j.ID));
         }
 
-        private static string CompactFormat( SignData d )
+        private static string CompactFormat( SignData d, string t )
         {
             // [ID] to/from [station]
+            if( t != null ) return t;
             if( d.Jobs == null || d.Jobs.Length == 0 ) return string.Empty;
             return string.Join("\n", d.Jobs.Take(2).Select(j => (j.Incoming) ? $"{j.ID} from {j.Src}" : $"{j.ID} to {j.Dest}"));
         }
 
-        private static string TrainDescFormat( SignData d )
+        private static string TrainDescFormat( SignData d, string t )
         {
             // [Name] to/from [station]
+            if( t != null ) return t;
             if( d.Jobs == null || d.Jobs.Length == 0 ) return string.Empty;
             return string.Join("\n", d.Jobs.Take(2).Select(j => (j.Incoming) ? $"{j.Name} from {j.Src}" : $"{j.Name} to {j.Dest}"));
         }
 
-        private static readonly Func<SignData, string>[] Formatters =
+        private static readonly Func<SignData, string, string>[] Formatters =
         {
-            d => $"{d.TrackId}\n{d.TimeString}",
+            (d, t) => $"{d.TrackId}\n{d.TimeString}",
             JobIdFormat,
             CompactFormat,
             TrainDescFormat
         };
 
-        public void UpdateDisplay( SignData input )
+        public void UpdateDisplay( SignData input, string overrideText = null )
         {
             if( Signs == null ) return;
-            foreach( var sign in Signs ) sign.UpdateText(input);
+            foreach( var sign in Signs ) sign.UpdateText(input, overrideText);
         }
 
         public class SignTextConfig
@@ -113,9 +115,9 @@ namespace PassengerJobsMod
             public TextMeshPro TextRenderer;
             public TextRegionType Type;
 
-            public void UpdateText( SignData data )
+            public void UpdateText( SignData data, string overrideText = null )
             {
-                TextRenderer.text = Formatters[(int)Type](data);
+                TextRenderer.text = Formatters[(int)Type](data, overrideText);
             }
         }
     }

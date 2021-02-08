@@ -5,12 +5,13 @@ using System.Reflection;
 using System.Text;
 using DV.Logic.Job;
 using HarmonyLib;
-using TMPro;
 using UnityEngine;
 
 namespace PassengerJobsMod
 {
     using WMDataState = WarehouseMachine.WarehouseLoadUnloadDataPerJob.State;
+
+    using SignJobInfo = Tuple<Job, bool>; // true = incoming
 
     public class PlatformController : MonoBehaviour
     {
@@ -34,7 +35,6 @@ namespace PassengerJobsMod
         public List<SignPrinter> DisplayComponents = new List<SignPrinter>();
 
         private Coroutine DelayedLoadUnloadRoutine = null;
-        private Coroutine MessageDequeueRoutine = null;
 
         private bool loadInRange = false;
         private bool unloadInRange = false;
@@ -45,7 +45,13 @@ namespace PassengerJobsMod
         private bool loading = false;
         private bool unloading = false;
 
-        private readonly Queue<string> StatusMessages = new Queue<string>();
+        private readonly List<SignJobInfo> DisplayedJobs = new List<SignJobInfo>();
+        private bool JobListDirty = true;
+
+        private SignData.JobInfo[] CachedJobsData = null;
+        private string LastTime = "12:00";
+        private string TrackId = null;
+        private string OverrideMessage = null;
 
         public void Initialize( RailTrack track, string name, string yardId )
         {
@@ -56,6 +62,7 @@ namespace PassengerJobsMod
             }
 
             PlatformTrack = track;
+            TrackId = PlatformTrack.logicTrack.ID.TrackPartOnly;
             LogicMachine = new WarehouseMachine(track.logicTrack, SUPPORTED_CARGO);
             PlatformName = name;
             YardId = yardId;
@@ -83,12 +90,95 @@ namespace PassengerJobsMod
             signObject.SetActive(SignsActive);
         }
 
-        public void UpdateSignsText( SignData data )
+        public void AddOutgoingJobToDisplay( Job job )
         {
+            DisplayedJobs.Add(new SignJobInfo(job, false));
+            job.JobCompleted += RemoveJobFromDisplay;
+            job.JobAbandoned += RemoveJobFromDisplay;
+            JobListDirty = true;
+        }
+
+        public void AddIncomingJobToDisplay( Job job, bool _ = false )
+        {
+            // add incoming jobs to top of list
+            DisplayedJobs.AddToFront(new SignJobInfo(job, true));
+            job.JobCompleted += RemoveJobFromDisplay;
+            job.JobAbandoned += RemoveJobFromDisplay;
+            JobListDirty = true;
+        }
+
+        public void RemoveJobFromDisplay( Job job )
+        {
+            for( int i = 0; i < DisplayedJobs.Count; i++ )
+            {
+                if( DisplayedJobs[i].Item1.ID.Equals(job.ID) )
+                {
+                    DisplayedJobs.RemoveAt(i);
+                    JobListDirty = true;
+                    return;
+                }
+            }
+        }
+
+        public void RegenerateJobsData()
+        {
+            CachedJobsData = new SignData.JobInfo[DisplayedJobs.Count];
+
+            for( int i = 0; i < DisplayedJobs.Count; i++ )
+            {
+                Job job = DisplayedJobs[i].Item1;
+                CachedJobsData[i] = new SignData.JobInfo()
+                {
+                    Incoming = DisplayedJobs[i].Item2,
+                    ID = job.ID,
+                    Name = GetTrainName(job),
+                    Src = job.chainData.chainOriginYardId,
+                    Dest = job.chainData.chainDestinationYardId
+                };
+            }
+
+            JobListDirty = false;
+        }
+
+        public void RefreshDisplays()
+        {
+            if( JobListDirty ) RegenerateJobsData();
+            var data = new SignData(TrackId, LastTime) { Jobs = CachedJobsData };
+
             foreach( var printer in DisplayComponents )
             {
-                printer.UpdateDisplay(data);
+                printer.UpdateDisplay(data, OverrideMessage);
             }
+        }
+
+        public void ApplyOverrideText( string message )
+        {
+            OverrideMessage = message;
+            RefreshDisplays();
+        }
+
+        public void ClearOverrideText()
+        {
+            OverrideMessage = null;
+            RefreshDisplays();
+        }
+
+        private string GetTrainName( Job job )
+        {
+            string jobId = job.ID;
+            int lastDashIdx = jobId.LastIndexOf('-');
+            string trainNum = jobId.Substring(lastDashIdx + 1);
+
+            if( SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
+            {
+                // Named Train
+                return $"{special.Name} {trainNum}";
+            }
+
+            // Ordinary boring train
+            char jobTypeChar = (job.jobType == PassJobType.Commuter) ? 'C' : 'E';
+
+            return $"Train {jobTypeChar}{trainNum}";
         }
 
         public void SetSignState( bool en )
@@ -110,85 +200,69 @@ namespace PassengerJobsMod
         {
             StopAllCoroutines();
             DelayedLoadUnloadRoutine = null;
-            MessageDequeueRoutine = null;
-            StatusMessages.Clear();
         }
 
-        private const int ELEM_SPACING = 10;
-        private const int ELEM_START_Y = 40;
-        private const int ELEM_HEIGHT = 20;
-        private const int ELEM_WIDTH = 110;
-        private const int BOX_WIDTH = ELEM_WIDTH + (ELEM_SPACING * 2);
-
-        void OnGUI()
-        {
-            if( loadInRange || unloadInRange )
-            {
-                int boxHeight = ELEM_START_Y + ELEM_HEIGHT + (ELEM_SPACING * 2);
-                if( loadInRange && unloadInRange && !loading && !unloading )
-                {
-                    boxHeight += (ELEM_HEIGHT + ELEM_SPACING);
-                }
-
-                int boxX = Screen.width - ELEM_SPACING - BOX_WIDTH;
-                int boxY = ELEM_SPACING;
-                GUI.Box(new Rect(boxX, boxY, BOX_WIDTH, boxHeight), PlatformName);
-
-                boxY += ELEM_START_Y;
-
-                if( loadInRange && !unloading )
-                {
-                    if( loading )
-                    {
-                        GUI.Label(new Rect(boxX + ELEM_SPACING, boxY, ELEM_WIDTH, ELEM_HEIGHT), "Boarding...");
-                    }
-                    else
-                    {
-                        GUI.Label(new Rect(boxX + ELEM_SPACING, boxY, ELEM_WIDTH, ELEM_HEIGHT), $"Starting boarding in {loadCountdown}...");
-                    }
-                    boxY += (ELEM_HEIGHT + ELEM_SPACING);
-                }
-
-                if( unloadInRange && !loading )
-                {
-                    if( unloading )
-                    {
-                        GUI.Label(new Rect(boxX + ELEM_SPACING, boxY, ELEM_WIDTH, ELEM_HEIGHT), "Disembarking...");
-                    }
-                    else
-                    {
-                        GUI.Label(new Rect(boxX + ELEM_SPACING, boxY, ELEM_WIDTH, ELEM_HEIGHT), $"Disembarking in {unloadCountdown}...");
-                    }
-                }
-            }
-
-            if( StatusMessages.TryPeek(out string curMsg) )
-            {
-                int width = Screen.width / 3;
-                int left = (Screen.width - width) / 2;
-
-                GUI.Box(new Rect(left, ELEM_SPACING, width, ELEM_START_Y), curMsg);
-            }
-        }
-
+        // type = List<WarehouseTask>
         private static readonly FieldInfo CurrentTasksField = AccessTools.Field(typeof(WarehouseMachine), "currentTasks");
+
+        private bool IsAnyTrainAtPlatform( bool loading )
+        {
+            if( !(CurrentTasksField?.GetValue(LogicMachine) is List<WarehouseTask> currentTasks) ) return false;
+
+            WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
+
+            foreach( WarehouseTask warehouseTask in currentTasks )
+            {
+                if( warehouseTask.readyForMachine && (warehouseTask.warehouseTaskType == taskType) && AreCarsStoppedAtPlatform(warehouseTask.cars) )
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool AreCarsStoppedAtPlatform( IEnumerable<Car> cars )
+        {
+            // do it in two stages to exit early before speed lookup
+            foreach( Car car in cars )
+            {
+                // make sure cars are all on the correct track
+                if( car.CurrentTrack != LogicMachine.WarehouseTrack ) return false;
+            }
+
+            foreach( Car car in cars )
+            {
+                // make sure cars are stationary
+                if( !(IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) && (trainCar.GetForwardSpeed() < 0.3f)) )
+                {
+                    // couldn't find logic car or car was moving
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         private System.Collections.IEnumerator CheckForTrains()
         {
+            bool inIdleState = false;
+
             while( true )
             {
                 yield return WaitFor.SecondsRealtime(TRAIN_CHECK_INTERVAL);
 
-                loadInRange = LogicMachine.AnyTrainToLoadPresentOnTrack();
+                // Check for loading train, is highest priority on sign
+                loadInRange = IsAnyTrainAtPlatform(true);
                 if( loadInRange )
                 {
                     if( loadCountdown == 0 )
                     {
                         if( DelayedLoadUnloadRoutine == null )
                         {
+                            inIdleState = false;
                             DelayedLoadUnloadRoutine = StartCoroutine(DelayedLoadUnload(true));
                         }
-                        else continue;
+                        continue;
                     }
                     else
                     {
@@ -201,16 +275,18 @@ namespace PassengerJobsMod
                     loadCountdown = START_XFER_DELAY;
                 }
                 
-                unloadInRange = LogicMachine.AnyTrainToUnloadPresentOnTrack();
+                // Check for unloading train, next highest priority
+                unloadInRange = IsAnyTrainAtPlatform(false);
                 if( unloadInRange )
                 {
                     if( unloadCountdown == 0 )
                     {
                         if( DelayedLoadUnloadRoutine == null )
                         {
+                            inIdleState = false;
                             DelayedLoadUnloadRoutine = StartCoroutine(DelayedLoadUnload(false));
                         }
-                        else continue;
+                        continue;
                     }
                     else
                     {
@@ -223,60 +299,15 @@ namespace PassengerJobsMod
                     unloadCountdown = START_XFER_DELAY;
                 }
 
-                // set sign display
-                if( !(loading || unloading) )
+                // if no trains in progress, then display the default message
+                if( !(loading || unloading) && !inIdleState )
                 {
-                    if( CurrentTasksField.GetValue(LogicMachine) is List<WarehouseTask> tasks )
-                    {
-                        var signData = new SignData(PlatformTrack.logicTrack.ID.TrackPartOnly, "12:00");
-
-                        if( tasks.Count > 0 )
-                        {
-                            int nJobs = (tasks.Count >= 2) ? 2 : 1;
-                            signData.Jobs = new SignData.JobInfo[nJobs];
-
-                            for( int i = 0; i < nJobs; i++ )
-                            {
-                                WarehouseTask task = tasks[i];
-                                SignData.JobInfo jobInfo = new SignData.JobInfo();
-                                signData.Jobs[i] = jobInfo;
-
-                                jobInfo.ID = task.Job.ID;
-
-                                if( SpecialConsistManager.JobToSpecialMap.TryGetValue(task.Job.ID, out SpecialTrain special) )
-                                {
-                                    // Named Train
-                                    jobInfo.Name = special.Name;
-                                }
-                                else
-                                {
-                                    // Ordinary boring train
-                                    char jobTypeChar = (tasks[i].Job.jobType == PassJobType.Commuter) ? 'C' : 'E';
-
-                                    string jobId = tasks[i].Job.ID;
-                                    int lastDashIdx = jobId.LastIndexOf('-');
-                                    string trainNum = jobId.Substring(lastDashIdx + 1);
-
-                                    jobInfo.Name = $"Train {jobTypeChar}{trainNum}";
-                                }
-
-                                if( task.warehouseTaskType == WarehouseTaskType.Loading )
-                                {
-                                    // This is an outgoing train
-                                    jobInfo.Incoming = false;
-                                    jobInfo.Dest = task.Job.chainData.chainDestinationYardId;
-                                }
-                                else
-                                {
-                                    // unloading
-                                    jobInfo.Incoming = true;
-                                    jobInfo.Src = task.Job.chainData.chainOriginYardId;
-                                }
-                            }
-                        }
-
-                        UpdateSignsText(signData);
-                    }
+                    ClearOverrideText();
+                    inIdleState = true;
+                }
+                else if( JobListDirty )
+                {
+                    RefreshDisplays();
                 }
             }
         }
@@ -291,54 +322,54 @@ namespace PassengerJobsMod
             if( currentLoadData.Count == 0 )
             {
                 DelayedLoadUnloadRoutine = null;
+                loading = false;
+                unloading = false;
                 yield break;
             }
 
-            if( isLoading ) loading = true;
-            else unloading = true;
+            if( isLoading )
+            {
+                loading = true;
+                unloading = false;
+            }
+            else
+            {
+                loading = false;
+                unloading = true;
+            }
 
             bool completedTransfer = false;
 
             foreach( var data in currentLoadData )
             {
                 yield return carDelay;
-                string loadDirStr = isLoading ? "load" : "unload";
 
                 if( data.state == WMDataState.FullLoadUnloadPossible )
                 {
                     // all cars ready to load
-                    bool anyCarMoving = false;
                     foreach( WarehouseTask task in data.tasksAvailableToProcess )
                     {
-                        foreach( Car car in task.cars )
+                        // make double sure that the cars are able to be loaded
+                        bool allCarsStopped = AreCarsStoppedAtPlatform(task.cars);
+                        if( !allCarsStopped )
                         {
-                            if( SingletonBehaviour<IdGenerator>.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) )
-                            {
-                                if( trainCar.GetForwardSpeed() > 0.3f )
-                                {
-                                    anyCarMoving = true;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                PassengerJobs.ModEntry.Logger.Error("Unexpected error: can't pair " + car.ID + " with its TrainCar!");
-                            }
+                            // this kills the passengers
+                            continue;
                         }
 
-                        if( anyCarMoving ) break;
-                    }
+                        // display the current transferring train
+                        string message;
+                        if( task.warehouseTaskType == WarehouseTaskType.Loading )
+                        {
+                            message = $"Now Boarding\n{task.Job.ID} to {task.Job.chainData.chainDestinationYardId}";
+                        }
+                        else
+                        {
+                            message = $"Now Boarding\n{task.Job.ID} from {task.Job.chainData.chainOriginYardId}";
+                        }
+                        ApplyOverrideText(message);
 
-                    if( anyCarMoving )
-                    {
-                        // this kills the passengers
-                        string msg = $"[{data.job.ID}] {loadDirStr} error, cars need to be stationary!";
-                        DisplayStatusMessage(msg);
-                        continue;
-                    }
-
-                    foreach( WarehouseTask task in data.tasksAvailableToProcess )
-                    {
+                        // now that we verified that the cars are okay, actually transfer the passengers to/from the cars
                         for( int nToProcess = task.cars.Count; nToProcess > 0; nToProcess-- )
                         {
                             Car result = ( isLoading ) ?
@@ -348,6 +379,16 @@ namespace PassengerJobsMod
                             if( result == null )
                             {
                                 PassengerJobs.ModEntry.Logger.Error("Tried to (un)load a car that wasn't there :(");
+
+                                // fail into safe state by completing task
+                                task.state = TaskState.Done;
+                                foreach( Car car in task.cars )
+                                {
+                                    if( isLoading ) car.LoadCargo(car.capacity, CargoType.Passengers);
+                                    else car.DumpCargo();
+                                }
+                                LogicMachine.RemoveWarehouseTask(task);
+
                                 break;
                             }
 
@@ -355,17 +396,8 @@ namespace PassengerJobsMod
                         }
                     }
 
-                    string trainStat = (isLoading) ? "loaded" : "unloaded";
-                    string successMsg = $"[{data.job.ID}] train fully {trainStat}!";
-                    DisplayStatusMessage(successMsg);
+                    ClearOverrideText();
                     completedTransfer = true;
-                }
-                else
-                {
-                    // need to have all cars at platform to load
-                    string msg = $"[{data.job.ID}] {loadDirStr} error, need all cars on track";
-                    DisplayStatusMessage(msg);
-                    continue;
                 }
             }
             // all jobs processed
@@ -378,24 +410,6 @@ namespace PassengerJobsMod
 
             loading = unloading = false;
             DelayedLoadUnloadRoutine = null;
-        }
-
-        private void DisplayStatusMessage( string message )
-        {
-            StatusMessages.Enqueue(message);
-            if( MessageDequeueRoutine == null )
-            {
-                MessageDequeueRoutine = StartCoroutine(DequeueMessages());
-            }
-        }
-
-        private System.Collections.IEnumerator DequeueMessages()
-        {
-            while( StatusMessages.Count > 0 )
-            {
-                yield return WaitFor.SecondsRealtime(ERROR_DISPLAY_TIME);
-                StatusMessages.Dequeue();
-            }
         }
     }
 }

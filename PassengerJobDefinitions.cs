@@ -55,11 +55,11 @@ namespace PassengerJobsMod
                 return;
             }
 
-            // Force cargo state
+            // Get total cargo capacity
             float totalCapacity = 0;
             foreach( var car in trainCarsToTransport )
             {
-                car.DumpCargo();
+                //car.DumpCargo();
                 totalCapacity += car.capacity;
             }
 
@@ -68,6 +68,7 @@ namespace PassengerJobsMod
             var taskList = new List<Task>();
 
             // Check for loading task
+            PlatformController loadPlatform = null;
             if( loadMachine != null )
             {
                 departTrack = loadMachine.WarehouseTrack;
@@ -77,6 +78,12 @@ namespace PassengerJobsMod
 
                 Task loadTask = new WarehouseTask(trainCarsToTransport, WarehouseTaskType.Loading, loadMachine, CargoType.Passengers, totalCapacity);
                 taskList.Add(loadTask);
+
+                // check to register for unloading display
+                if( (PlatformManager.GetPlatformByTrackId(loadMachine.WarehouseTrack.ID.FullID) is PlatformDefinition pdef) && pdef.Initialized )
+                {
+                    loadPlatform = pdef.Controller;
+                }
             }
             else
             {
@@ -96,6 +103,7 @@ namespace PassengerJobsMod
             taskList.Add(transportTask);
 
             // check for unloading task
+            PlatformController unloadPlatform = null;
             if( unloadMachine != null )
             {
                 Task unloadTask = new WarehouseTask(trainCarsToTransport, WarehouseTaskType.Unloading, unloadMachine, CargoType.Passengers, totalCapacity);
@@ -103,6 +111,12 @@ namespace PassengerJobsMod
 
                 Task storeCarsTask = JobsGenerator.CreateTransportTask(trainCarsToTransport, destinationTrack, arriveTrack);
                 taskList.Add(storeCarsTask);
+
+                // check to register for unloading display
+                if( (PlatformManager.GetPlatformByTrackId(unloadMachine.WarehouseTrack.ID.FullID) is PlatformDefinition pdef) && pdef.Initialized )
+                {
+                    unloadPlatform = pdef.Controller;
+                }
             }
 
             Task superTask = new SequentialTasks(taskList);
@@ -114,6 +128,10 @@ namespace PassengerJobsMod
             }
 
             job = new Job(superTask, subType, jobTimeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
+
+            // set up platform displays
+            if( loadPlatform != null ) loadPlatform.AddOutgoingJobToDisplay(job);
+            if( unloadPlatform != null ) job.JobTaken += unloadPlatform.AddIncomingJobToDisplay;
 
             // track the job if it's a special, for booklet info etc
             if( specialDefinition != null )
