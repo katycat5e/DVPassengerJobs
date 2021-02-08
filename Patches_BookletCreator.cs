@@ -182,15 +182,15 @@ namespace PassengerJobsMod
             string description;
             if( job.jobType == PassJobType.Express )
             {
-                description = $"Transport {trainName}";
+                description = $"Transport {trainName} to {job.chainData.chainDestinationYardId}";
 
                 if( PassengerJobs.Settings.UseCustomWages )
                 {
-                    float bonusAmount = Mathf.Round(PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO * job.GetBasePaymentForTheJob());
-                    description += $" (${bonusAmount} bonus with on-time completion)";
+                    float bonusAmount = Mathf.Round(PassengerJobGenerator.BONUS_TO_BASE_WAGE_RATIO * job.GetBasePaymentForTheJob() / 1000f);
+                    description += $" (${bonusAmount}k bonus with on-time completion)";
                 }
             }
-            else description = "Transport a commuter train";
+            else description = $"Transport a commuter train to {job.chainData.chainDestinationYardId}";
 
             string trainLength = jobCars.Sum(c => c.length).ToString("F") + " m";
             string trainMass = (GetLoadedConsistMass(jobCars) * 0.001f).ToString("F") + " t";
@@ -328,7 +328,10 @@ namespace PassengerJobsMod
             if( SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
             {
                 coverTitle = special.Name.ToUpper();
-                trainName = $"a {special.Name} train";
+
+                int lastDashIdx = job.ID.LastIndexOf('-');
+                string trainNum = job.ID.Substring(lastDashIdx + 1);
+                trainName = $"{special.Name} #{trainNum}";
             }
             else
             {
@@ -618,7 +621,9 @@ namespace PassengerJobsMod
             string trainName;
             if( (job.jobType == PassJobType.Express) && SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
             {
-                trainName = $"a {special.Name} train";
+                int lastDashIdx = job.ID.LastIndexOf('-');
+                string trainNum = job.ID.Substring(lastDashIdx + 1);
+                trainName = $"{special.Name} #{trainNum}";
             }
             else
             {
