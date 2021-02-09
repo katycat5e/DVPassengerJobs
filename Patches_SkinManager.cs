@@ -106,26 +106,22 @@ namespace PassengerJobsMod
                 return;
             }
 
-            HashSet<string> blockList = SpecialConsistManager.TrainDefinitions
-                .Where(train => (train.CarType == TrainCarType.PassengerRed) && train.ExpressOnly)
-                .Select(train => train.Name)
-                .ToHashSet();
-
+            HashSet<string> blockList = GetBlockList(TrainCarType.PassengerRed);
             GetPlainSkinsForCoachType(RedCoachSkins, TrainCarType.PassengerRed, blockList);
 
-            SpecialConsistManager.TrainDefinitions
-                .Where(train => (train.CarType == TrainCarType.PassengerGreen) && train.ExpressOnly)
-                .Select(train => train.Name)
-                .ToHashSet();
-
+            blockList = GetBlockList(TrainCarType.PassengerGreen);
             GetPlainSkinsForCoachType(GreenCoachSkins, TrainCarType.PassengerGreen, blockList);
 
-            SpecialConsistManager.TrainDefinitions
-                .Where(train => (train.CarType == TrainCarType.PassengerBlue) && train.ExpressOnly)
-                .Select(train => train.Name)
-                .ToHashSet();
-
+            blockList = GetBlockList(TrainCarType.PassengerBlue);
             GetPlainSkinsForCoachType(BlueCoachSkins, TrainCarType.PassengerBlue, blockList);
+        }
+
+        private static HashSet<string> GetBlockList( TrainCarType carType )
+        {
+            return SpecialConsistManager.TrainDefinitions
+                .Where(train => (train.CarType == carType) && train.ExpressOnly)
+                .SelectMany(train => train.Skins)
+                .ToHashSet();
         }
 
         private static void GetPlainSkinsForCoachType( List<string> dest, TrainCarType carType, HashSet<string> blockList )
