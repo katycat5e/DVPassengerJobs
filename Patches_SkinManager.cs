@@ -119,8 +119,9 @@ namespace PassengerJobsMod
         private static HashSet<string> GetBlockList( TrainCarType carType )
         {
             return SpecialConsistManager.TrainDefinitions
-                .Where(train => (train.CarType == carType) && train.ExpressOnly)
                 .SelectMany(train => train.Skins)
+                .Where(skin => (skin.CarType == carType) && skin.ExpressOnly)
+                .Select(skin => skin.Name)
                 .ToHashSet();
         }
 
@@ -161,12 +162,12 @@ namespace PassengerJobsMod
             }
         }
 
-        public static void SetConsistSkin( List<TrainCar> consist, string[] skinNames )
+        public static void ApplyConsistSkins( List<TrainCar> consist, List<string> skinNames )
         {
-            foreach( TrainCar car in consist )
+            for( int i = 0; i < consist.Count; i++ )
             {
-                CarStates[car.CarGUID] = skinNames.ChooseOne(Rand);
-                SM_ReplaceTexture(car);
+                CarStates[consist[i].CarGUID] = skinNames[i];
+                SM_ReplaceTexture(consist[i]);
             }
         }
 

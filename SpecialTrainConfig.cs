@@ -12,25 +12,28 @@ namespace PassengerJobsMod
         public SpecialTrain[] Trains;
     }
 
+    public class SpecialTrainSkin
+    {
+        [XmlAttribute("CarType")]
+        public string CarTypeString = null;
+
+        [XmlIgnore]
+        public TrainCarType CarType = TrainCarType.NotSet;
+
+        [XmlAttribute("Name")]
+        public string Name = null;
+
+        [XmlAttribute]
+        public bool ExpressOnly = false;
+    }
+
     public class SpecialTrain
     {
         [XmlAttribute("Name")]
         public string Name = null;
 
-        [XmlAttribute("Skin")]
-        public string SkinListString = null;
-
-        [XmlIgnore]
-        public string[] Skins;
-
         [XmlAttribute("IDAbbrev")]
         public string IDAbbrev = null;
-
-        [XmlAttribute("CarType")]
-        public string CarTypeString = null;
-
-        [XmlIgnore]
-        public TrainCarType CarType;
 
         [XmlAttribute("Routes")]
         public string RouteString = null;
@@ -41,8 +44,9 @@ namespace PassengerJobsMod
         [XmlIgnore]
         public StationsChainData[] Routes = null;
 
-        [XmlAttribute]
-        public bool ExpressOnly = false;
+        [XmlElement(ElementName = "Skin")]
+        public SpecialTrainSkin[] Skins;
+
 
         public bool IsAllowedOnRoute( string start, string end )
         {
@@ -72,8 +76,8 @@ namespace PassengerJobsMod
                 string[] stations = routePairs[i].ToUpper().Split('-');
 
                 if( (stations.Length == 2) &&
-                    SingletonBehaviour<LogicController>.Instance.YardIdToStationController.TryGetValue(stations[0], out _) &&
-                    SingletonBehaviour<LogicController>.Instance.YardIdToStationController.TryGetValue(stations[1], out _) )
+                    LogicController.Instance.YardIdToStationController.TryGetValue(stations[0], out _) &&
+                    LogicController.Instance.YardIdToStationController.TryGetValue(stations[1], out _) )
                 {
                     Routes[i] = new StationsChainData(stations[0], stations[1]);
                 }
@@ -113,34 +117,34 @@ namespace PassengerJobsMod
                 }
             }
 
-            // cartype must be red, green, or blue
-            if( "red".Equals(CarTypeString, comp) )
+            foreach( SpecialTrainSkin skin in Skins )
             {
-                CarType = TrainCarType.PassengerRed;
-            }
-            else if( "green".Equals(CarTypeString, comp) )
-            {
-                CarType = TrainCarType.PassengerGreen;
-            }
-            else if( "blue".Equals(CarTypeString, comp) )
-            {
-                CarType = TrainCarType.PassengerBlue;
-            }
-            else
-            {
-                message = $"Invalid car type {CarType}";
-                return false;
-            }
+                // cartype must be red, green, or blue
+                if( "red".Equals(skin.CarTypeString, comp) )
+                {
+                    skin.CarType = TrainCarType.PassengerRed;
+                }
+                else if( "green".Equals(skin.CarTypeString, comp) )
+                {
+                    skin.CarType = TrainCarType.PassengerGreen;
+                }
+                else if( "blue".Equals(skin.CarTypeString, comp) )
+                {
+                    skin.CarType = TrainCarType.PassengerBlue;
+                }
+                else
+                {
+                    message = $"Invalid car type {skin.CarTypeString}";
+                    return false;
+                }
 
-            // check that a skin is given
-            if( string.IsNullOrWhiteSpace(SkinListString) )
-            {
-                message = "No skin specified";
-                return false;
+                // check that a skin is given
+                if( string.IsNullOrWhiteSpace(skin.Name) )
+                {
+                    message = "Skin specified without name";
+                    return false;
+                }
             }
-
-            // process skin list
-            Skins = SkinListString.Split(',').Select(s => s.Trim()).ToArray();
 
             // check that the routes are okay
             if( !ParseRoutes() )

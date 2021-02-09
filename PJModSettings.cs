@@ -15,7 +15,7 @@ namespace PassengerJobsMod
         public bool UniformConsists = true;
 
         [Draw("Special/named train generation probability", Min = 0, Max = 1)]
-        public float NamedTrainProbability = 0.6f;
+        public float NamedTrainProbability = 0.7f;
 
         [Draw("Perform data purge for uninstall (see log for results)")]
         public bool DoPurge = false;

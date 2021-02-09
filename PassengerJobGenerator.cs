@@ -370,6 +370,8 @@ namespace PassengerJobsMod
             // if we're creating a new consist, check if it can be a special train
             // let's try 2/3 chance of special train, 1/3 normal gen
             SpecialTrain specialInfo = null;
+            List<string> skinList = null;
+
             if( consistInfo == null )
             {
                 // default 67% chance, or as configured (if there is a special available)
@@ -379,7 +381,9 @@ namespace PassengerJobsMod
                     (SpecialConsistManager.GetTrainForRoute(Controller.stationInfo.YardID, destStation.stationInfo.YardID) is SpecialTrain special) )
                 {
                     specialInfo = special;
-                    jobCarTypes = Enumerable.Repeat(special.CarType, nTotalCars).ToList();
+                    IEnumerable<SpecialTrainSkin> consistSkins = special.Skins.ChooseMany(Rand, nTotalCars);
+                    jobCarTypes = consistSkins.Select(s => s.CarType).ToList();
+                    skinList = consistSkins.Select(s => s.Name).ToList();
                 }
                 else
                 {
@@ -448,7 +452,7 @@ namespace PassengerJobsMod
             {
                 jobDefinition = PopulateTransportJobAndSpawn(
                     chainController, Controller.logicStation, startSiding, destSiding,
-                    jobCarTypes, chainData, bonusLimit, transportPayment, true, specialInfo);
+                    jobCarTypes, chainData, bonusLimit, transportPayment, true, skinList);
             }
             else
             {
@@ -521,7 +525,7 @@ namespace PassengerJobsMod
         private static StaticPassengerJobDefinition PopulateTransportJobAndSpawn(
             JobChainController chainController, Station startStation,
             Track startTrack, Track destTrack, List<TrainCarType> carTypes,
-            StationsChainData chainData, float timeLimit, float initialPay, bool unifyConsist = false, SpecialTrain special = null )
+            StationsChainData chainData, float timeLimit, float initialPay, bool unifyConsist = false, List<string> skinList = null )
         {
             // Spawn the cars
             RailTrack startRT = SingletonBehaviour<LogicController>.Instance.LogicToRailTrack[startTrack];
@@ -538,9 +542,9 @@ namespace PassengerJobsMod
                 return null;
             }
 
-            if( (special != null) && SkinManager_Patch.Enabled )
+            if( (skinList != null) && SkinManager_Patch.Enabled )
             {
-                SkinManager_Patch.SetConsistSkin(spawnedCars, special.Skins);
+                SkinManager_Patch.ApplyConsistSkins(spawnedCars, skinList);
             }
             else if( unifyConsist && SkinManager_Patch.Enabled )
             {
