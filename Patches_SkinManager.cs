@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
 using HarmonyLib;
 using UnityModManagerNet;
 
@@ -17,6 +17,13 @@ namespace PassengerJobsMod
         private delegate void ReplaceTextureDelegate( TrainCar car );
         private static ReplaceTextureDelegate SM_ReplaceTexture = null;
         private static Dictionary<string, string> CarStates = null;
+        private static IDictionary SkinGroups = null;
+
+        private static readonly List<string> RedCoachSkins = new List<string>();
+        private static readonly List<string> GreenCoachSkins = new List<string>();
+        private static readonly List<string> BlueCoachSkins = new List<string>();
+
+        private static readonly System.Random Rand = new System.Random();
 
         public static void Initialize()
         {
@@ -29,6 +36,7 @@ namespace PassengerJobsMod
                 {
                     SM_ReplaceTexture = AccessTools.Method(smType, "ReplaceTexture")?.CreateDelegate(typeof(ReplaceTextureDelegate)) as ReplaceTextureDelegate;
                     CarStates = AccessTools.Field(smType, "trainCarState")?.GetValue(null) as Dictionary<string, string>;
+                    SkinGroups = AccessTools.Field(smType, "skinGroups")?.GetValue(null) as IDictionary;
 
                     if( (CarStates == null) || (SM_ReplaceTexture == null) )
                     {
@@ -40,6 +48,7 @@ namespace PassengerJobsMod
                         PassengerJobs.ModEntry.Logger.Log("SkinManager integration enabled");
 
                         SearchForNamedTrains();
+                        GetPlainCoachSkinList();
                     }
                 }
                 else
@@ -76,6 +85,70 @@ namespace PassengerJobsMod
             }
         }
 
+        private static FieldInfo skinsField;
+        private static FieldInfo skinNameField;
+
+        private static void GetPlainCoachSkinList()
+        {
+            Type skinGroupType = AccessTools.TypeByName("SkinManagerMod.SkinGroup");
+            Type skinType = AccessTools.TypeByName("SkinManagerMod.Skin");
+            if( skinGroupType == null || skinType == null )
+            {
+                PassengerJobs.ModEntry.Logger.Error("Couldn't get skin manager types");
+                return;
+            }
+
+            skinsField = AccessTools.Field(skinGroupType, "skins");
+            skinNameField = AccessTools.Field(skinType, "name");
+            if( skinsField == null || skinNameField == null )
+            {
+                PassengerJobs.ModEntry.Logger.Error("Couldn't get skin manager skin fields");
+                return;
+            }
+
+            HashSet<string> blockList = SpecialConsistManager.TrainDefinitions
+                .Where(train => (train.CarType == TrainCarType.PassengerRed) && train.ExpressOnly)
+                .Select(train => train.Name)
+                .ToHashSet();
+
+            GetPlainSkinsForCoachType(RedCoachSkins, TrainCarType.PassengerRed, blockList);
+
+            SpecialConsistManager.TrainDefinitions
+                .Where(train => (train.CarType == TrainCarType.PassengerGreen) && train.ExpressOnly)
+                .Select(train => train.Name)
+                .ToHashSet();
+
+            GetPlainSkinsForCoachType(GreenCoachSkins, TrainCarType.PassengerGreen, blockList);
+
+            SpecialConsistManager.TrainDefinitions
+                .Where(train => (train.CarType == TrainCarType.PassengerBlue) && train.ExpressOnly)
+                .Select(train => train.Name)
+                .ToHashSet();
+
+            GetPlainSkinsForCoachType(BlueCoachSkins, TrainCarType.PassengerBlue, blockList);
+        }
+
+        private static void GetPlainSkinsForCoachType( List<string> dest, TrainCarType carType, HashSet<string> blockList )
+        {
+            object skinGroup = SkinGroups[carType];
+
+            if( skinsField.GetValue(skinGroup) is IList skinList )
+            {
+                foreach( object skin in skinList )
+                {
+                    if( skinNameField.GetValue(skin) is string skinName )
+                    {
+                        if( !blockList.Contains(skinName) ) dest.Add(skinName);
+                    }
+                }
+            }
+            else
+            {
+                PassengerJobs.ModEntry.Logger.Error("Couldn't get skins list from skingroup");
+                return;
+            }
+        }
+
         public static void UnifyConsist( List<TrainCar> consist )
         {
             if( consist.Count <= 1 ) return;
@@ -94,10 +167,32 @@ namespace PassengerJobsMod
 
         public static void SetConsistSkin( List<TrainCar> consist, string[] skinNames )
         {
-            var rand = new System.Random();
             foreach( TrainCar car in consist )
             {
-                CarStates[car.CarGUID] = skinNames.ChooseOne(rand);
+                CarStates[car.CarGUID] = skinNames.ChooseOne(Rand);
+                SM_ReplaceTexture(car);
+            }
+        }
+
+        public static void ApplyPlainSkins( List<TrainCar> consist )
+        {
+            foreach( TrainCar car in consist )
+            {
+                switch( car.carType )
+                {
+                    case TrainCarType.PassengerRed:
+                        CarStates[car.CarGUID] = RedCoachSkins.ChooseOne(Rand);
+                        break;
+
+                    case TrainCarType.PassengerGreen:
+                        CarStates[car.CarGUID] = GreenCoachSkins.ChooseOne(Rand);
+                        break;
+
+                    case TrainCarType.PassengerBlue:
+                        CarStates[car.CarGUID] = BlueCoachSkins.ChooseOne(Rand);
+                        break;
+                }
+
                 SM_ReplaceTexture(car);
             }
         }

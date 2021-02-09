@@ -546,6 +546,11 @@ namespace PassengerJobsMod
             {
                 SkinManager_Patch.UnifyConsist(spawnedCars);
             }
+            else
+            {
+                // random non-express skins
+                SkinManager_Patch.ApplyPlainSkins(spawnedCars);
+            }
 
             return PopulateTransportJobExistingCars(chainController, startStation, startTrack, destTrack, logicCars, chainData, timeLimit, initialPay);
         }

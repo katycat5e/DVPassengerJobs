@@ -41,6 +41,9 @@ namespace PassengerJobsMod
         [XmlIgnore]
         public StationsChainData[] Routes = null;
 
+        [XmlAttribute]
+        public bool ExpressOnly = false;
+
         public bool IsAllowedOnRoute( string start, string end )
         {
             if( AllowAnyRoute ) return true;
