@@ -49,7 +49,8 @@ namespace PassengerJobsMod
         private bool JobListDirty = true;
 
         private SignData.JobInfo[] CachedJobsData = null;
-        private string LastTime = "12:00";
+        private string LastTimeString = "12:00";
+        private DateTime LastTime = DateTime.MinValue;
         private string TrackId = null;
         private string OverrideMessage = null;
 
@@ -143,7 +144,7 @@ namespace PassengerJobsMod
         public void RefreshDisplays()
         {
             if( JobListDirty ) RegenerateJobsData();
-            var data = new SignData(TrackId, LastTime) { Jobs = CachedJobsData };
+            var data = new SignData(TrackId, LastTimeString) { Jobs = CachedJobsData };
 
             foreach( var printer in DisplayComponents )
             {
@@ -246,10 +247,25 @@ namespace PassengerJobsMod
         private System.Collections.IEnumerator CheckForTrains()
         {
             bool inIdleState = false;
+            bool timeDirty = false;
 
             while( true )
             {
                 yield return WaitFor.SecondsRealtime(TRAIN_CHECK_INTERVAL);
+
+                // Check whether to update the time
+                DateTime newTime = DVTime_Patch.GetCurrentTime();
+                TimeSpan timeDelta = newTime.Subtract(LastTime);
+                if( timeDelta.TotalSeconds >= 60 )
+                {
+                    LastTime = newTime;
+                    LastTimeString = newTime.ToString("hh:mm");
+                    timeDirty = true;
+                }
+                else
+                {
+                    timeDirty = false;
+                }
 
                 // Check for loading train, is highest priority on sign
                 loadInRange = IsAnyTrainAtPlatform(true);
@@ -305,7 +321,7 @@ namespace PassengerJobsMod
                     ClearOverrideText();
                     inIdleState = true;
                 }
-                else if( JobListDirty )
+                else if( JobListDirty || timeDirty )
                 {
                     RefreshDisplays();
                 }

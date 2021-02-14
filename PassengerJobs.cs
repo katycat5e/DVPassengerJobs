@@ -5,9 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityModManagerNet;
 
 namespace PassengerJobsMod
@@ -63,6 +60,7 @@ namespace PassengerJobsMod
 
             // Find companion mods
             if( Settings.UniformConsists ) SkinManager_Patch.Initialize();
+            DVTime_Patch.Initialize();
 
             SlicedCarsModEntry = UnityModManager.FindMod("SlicedPassengerCars");
             if( SmallerCoachesEnabled )

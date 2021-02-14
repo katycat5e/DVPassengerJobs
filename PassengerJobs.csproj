@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommuterChainController.cs" />
+    <Compile Include="DVTime_Patch.cs" />
     <Compile Include="SignPrinter.cs" />
     <Compile Include="SpecialConsistManager.cs" />
     <Compile Include="Extensions.cs" />
