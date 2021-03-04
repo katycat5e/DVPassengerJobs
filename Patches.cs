@@ -188,7 +188,7 @@ namespace PassengerJobsMod
 
             if( idStr != null )
             {
-                IdGenerator.Instance.RegisterJobId(idStr);
+                //IdGenerator.Instance.RegisterJobId(idStr);
                 return idStr;
             }
             else
