@@ -542,18 +542,21 @@ namespace PassengerJobsMod
                 return null;
             }
 
-            if( (skinList != null) && SkinManager_Patch.Enabled )
+            if( SkinManager_Patch.Enabled )
             {
-                SkinManager_Patch.ApplyConsistSkins(spawnedCars, skinList);
-            }
-            else if( unifyConsist && SkinManager_Patch.Enabled )
-            {
-                SkinManager_Patch.UnifyConsist(spawnedCars);
-            }
-            else
-            {
-                // random non-express skins
-                SkinManager_Patch.ApplyPlainSkins(spawnedCars);
+                if( (skinList != null) && SkinManager_Patch.Enabled )
+                {
+                    SkinManager_Patch.ApplyConsistSkins(spawnedCars, skinList);
+                }
+                else if( unifyConsist && SkinManager_Patch.Enabled )
+                {
+                    SkinManager_Patch.UnifyConsist(spawnedCars);
+                }
+                else
+                {
+                    // random non-express skins
+                    SkinManager_Patch.ApplyPlainSkins(spawnedCars);
+                }
             }
 
             return PopulateTransportJobExistingCars(chainController, startStation, startTrack, destTrack, logicCars, chainData, timeLimit, initialPay);
