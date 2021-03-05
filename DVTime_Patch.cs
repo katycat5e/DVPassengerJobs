@@ -22,23 +22,23 @@ namespace PassengerJobsMod
 
                         if( GetCurrentTime != null )
                         {
-                            PassengerJobs.ModEntry.Logger.Warning($"Found DVTime mod, enabling");
+                            PassengerJobs.ModEntry.Logger.Log($"Found DVTime mod, enabling");
                             return;
                         }
                     }
                     else
                     {
-                        PassengerJobs.ModEntry.Logger.Warning($"unable to get CurrentTime.Time property");
+                        PassengerJobs.ModEntry.Logger.Log($"unable to get CurrentTime.Time property");
                     }
                 }
                 else
                 {
-                    PassengerJobs.ModEntry.Logger.Warning($"unable to find DVTime CurrentTime type");
+                    PassengerJobs.ModEntry.Logger.Log($"unable to find DVTime CurrentTime type");
                 }
             }
             catch( Exception )
             {
-                PassengerJobs.ModEntry.Logger.Warning($"unable to find DVTime");
+                PassengerJobs.ModEntry.Logger.Log($"unable to find DVTime");
             }
 
             // Implement some kind of fallback strategy here
