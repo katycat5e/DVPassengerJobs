@@ -317,9 +317,9 @@ namespace PassengerJobsMod
 
                 // pick start storage track
                 var emptyTracks = TrackOrg.FilterOutOccupiedTracks(StorageTracks);
-                startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(emptyTracks, trainLength);
+                startSiding = TrackOrg.GetTrackWithEnoughFreeSpace(emptyTracks, trainLength);
 
-                if( startSiding == null ) startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, trainLength);
+                if( startSiding == null ) startSiding = TrackOrg.GetTrackWithEnoughFreeSpace(StorageTracks, trainLength);
             }
             else
             {
@@ -354,7 +354,7 @@ namespace PassengerJobsMod
 
                 // pick ending platform
                 PassengerJobGenerator destGenerator = LinkedGenerators[destStation];
-                destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(destGenerator.StorageTracks, trainLength);
+                destSiding = TrackOrg.GetTrackWithEnoughFreeSpace(destGenerator.StorageTracks, trainLength);
 
                 // remove this station from the pool
                 destPool.Remove(destStation);
@@ -600,9 +600,9 @@ namespace PassengerJobsMod
 
                 // pick start storage track
                 var emptyTracks = TrackOrg.FilterOutOccupiedTracks(StorageTracks);
-                startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(emptyTracks, trainLength);
+                startSiding = TrackOrg.GetTrackWithEnoughFreeSpace(emptyTracks, trainLength);
 
-                if( startSiding == null ) startSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, trainLength);
+                if( startSiding == null ) startSiding = TrackOrg.GetTrackWithEnoughFreeSpace(StorageTracks, trainLength);
 
                 if( startSiding == null )
                 {
@@ -643,7 +643,7 @@ namespace PassengerJobsMod
             {
                 string destYard = destPool.ChooseOne(Rand);
                 destStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[destYard];
-                destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(destStation.logicStation.yard.StorageTracks, trainLength);
+                destSiding = TrackOrg.GetTrackWithEnoughFreeSpace(destStation.logicStation.yard.StorageTracks, trainLength);
 
                 destPool.Remove(destYard);
             }
@@ -733,7 +733,7 @@ namespace PassengerJobsMod
             }
 
             // pick ending storage track
-            Track destSiding = TrackOrg.GetTrackThatHasEnoughFreeSpace(StorageTracks, trainLength);
+            Track destSiding = TrackOrg.GetTrackWithEnoughFreeSpace(StorageTracks, trainLength);
 
             if( destSiding == null )
             {

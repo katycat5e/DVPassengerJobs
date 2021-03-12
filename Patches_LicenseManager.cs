@@ -40,7 +40,7 @@ namespace PassengerJobsMod
         {
             if( license == PassLicenses.Passengers1 )
             {
-                __result = true;
+                __result = LicenseManager.IsJobLicenseAcquired(JobLicenses.Shunting);
                 return false;
             }
             return true;

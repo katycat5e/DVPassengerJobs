@@ -51,9 +51,9 @@ namespace PassengerJobsMod
                 PassengerLicenseUtil.SetLicenseObjectProperties(licenseObj, PassBookletType.Passengers1License);
                 licenseObj.GetComponent<InventoryItemSpec>().belongsToPlayer = itemData.belongsToPlayer;
 
-                if( licenseObj.GetComponent<IStateSave>() is IStateSave stateSave )
+                if( licenseObj.GetComponent<ItemSaveData>() is ItemSaveData stateSave )
                 {
-                    stateSave.SetStateSaveData(itemData.state);
+                    stateSave.LoadItemData(itemData.state);
                 }
 
                 // Position / rotation data

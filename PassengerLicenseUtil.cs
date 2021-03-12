@@ -107,6 +107,13 @@ namespace PassengerJobsMod
             if( !IconsSpriteMap.jobLicenseToSpriteIcon.TryGetValue(PassLicenses.Passengers1, out Sprite licenseIcon) )
             {
                 PassengerJobs.ModEntry.Logger.Warning("Couldn't load passenger license icon");
+                return null;
+            }
+
+            if( !IconsSpriteMap.jobLicenseToSpriteIcon.TryGetValue(JobLicenses.Shunting, out Sprite shuntSprite) )
+            {
+                PassengerJobs.ModEntry.Logger.Warning("Couldn't load shunting license icon (license requirement)");
+                shuntSprite = null;
             }
 
             string costString = $"${PASS1_COST:F}";
@@ -116,7 +123,7 @@ namespace PassengerJobsMod
             string bonusDecrease = "N/A"; // "$"-{percentBonusDecrease:F}%";
 
             return new LicenseTemplatePaperData(
-                PASS1_LICENSE_NAME, PASS1_LICENSE_DESC, PASSENGER_LICENSE_COLOR, costString, insuranceIncrease, bonusDecrease, licenseIcon);
+                PASS1_LICENSE_NAME, PASS1_LICENSE_DESC, PASSENGER_LICENSE_COLOR, costString, insuranceIncrease, bonusDecrease, licenseIcon, shuntSprite);
         }
 
         public struct BookletProps

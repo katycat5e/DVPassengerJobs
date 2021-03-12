@@ -85,5 +85,18 @@ namespace PassengerJobsMod
         {
             return yto.GetReservedSpace(track) > 40.5f;
         }
+
+        internal static Track GetTrackWithEnoughFreeSpace( this YardTracksOrganizer yto, IEnumerable<Track> pool, float requiredLength )
+        {
+            foreach( Track candidate in pool )
+            {
+                if( yto.GetFreeSpaceOnTrack(candidate) > requiredLength )
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
     }
 }
