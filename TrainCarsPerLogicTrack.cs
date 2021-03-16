@@ -5,7 +5,7 @@ using DV.Logic.Job;
 
 namespace PassengerJobsMod
 {
-    class TrainCarsPerLogicTrack
+    public class TrainCarsPerLogicTrack
     {
         public readonly List<TrainCar> cars;
         public readonly Track track;

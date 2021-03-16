@@ -11,11 +11,11 @@ namespace PassengerJobsMod
 {
     public static class PassengerJobs
     {
-        internal static UnityModManager.ModEntry ModEntry;
+        public static UnityModManager.ModEntry ModEntry;
         public static PJModSettings Settings { get; private set; }
 
         internal static UnityModManager.ModEntry SlicedCarsModEntry;
-        internal static bool SmallerCoachesEnabled
+        public static bool SmallerCoachesEnabled
         {
             get => (SlicedCarsModEntry != null) && SlicedCarsModEntry.Active;
         }

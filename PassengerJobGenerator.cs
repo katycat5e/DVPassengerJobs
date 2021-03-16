@@ -16,7 +16,7 @@ namespace PassengerJobsMod
         public const JobType Commuter = (JobType)102;
     }
 
-    class PassengerJobGenerator : MonoBehaviour
+    public class PassengerJobGenerator : MonoBehaviour
     {
         public const int MIN_CARS_EXPRESS = 4;
         public static int MAX_CARS_EXPRESS = 5;

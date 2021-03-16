@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace PassengerJobsMod
 {
-    class StaticPassengerJobDefinition : StaticJobDefinition
+    public class StaticPassengerJobDefinition : StaticJobDefinition
     {
         public JobType subType = PassJobType.Commuter;
         public List<Car> trainCarsToTransport;
@@ -143,7 +143,7 @@ namespace PassengerJobsMod
         }
     }
 
-    class PassengerJobDefinitionData : JobDefinitionDataBase
+    public class PassengerJobDefinitionData : JobDefinitionDataBase
     {
         public int subType;
         public string[] trainCarGuids;

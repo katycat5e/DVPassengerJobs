@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace PassengerJobsMod
 {
-    class PlatformDefinition
+    public class PlatformDefinition
     {
         public readonly string TrackId;
         public readonly string Name;
@@ -30,7 +30,7 @@ namespace PassengerJobsMod
         Lillys
     }
 
-    class SignDefinition
+    public class SignDefinition
     {
         public readonly StationSignType SignType;
         public readonly Vector3 Position;
@@ -45,7 +45,7 @@ namespace PassengerJobsMod
         }
     }
 
-    static class PlatformManager
+    public static class PlatformManager
     {
         public static readonly Dictionary<string, PlatformDefinition[]> PlatformDefs = new Dictionary<string, PlatformDefinition[]>()
         {

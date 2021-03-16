@@ -9,18 +9,18 @@ using UnityEngine;
 
 namespace PassengerJobsMod
 {
-    static class PassLicenses
+    public static class PassLicenses
     {
         public const JobLicenses Passengers1 = (JobLicenses)64;
     }
 
-    enum PassBookletType
+    public enum PassBookletType
     {
         Passengers1License,
         Passengers1Info
     }
 
-    static class PassengerLicenseUtil
+    public static class PassengerLicenseUtil
     {
         public static readonly Color PASSENGER_LICENSE_COLOR = new Color(0.278f, 0.518f, 0.69f);
         public const string PASS1_LICENSE_NAME = "Passengers 1";
