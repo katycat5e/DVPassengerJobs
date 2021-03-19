@@ -89,7 +89,11 @@ namespace PassengerJobsMod
             {
                 foreach( var car in trainCarsToTransport )
                 {
-                    car.LoadCargo(car.capacity, CargoType.Passengers);
+                    if( car.LoadedCargoAmount < (car.capacity - 0.1) )
+                    {
+                        float toload = car.capacity - car.LoadedCargoAmount;
+                        car.LoadCargo(toload, CargoType.Passengers);
+                    }
                 }
             }
 
