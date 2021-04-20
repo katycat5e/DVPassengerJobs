@@ -234,7 +234,7 @@ namespace PassengerJobsMod
             foreach( Car car in cars )
             {
                 // make sure cars are stationary
-                if( !(IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) && (trainCar.GetForwardSpeed() < 0.3f)) )
+                if( !(IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) && (Mathf.Abs(trainCar.GetForwardSpeed()) < 0.3f)) )
                 {
                     // couldn't find logic car or car was moving
                     return false;
