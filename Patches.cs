@@ -1,4 +1,5 @@
-﻿using DV.Logic.Job;
+﻿using DV.CabControls;
+using DV.Logic.Job;
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,7 @@ namespace PassengerJobsMod
     }
 
     // InventoryStartingItems.InstantiateStorageItemsWorld()
-    [HarmonyPatch(typeof(InventoryStartingItems), "InstantiateStorageItemsWorld")]
+    [HarmonyPatch(typeof(StartingItemsController), "InstantiateStorageItemsWorld")]
     static class ISI_InstantiateItemsWorld_Patch
     {
         static void Prefix( ref List<StorageItemData> storageItemData, ref GameObject __state )
@@ -68,7 +69,9 @@ namespace PassengerJobsMod
                     {
                         if( car.GetComponent<TrainPhysicsLod>() is TrainPhysicsLod carPhysics )
                         {
-                            carPhysics.ForceItemUpdate(false);
+                            var itemBase = licenseObj.GetComponent<ItemBase>();
+                            carPhysics.AddItem(itemBase);
+                            carPhysics.ForceCurrentLodUpdate();
                         }
                         else
                         {
