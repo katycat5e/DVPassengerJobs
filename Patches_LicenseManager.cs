@@ -62,5 +62,21 @@ namespace PassengerJobsMod
             JobLicenses cleaned = CleanJobLicenses(LicenseManager.GetAcquiredJobLicenses());
             SaveGameManager.data.SetInt(SaveGameKeys.Job_Licenses, (int)cleaned);
         }
+
+        [HarmonyPatch(nameof(LicenseManager.LoadData))]
+        [HarmonyPostfix]
+        static void AcquirePassLicenseLegacySave()
+        {
+            int? savedLicenses = SaveGameManager.data.GetInt("Job_Licenses");
+            if( savedLicenses.HasValue )
+            {
+                JobLicenses val = (JobLicenses)savedLicenses.Value;
+                if( val.HasFlag(PassLicenses.Passengers1) )
+                {
+                    PassengerJobs.Log("Acquiring passengers license from legacy save data");
+                    LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
+                }
+            }
+        }
     }
 }

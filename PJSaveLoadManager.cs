@@ -127,6 +127,11 @@ namespace PassengerJobsMod
                     loadedData = null;
                 }
             }
+            else
+            {
+                // no save file exists
+                PassengerJobs.Log("No save file found, skipping load");
+            }
         }
 
         public static void CreateSaveBackup()
@@ -137,11 +142,21 @@ namespace PassengerJobsMod
 
             if( !File.Exists(SaveFilePath) || File.Exists(backupPath) )
             {
-                PassengerJobs.Log("Skipping save backup, no data or backup already exists");
+                PassengerJobs.Log("Skipping save backup, no existing save or backup already exists");
                 return;
             }
 
-            File.Copy(SaveFilePath, backupPath);
+            try
+            {
+                File.Copy(SaveFilePath, backupPath);
+            }
+            catch( Exception ex )
+            {
+                PassengerJobs.Error("Failed to create save file backup:\n" + ex.Message);
+                return;
+            }
+
+            PassengerJobs.Log("Successfully backed up save data");
             DeleteOldBackups();
         }
 
@@ -154,10 +169,33 @@ namespace PassengerJobsMod
                 .Select(name => new FileInfo(Path.Combine(saveDir, name)))
                 .OrderByDescending(file => file.CreationTime)
                 .Skip(5);
-            
+
+            int deletedCount = 0;
             foreach( FileInfo file in oldBackups )
             {
                 file.Delete();
+                deletedCount++;
+            }
+
+            if( deletedCount > 0 )
+            {
+                PassengerJobs.Log($"Deleted {deletedCount} old passenger saves");
+            }
+        }
+
+        public static void PurgeSaveData()
+        {
+            // we'll keep the backups just in case
+            if( File.Exists(SaveFilePath) )
+            {
+                try
+                {
+                    File.Delete(SaveFilePath);
+                }
+                catch( Exception ex )
+                {
+                    PassengerJobs.Error("Failed to delete save file:\n" + ex.Message);
+                }
             }
         }
     }
@@ -184,18 +222,6 @@ namespace PassengerJobsMod
     [HarmonyPatch(typeof(JobChainController), nameof(JobChainController.GetJobChainSaveData))]
     static class JCC_GetJobChainSaveData_Patch
     {
-        static bool Prefix( JobChainController __instance, ref JobChainSaveData __result )
-        {
-            if( __instance is PassengerTransportChainController || __instance is CommuterChainController )
-            {
-                __result = null;
-                return false;
-            }
-
-            return true;
-        }
-
-        /*
         static void Postfix( JobChainController __instance, ref JobChainSaveData __result )
         {
             if( __instance is PassengerTransportChainController )
@@ -207,19 +233,23 @@ namespace PassengerJobsMod
                 __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Commuter, __result);
             }
         }
-        */
     }
 
-    // Filter save game job data to exclude null (passenger) values
+    // Filter save game job data to exclude passenger values
     [HarmonyPatch(typeof(JobSaveManager))]
     static class JobSaveManager_Patches
     {
+        static bool IsNotPassengerChainData( JobChainSaveData data )
+        {
+            return !(data is PassengerChainSaveData);
+        }
+
         [HarmonyPatch(nameof(JobSaveManager.GetJobsSaveGameData))]
         [HarmonyPostfix]
-        static void FilterNullJobChains( ref JobsSaveGameData __result )
+        static void FilterPassengerJobChains( ref JobsSaveGameData __result )
         {
             __result.jobChains = __result.jobChains
-                .Where(chainData => chainData != null)
+                .Where(IsNotPassengerChainData)
                 .ToArray();
         }
 
