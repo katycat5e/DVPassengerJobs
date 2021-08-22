@@ -27,6 +27,43 @@ namespace PassengerJobsMod
         }
     }
 
+    [HarmonyPatch(typeof(StartingItemsController), "InstantiateItem")]
+    static class StartingItemsController_InstantiateItem_Patch
+    {
+        private static readonly string pass1LicenseName = PassengerLicenseUtil.BookletProperties[PassBookletType.Passengers1License].Name;
+
+        static bool Prefix( StorageItemData itemData, ref GameObject __result )
+        {
+            if( pass1LicenseName.Equals(itemData.itemPrefabName) )
+            {
+                // need to perform custom instantiate
+                __result = null;
+
+                GameObject licenseObj = Resources.Load(BC_CreateLicense_Patch.COPIED_PREFAB_NAME) as GameObject;
+                if( licenseObj == null )
+                {
+                    PassengerJobs.ModEntry.Logger.Error("Couldn't spawn saved Passengers 1 license");
+                    return false;
+                }
+
+                // GameObject properties and state
+                licenseObj = UnityEngine.Object.Instantiate(licenseObj);
+                PassengerLicenseUtil.SetLicenseObjectProperties(licenseObj, PassBookletType.Passengers1License);
+                licenseObj.GetComponent<InventoryItemSpec>().belongsToPlayer = itemData.belongsToPlayer;
+
+                if( licenseObj.GetComponent<ItemSaveData>() is ItemSaveData stateSave )
+                {
+                    stateSave.LoadItemData(itemData.state);
+                }
+
+                __result = licenseObj;
+                return false;
+            }
+            return true;
+        }
+    }
+
+    /*
     // InventoryStartingItems.InstantiateStorageItemsWorld()
     [HarmonyPatch(typeof(StartingItemsController), "InstantiateStorageItemsWorld")]
     static class ISI_InstantiateItemsWorld_Patch
@@ -106,6 +143,7 @@ namespace PassengerJobsMod
             }
         }
     }
+    */
 
     // Job.GetPotentialBonusPaymentForTheJob()
     [HarmonyPatch(typeof(Job), nameof(Job.GetPotentialBonusPaymentForTheJob))]
@@ -198,22 +236,6 @@ namespace PassengerJobsMod
             {
                 PassengerJobs.ModEntry.Logger.Warning($"Couldn't find free jobId for express special: {special.IDAbbrev}! Using 0 for jobId number!");
                 return $"{special.IDAbbrev}-{0:D2}";
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(JobChainController), nameof(JobChainController.GetJobChainSaveData))]
-    static class JCC_GetJobChainSaveData_Patch
-    {
-        static void Postfix( JobChainController __instance, ref JobChainSaveData __result)
-        {
-            if( __instance is PassengerTransportChainController )
-            {
-                __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Transport, __result);
-            }
-            else if( __instance is CommuterChainController )
-            {
-                __result = new PassengerChainSaveData(PassengerChainSaveData.PassChainType.Commuter, __result);
             }
         }
     }
