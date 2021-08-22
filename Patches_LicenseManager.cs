@@ -4,11 +4,13 @@ using System;
 namespace PassengerJobsMod
 {
     // JobLicenses.DisplayName() (extension)
-    [HarmonyPatch(typeof(LicenseManager), nameof(LicenseManager.DisplayName))]
-    [HarmonyPatch(new Type[] { typeof(JobLicenses) })]
-    class LM_DisplayName_Patch
+    [HarmonyPatch(typeof(LicenseManager))]
+    static class LicenseManager_Patches
     {
-        static bool Prefix( JobLicenses license, ref string __result )
+        [HarmonyPatch(nameof(LicenseManager.DisplayName))]
+        [HarmonyPatch(new Type[] { typeof(JobLicenses) })]
+        [HarmonyPrefix]
+        static bool DisplayName( JobLicenses license, ref string __result )
         {
             if( license == PassLicenses.Passengers1 )
             {
@@ -17,26 +19,20 @@ namespace PassengerJobsMod
             }
             return true;
         }
-    }
 
-    // LicenseManager.GetNumberOfAcquiredJobLicenses()
-    [HarmonyPatch(typeof(LicenseManager), nameof(LicenseManager.GetNumberOfAcquiredJobLicenses))]
-    class LM_GetAcquiredLicenses_Patch
-    {
-        static void Postfix( ref int __result )
+        [HarmonyPatch(nameof(LicenseManager.GetNumberOfAcquiredJobLicenses))]
+        [HarmonyPostfix]
+        static void CorrectNumberOfLicenses( ref int __result )
         {
             if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
             {
                 __result += 1;
             }
         }
-    }
 
-    // LicenseManager.IsJobLicenseObtainable()
-    [HarmonyPatch(typeof(LicenseManager), nameof(LicenseManager.IsJobLicenseObtainable))]
-    class LM_IsLicenseObtainable_Patch
-    {
-        static bool Prefix( JobLicenses license, ref bool __result )
+        [HarmonyPatch(nameof(LicenseManager.IsJobLicenseObtainable))]
+        [HarmonyPrefix]
+        static bool IsJobLicenseObtainable( JobLicenses license, ref bool __result )
         {
             if( license == PassLicenses.Passengers1 )
             {
@@ -45,24 +41,31 @@ namespace PassengerJobsMod
             }
             return true;
         }
-    }
 
-    // LicenseManager.IsValidForParsingToJobLicense()
-    [HarmonyPatch(typeof(LicenseManager), nameof(LicenseManager.IsValidForParsingToJobLicense))]
-    class LM_IsValidLicenses_Patch
-    {
-        static void Prefix( ref JobLicenses jobLicensesInt )
+        static JobLicenses CleanJobLicenses( JobLicenses jobLicenses )
+        {
+            return jobLicenses & ~PassLicenses.Passengers1;
+        }
+
+        [HarmonyPatch(nameof(LicenseManager.IsValidForParsingToJobLicense))]
+        [HarmonyPrefix]
+        static void HideExtraLicenseForParseCheck( ref JobLicenses jobLicensesInt )
         {
             // we'll mask out the passenger license and pass on the remaining value
-            jobLicensesInt &= ~PassLicenses.Passengers1;
+            jobLicensesInt = CleanJobLicenses(jobLicensesInt);
         }
-    }
 
-    // LicenseManager.LoadData()
-    [HarmonyPatch(typeof(LicenseManager), nameof(LicenseManager.LoadData))]
-    class LM_LoadData_Patch
-    {
-        static void Postfix()
+        [HarmonyPatch(nameof(LicenseManager.SaveData))]
+        [HarmonyPostfix]
+        static void CleanExtraLicenseFromSave()
+        {
+            JobLicenses cleaned = CleanJobLicenses(LicenseManager.GetAcquiredJobLicenses());
+            SaveGameManager.data.SetInt(SaveGameKeys.Job_Licenses, (int)cleaned);
+        }
+
+        [HarmonyPatch(nameof(LicenseManager.LoadData))]
+        [HarmonyPostfix]
+        static void AcquirePassLicenseLegacySave()
         {
             int? savedLicenses = SaveGameManager.data.GetInt("Job_Licenses");
             if( savedLicenses.HasValue )
@@ -70,7 +73,7 @@ namespace PassengerJobsMod
                 JobLicenses val = (JobLicenses)savedLicenses.Value;
                 if( val.HasFlag(PassLicenses.Passengers1) )
                 {
-                    PassengerJobs.ModEntry.Logger.Log("Acquiring passengers license");
+                    PassengerJobs.Log("Acquiring passengers license from legacy save data");
                     LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
                 }
             }

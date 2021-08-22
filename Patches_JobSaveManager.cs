@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace PassengerJobsMod
 {
-    [HarmonyPatch(typeof(JobSaveManager), "LoadJobChain")]
+    [HarmonyPatch(typeof(JobSaveManager), nameof(JobSaveManager.LoadJobChain))]
     static class JSM_LoadJobChain_Patch
     {
         private static Station GetStationWithId( string stationId )
@@ -90,7 +90,13 @@ namespace PassengerJobsMod
 
         static bool Prefix( JobChainSaveData chainSaveData, ref GameObject __result )
         {
-            if( chainSaveData.jobChainData.Length < 1 )
+            if( chainSaveData == null )
+            {
+                __result = null;
+                return false;
+            }
+
+            if(  chainSaveData.jobChainData.Length < 1 )
             {
                 return true;
             }
