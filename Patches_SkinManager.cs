@@ -129,11 +129,17 @@ namespace PassengerJobsMod
         {
             object skinGroup = SkinGroups[carType];
 
+            if( skinGroup == null )
+            {
+                PassengerJobs.Log($"No skin group for car type {carType.DisplayName()}");
+                return;
+            }
+
             if( skinsField.GetValue(skinGroup) is IList skinList )
             {
                 foreach( object skin in skinList )
                 {
-                    if( skinNameField.GetValue(skin) is string skinName )
+                    if( (skin != null) && skinNameField.GetValue(skin) is string skinName )
                     {
                         if( !blockList.Contains(skinName) ) dest.Add(skinName);
                     }
