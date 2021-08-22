@@ -109,6 +109,8 @@ namespace PassengerJobsMod
                     {
                         PassengerJobs.Log("Acquiring passengers license");
                         LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
+
+                        Inventory.Instance.RemoveMoney(PassengerLicenseUtil.PASS1_COST);
                     }
 
                     // inject job chains into main game data
@@ -206,6 +208,24 @@ namespace PassengerJobsMod
         static void Postfix()
         {
             PJSaveLoadManager.Save();
+        }
+    }
+
+    [HarmonyPatch(typeof(SaveGameManager), "DoSaveIO")]
+    static class SaveGameManager_DoSaveIO_Patch
+    {
+        static void Prefix( SaveGameData data )
+        {
+            // refund license in case mod is uninstalled
+            if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
+            {
+                float? money = data.GetFloat(SaveGameKeys.Player_money);
+                if( money.HasValue )
+                {
+                    float newBalance = money.Value + PassengerLicenseUtil.PASS1_COST;
+                    data.SetFloat(SaveGameKeys.Player_money, newBalance);
+                }
+            }
         }
     }
 

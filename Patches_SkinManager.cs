@@ -44,11 +44,11 @@ namespace PassengerJobsMod
                     }
                     else
                     {
-                        Enabled = true;
-                        PassengerJobs.ModEntry.Logger.Log("SkinManager integration enabled");
-
                         SearchForNamedTrains();
                         GetPlainCoachSkinList();
+
+                        PassengerJobs.ModEntry.Logger.Log("SkinManager integration enabled");
+                        Enabled = true;
                     }
                 }
                 else
