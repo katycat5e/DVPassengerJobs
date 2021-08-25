@@ -18,7 +18,8 @@ namespace PassengerJobsMod
 
         public static string SaveDirectory => Path.Combine(PassengerJobs.ModEntry.Path, SAVE_FOLDER);
         public static string SaveFilePath => Path.Combine(PassengerJobs.ModEntry.Path, SAVE_FOLDER, SAVE_FILE_NAME);
-        
+
+        private const string PJ_DATA_KEY = "passengers_mod";
         private const string HAS_LICENSE_P1_KEY = "pass1_obtained";
         private const string VERSION_KEY = "version";
 
@@ -31,7 +32,7 @@ namespace PassengerJobsMod
             get => StationController.allStations.Select(sc => sc.ProceduralJobsController);
         }
 
-        public static void Save()
+        public static void InjectDataIntoSaveGame( SaveGameData mainGameData )
         {
             var pjSaveData = new JObject();
 
@@ -51,24 +52,8 @@ namespace PassengerJobsMod
 
             pjSaveData.SetInt(VERSION_KEY, CURRENT_DATA_VERSION);
 
-            try
-            {
-                if( !Directory.Exists(SaveDirectory) ) Directory.CreateDirectory(SaveDirectory);
-
-                using( var outFile = File.CreateText(SaveFilePath) )
-                {
-                    using( var jtw = new JsonTextWriter(outFile) )
-                    {
-                        jtw.Formatting = Formatting.Indented;
-                        pjSaveData.WriteTo(jtw);
-                    }
-                }
-            }
-            catch( Exception ex )
-            {
-                PassengerJobs.Error("Couldn't open/create save file:\n" + ex.Message);
-                return;
-            }
+            // add to base game data
+            mainGameData.SetJObject(PJ_DATA_KEY, pjSaveData);
         }
 
         private static bool IsPassengerChain( JobChainController jobChain )
@@ -76,12 +61,11 @@ namespace PassengerJobsMod
             return (jobChain is PassengerTransportChainController) || (jobChain is CommuterChainController);
         }
 
-        public static void Load( JobsSaveGameData mainJobData )
+        private static JObject MigrateV3Data()
         {
             if( File.Exists(SaveFilePath) )
             {
-                // load data off disk
-                PassengerJobs.Log("Found save data file, attempting to load...");
+                JObject data;
 
                 try
                 {
@@ -89,20 +73,43 @@ namespace PassengerJobsMod
                     {
                         using( var jtr = new JsonTextReader(saveFile) )
                         {
-                            loadedData = JToken.ReadFrom(jtr) as JObject;
-                            if( loadedData == null )
+                            data = JToken.ReadFrom(jtr) as JObject;
+                            if( data == null )
                             {
                                 PassengerJobs.Error("Save file contained invalid JSON");
                             }
                         }
                     }
+
+                    File.Delete(SaveFilePath);
+                    return data;
                 }
                 catch( Exception ex )
                 {
-                    PassengerJobs.Error("Couldn't read save file:\n" + ex.Message);
-                    return;
+                    PassengerJobs.Warning("Couldn't read save v3 file:\n" + ex.Message);
+                    return null;
                 }
+            }
 
+            return null;
+        }
+
+        public static void OnSaveGameLoaded()
+        {
+            loadedData = SaveGameManager.data.GetJObject(PJ_DATA_KEY);
+            if( loadedData == null )
+            {
+                loadedData = MigrateV3Data();
+                if( loadedData != null ) PassengerJobs.Log("Migrated data from v3 save");
+            }
+            else
+            {
+                PurgeV3Save();
+                PassengerJobs.Log("Found injected save data, attempting to load...");
+            }
+
+            if( loadedData != null )
+            {
                 if( loadedData.GetInt(VERSION_KEY) == CURRENT_DATA_VERSION )
                 {
                     if( loadedData.GetBool(HAS_LICENSE_P1_KEY) == true )
@@ -111,16 +118,6 @@ namespace PassengerJobsMod
                         LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
 
                         Inventory.Instance.RemoveMoney(PassengerLicenseUtil.PASS1_COST);
-                    }
-
-                    // inject job chains into main game data
-                    if( loadedData.GetObjectViaJSON<JobsSaveGameData>(SaveGameKeys.Jobs, JobSaveManager.serializeSettings) is JobsSaveGameData jobData )
-                    {
-                        JobChainSaveData[] combinedChains = mainJobData.jobChains
-                            .Concat(jobData.jobChains)
-                            .ToArray();
-
-                        mainJobData.jobChains = combinedChains;
                     }
                 }
                 else
@@ -131,68 +128,33 @@ namespace PassengerJobsMod
             }
             else
             {
-                // no save file exists
-                PassengerJobs.Log("No save file found, skipping load");
+                PassengerJobs.Log("No save data found");
             }
         }
 
-        public static void CreateSaveBackup()
+        public static void InjectJobChains( JobsSaveGameData mainJobData )
         {
-            string dateString = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            string backupFileName = string.Format(SAVE_BACKUP_FORMAT, dateString);
-            string backupPath = Path.Combine(SaveDirectory, backupFileName);
-
-            if( !File.Exists(SaveFilePath) || File.Exists(backupPath) )
+            // inject job chains into main game data
+            if( loadedData?.GetObjectViaJSON<JobsSaveGameData>(SaveGameKeys.Jobs, JobSaveManager.serializeSettings) is JobsSaveGameData jobData )
             {
-                PassengerJobs.Log("Skipping save backup, no existing save or backup already exists");
-                return;
-            }
+                JobChainSaveData[] combinedChains = mainJobData.jobChains
+                    .Concat(jobData.jobChains)
+                    .ToArray();
 
-            try
-            {
-                File.Copy(SaveFilePath, backupPath);
-            }
-            catch( Exception ex )
-            {
-                PassengerJobs.Error("Failed to create save file backup:\n" + ex.Message);
-                return;
-            }
-
-            PassengerJobs.Log("Successfully backed up save data");
-            DeleteOldBackups();
-        }
-
-        public static void DeleteOldBackups()
-        {
-            string saveDir = SaveDirectory;
-
-            var oldBackups = Directory.EnumerateFiles(saveDir)
-                .Where(name => name.StartsWith(SAVE_BACKUP_PREFIX))
-                .Select(name => new FileInfo(Path.Combine(saveDir, name)))
-                .OrderByDescending(file => file.CreationTime)
-                .Skip(5);
-
-            int deletedCount = 0;
-            foreach( FileInfo file in oldBackups )
-            {
-                file.Delete();
-                deletedCount++;
-            }
-
-            if( deletedCount > 0 )
-            {
-                PassengerJobs.Log($"Deleted {deletedCount} old passenger saves");
+                mainJobData.jobChains = combinedChains;
             }
         }
 
-        public static void PurgeSaveData()
+        public static void PurgeV3Save()
         {
             // we'll keep the backups just in case
             if( File.Exists(SaveFilePath) )
             {
                 try
                 {
+                    File.Copy(SaveFilePath, SaveFilePath + ".bak");
                     File.Delete(SaveFilePath);
+                    PassengerJobs.Log("Deleted v3 save file");
                 }
                 catch( Exception ex )
                 {
@@ -202,43 +164,40 @@ namespace PassengerJobsMod
         }
     }
 
-    [HarmonyPatch(typeof(SaveGameManager), nameof(SaveGameManager.Save))]
-    static class SaveGameManager_Save_Patch
+    [HarmonyPatch(typeof(SaveGameManager))]
+    static class SaveGameManager_Patches
     {
-        static void Postfix()
+        [HarmonyPatch("DoSaveIO")]
+        [HarmonyPrefix]
+        static void InjectPassengerSaveData( SaveGameData data )
         {
-            PJSaveLoadManager.Save();
-        }
-    }
-
-    [HarmonyPatch(typeof(SaveGameManager), "DoSaveIO")]
-    static class SaveGameManager_DoSaveIO_Patch
-    {
-        static void Prefix( SaveGameData data )
-        {
-            // refund license in case mod is uninstalled
-            if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
+            if( !PassengerJobs.Settings.DoPurge )
             {
-                float? money = data.GetFloat(SaveGameKeys.Player_money);
-                if( money.HasValue )
+                PJSaveLoadManager.InjectDataIntoSaveGame(data);
+
+                // refund license in case mod is uninstalled
+                if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
                 {
-                    float newBalance = money.Value + PassengerLicenseUtil.PASS1_COST;
-                    data.SetFloat(SaveGameKeys.Player_money, newBalance);
+                    float? money = data.GetFloat(SaveGameKeys.Player_money);
+                    if( money.HasValue )
+                    {
+                        float newBalance = money.Value + PassengerLicenseUtil.PASS1_COST;
+                        data.SetFloat(SaveGameKeys.Player_money, newBalance);
+                    }
                 }
             }
         }
-    }
 
-    [HarmonyPatch(typeof(SaveGameManager), "MakeBackupFile")]
-    static class SaveGameManager_MakeBackup_Patch
-    {
-        static void Postfix()
+        [HarmonyPatch("DoLoadIO")]
+        [HarmonyPostfix]
+        static void OnSaveLoaded( bool __result )
         {
-            PJSaveLoadManager.CreateSaveBackup();
+            if( !__result ) return;
+
+            PJSaveLoadManager.OnSaveGameLoaded();
         }
     }
 
-    // Prevent regular saving of passenger job chains
     [HarmonyPatch(typeof(JobChainController), nameof(JobChainController.GetJobChainSaveData))]
     static class JCC_GetJobChainSaveData_Patch
     {
@@ -277,7 +236,7 @@ namespace PassengerJobsMod
         [HarmonyPrefix]
         static void LoadPassengerChains( JobsSaveGameData saveData )
         {
-            PJSaveLoadManager.Load(saveData);
+            PJSaveLoadManager.InjectJobChains(saveData);
         }
     }
 }

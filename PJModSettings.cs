@@ -17,7 +17,7 @@ namespace PassengerJobsMod
         [Draw("Special/named train generation probability", Min = 0, Max = 1)]
         public float NamedTrainProbability = 0.7f;
 
-        [Draw("Perform data purge for uninstall (see log for results)")]
+        [Draw("Perform data purge (see log for results) - leave enabled on exit to clean save")]
         public bool DoPurge = false;
 
         public override void Save( UnityModManager.ModEntry modEntry )
@@ -27,9 +27,8 @@ namespace PassengerJobsMod
 
         public void OnChange()
         {
-            if( DoPurge )
+            if( PassengerJobs.Enabled && DoPurge )
             {
-                DoPurge = false;
                 PurgeData();
             }
         }
