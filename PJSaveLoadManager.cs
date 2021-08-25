@@ -32,7 +32,7 @@ namespace PassengerJobsMod
             get => StationController.allStations.Select(sc => sc.ProceduralJobsController);
         }
 
-        public static void Save( SaveGameData mainGameData )
+        public static void InjectDataIntoSaveGame( SaveGameData mainGameData )
         {
             var pjSaveData = new JObject();
 
@@ -94,7 +94,7 @@ namespace PassengerJobsMod
             return null;
         }
 
-        public static void Load()
+        public static void OnSaveGameLoaded()
         {
             loadedData = SaveGameManager.data.GetJObject(PJ_DATA_KEY);
             if( loadedData == null )
@@ -102,11 +102,14 @@ namespace PassengerJobsMod
                 loadedData = MigrateV3Data();
                 if( loadedData != null ) PassengerJobs.Log("Migrated data from v3 save");
             }
+            else
+            {
+                PurgeV3Save();
+                PassengerJobs.Log("Found injected save data, attempting to load...");
+            }
 
             if( loadedData != null )
             {
-                PassengerJobs.Log("Found save data, attempting to load...");
-
                 if( loadedData.GetInt(VERSION_KEY) == CURRENT_DATA_VERSION )
                 {
                     if( loadedData.GetBool(HAS_LICENSE_P1_KEY) == true )
@@ -142,14 +145,16 @@ namespace PassengerJobsMod
             }
         }
 
-        public static void PurgeSaveData()
+        public static void PurgeV3Save()
         {
             // we'll keep the backups just in case
             if( File.Exists(SaveFilePath) )
             {
                 try
                 {
+                    File.Copy(SaveFilePath, SaveFilePath + ".bak");
                     File.Delete(SaveFilePath);
+                    PassengerJobs.Log("Deleted v3 save file");
                 }
                 catch( Exception ex )
                 {
@@ -166,16 +171,19 @@ namespace PassengerJobsMod
         [HarmonyPrefix]
         static void InjectPassengerSaveData( SaveGameData data )
         {
-            PJSaveLoadManager.Save(data);
-
-            // refund license in case mod is uninstalled
-            if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
+            if( !PassengerJobs.Settings.DoPurge )
             {
-                float? money = data.GetFloat(SaveGameKeys.Player_money);
-                if( money.HasValue )
+                PJSaveLoadManager.InjectDataIntoSaveGame(data);
+
+                // refund license in case mod is uninstalled
+                if( LicenseManager.IsJobLicenseAcquired(PassLicenses.Passengers1) )
                 {
-                    float newBalance = money.Value + PassengerLicenseUtil.PASS1_COST;
-                    data.SetFloat(SaveGameKeys.Player_money, newBalance);
+                    float? money = data.GetFloat(SaveGameKeys.Player_money);
+                    if( money.HasValue )
+                    {
+                        float newBalance = money.Value + PassengerLicenseUtil.PASS1_COST;
+                        data.SetFloat(SaveGameKeys.Player_money, newBalance);
+                    }
                 }
             }
         }
@@ -186,7 +194,7 @@ namespace PassengerJobsMod
         {
             if( !__result ) return;
 
-            PJSaveLoadManager.Load();
+            PJSaveLoadManager.OnSaveGameLoaded();
         }
     }
 

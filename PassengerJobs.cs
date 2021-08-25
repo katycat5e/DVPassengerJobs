@@ -13,12 +13,16 @@ namespace PassengerJobsMod
     {
         public static UnityModManager.ModEntry ModEntry;
         public static PJModSettings Settings { get; private set; }
+        public static bool Enabled { get; private set; } = false;
 
         internal static UnityModManager.ModEntry SlicedCarsModEntry;
+
         public static bool SmallerCoachesEnabled
         {
             get => (SlicedCarsModEntry != null) && SlicedCarsModEntry.Active;
         }
+
+        #region Enable/Disable
 
         public static bool Load( UnityModManager.ModEntry modEntry )
         {
@@ -55,6 +59,8 @@ namespace PassengerJobsMod
 
             // Initialize settings
             Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+            Settings.DoPurge = false;
+
             ModEntry.OnGUI = DrawGUI;
             ModEntry.OnSaveGUI = SaveGUI;
 
@@ -75,8 +81,12 @@ namespace PassengerJobsMod
             var harmony = new Harmony("com.foxden.passenger_jobs");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
+            Enabled = true;
+
             return true;
         }
+
+        #endregion
 
         #region Settings
 
