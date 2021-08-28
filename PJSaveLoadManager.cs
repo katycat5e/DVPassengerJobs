@@ -110,17 +110,7 @@ namespace PassengerJobsMod
 
             if( loadedData != null )
             {
-                if( loadedData.GetInt(VERSION_KEY) == CURRENT_DATA_VERSION )
-                {
-                    if( loadedData.GetBool(HAS_LICENSE_P1_KEY) == true )
-                    {
-                        PassengerJobs.Log("Acquiring passengers license");
-                        LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
-
-                        Inventory.Instance.RemoveMoney(PassengerLicenseUtil.PASS1_COST);
-                    }
-                }
-                else
+                if( loadedData.GetInt(VERSION_KEY) != CURRENT_DATA_VERSION )
                 {
                     PassengerJobs.Warning("Save file contains incompatible data version");
                     loadedData = null;
@@ -129,6 +119,17 @@ namespace PassengerJobsMod
             else
             {
                 PassengerJobs.Log("No save data found");
+            }
+        }
+
+        public static void OnInventoryStarted()
+        {
+            if( (loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P1_KEY) == true) && Inventory.Exists )
+            {
+                PassengerJobs.Log("Acquiring passengers license");
+                LicenseManager.AcquireJobLicense(PassLicenses.Passengers1);
+
+                Inventory.Instance.RemoveMoney(PassengerLicenseUtil.PASS1_COST);
             }
         }
 
@@ -195,6 +196,15 @@ namespace PassengerJobsMod
             if( !__result ) return;
 
             PJSaveLoadManager.OnSaveGameLoaded();
+        }
+    }
+
+    [HarmonyPatch(typeof(StartingItemsController), nameof(StartingItemsController.AddStartingItems))]
+    static class StartingItemsController_Patch
+    {
+        static void Postfix()
+        {
+            PJSaveLoadManager.OnInventoryStarted();
         }
     }
 
