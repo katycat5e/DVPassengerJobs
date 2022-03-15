@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DV.Logic.Job;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,8 +8,24 @@ using System.Xml.Serialization;
 
 namespace PassengerJobsMod
 {
-    public static class SpecialConsistManager
+    public static class ConsistManager
     {
+        private static TrainCarType[] _passCarTypes = null;
+        public static TrainCarType[] PassCarTypes
+        {
+            get
+            {
+                // late initialization of all passenger-capable cars
+                if (_passCarTypes == null)
+                {
+                    _passCarTypes = CargoTypes.GetTrainCarTypesThatAreSpecificContainerType(CargoContainerType.Passengers).ToArray();
+                    string carTypes = string.Join(", ", PassCarTypes.Select(CarTypes.DisplayName));
+                    PassengerJobs.Log("Found available coach types: " + carTypes);
+                }
+                return _passCarTypes;
+            }
+        }
+
         public static readonly List<SpecialTrain> TrainDefinitions = new List<SpecialTrain>();
 
         private static readonly XmlSerializer serializer = new XmlSerializer(typeof(SpecialTrainConfig));
@@ -49,12 +66,11 @@ namespace PassengerJobsMod
             }
         }
 
-        private static readonly Random rand = new Random();
         public static SpecialTrain GetTrainForRoute( string startId, string destId )
         {
             List<SpecialTrain> matches = TrainDefinitions.Where(train => train.IsAllowedOnRoute(startId, destId)).ToList();
 
-            return (matches.Count > 0) ? matches.ChooseOne(rand) : null;
+            return (matches.Count > 0) ? matches.ChooseOne() : null;
         }
     }
 }

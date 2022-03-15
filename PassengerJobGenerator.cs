@@ -27,11 +27,6 @@ namespace PassengerJobsMod
         public const float BASE_WAGE_SCALE = 0.5f;
         public const float BONUS_TO_BASE_WAGE_RATIO = 2f;
 
-        public static TrainCarType[] PassCarTypes = new TrainCarType[]
-        {
-            TrainCarType.PassengerRed, TrainCarType.PassengerGreen, TrainCarType.PassengerBlue
-        };
-
         public static Dictionary<string, StationController> PassDestinations = new Dictionary<string, StationController>();
 
         public static Dictionary<string, string[]> CommuterDestinations = new Dictionary<string, string[]>()
@@ -81,8 +76,6 @@ namespace PassengerJobsMod
         {
             return AllTracks.FirstOrDefault(t => id.Equals(t.ID.ToString()));
         }
-
-        private static readonly System.Random Rand = new System.Random(); // seeded with current time
 
 
         #region Generator Initialization
@@ -310,7 +303,7 @@ namespace PassengerJobsMod
             if( consistInfo == null )
             {
                 // generate a consist
-                nTotalCars = Rand.Next(MIN_CARS_EXPRESS, MAX_CARS_EXPRESS + 1);
+                nTotalCars = UnityEngine.Random.Range(MIN_CARS_EXPRESS, MAX_CARS_EXPRESS + 1);
 
                 float singleCarLength = TrackOrg.GetCarTypeLength(TrainCarType.PassengerRed);
                 trainLength = (singleCarLength * nTotalCars) + TrackOrg.GetSeparationLengthBetweenCars(nTotalCars);
@@ -350,7 +343,7 @@ namespace PassengerJobsMod
             while( (destSiding == null) && (destPool.Count > 0) )
             {
                 // search the possible destinations 1 by 1 until we find an opening (or we don't)
-                destStation = destPool.ChooseOne(Rand);
+                destStation = destPool.ChooseOne();
 
                 // pick ending platform
                 PassengerJobGenerator destGenerator = LinkedGenerators[destStation];
@@ -375,13 +368,13 @@ namespace PassengerJobsMod
             if( consistInfo == null )
             {
                 // default 67% chance, or as configured (if there is a special available)
-                double choice = Rand.NextDouble();
+                float choice = UnityEngine.Random.value;
 
                 if( (choice <= PassengerJobs.Settings.NamedTrainProbability) && 
-                    (SpecialConsistManager.GetTrainForRoute(Controller.stationInfo.YardID, destStation.stationInfo.YardID) is SpecialTrain special) )
+                    (ConsistManager.GetTrainForRoute(Controller.stationInfo.YardID, destStation.stationInfo.YardID) is SpecialTrain special) )
                 {
                     specialInfo = special;
-                    IEnumerable<SpecialTrainSkin> consistSkins = special.Skins.ChooseMany(Rand, nTotalCars);
+                    IEnumerable<SpecialTrainSkin> consistSkins = special.Skins.ChooseMany(nTotalCars);
                     jobCarTypes = consistSkins.Select(s => s.CarType).ToList();
                     skinList = consistSkins.Select(s => s.Name).ToList();
                 }
@@ -390,12 +383,12 @@ namespace PassengerJobsMod
                     // normal consist generation
                     if( PassengerJobs.Settings.UniformConsists )
                     {
-                        TrainCarType carType = PassCarTypes.ChooseOne(Rand);
+                        TrainCarType carType = ConsistManager.PassCarTypes.ChooseOne();
                         jobCarTypes = Enumerable.Repeat(carType, nTotalCars).ToList();
                     }
                     else
                     {
-                        jobCarTypes = PassCarTypes.ChooseMany(Rand, nTotalCars);
+                        jobCarTypes = ConsistManager.PassCarTypes.ChooseMany(nTotalCars);
                     }
                 }
             }
@@ -544,11 +537,11 @@ namespace PassengerJobsMod
 
             if( SkinManager_Patch.Enabled )
             {
-                if( (skinList != null) && SkinManager_Patch.Enabled )
+                if (skinList != null)
                 {
                     SkinManager_Patch.ApplyConsistSkins(spawnedCars, skinList);
                 }
-                else if( unifyConsist && SkinManager_Patch.Enabled )
+                else if (unifyConsist)
                 {
                     SkinManager_Patch.UnifyConsist(spawnedCars);
                 }
@@ -593,8 +586,8 @@ namespace PassengerJobsMod
             if( consistInfo == null )
             {
                 // generate a consist
-                nCars = Rand.Next(MIN_CARS_COMMUTE, MAX_CARS_COMMUTE + 1);
-                jobCarTypes = PassCarTypes.ChooseMany(Rand, nCars);
+                nCars = UnityEngine.Random.Range(MIN_CARS_COMMUTE, MAX_CARS_COMMUTE + 1);
+                jobCarTypes = ConsistManager.PassCarTypes.ChooseMany(nCars);
 
                 trainLength = TrackOrg.GetTotalCarTypesLength(jobCarTypes) + TrackOrg.GetSeparationLengthBetweenCars(nCars);
 
@@ -641,7 +634,7 @@ namespace PassengerJobsMod
             var destPool = possibleDestinations.ToList();
             while( (destSiding == null) && (destPool.Count > 0) )
             {
-                string destYard = destPool.ChooseOne(Rand);
+                string destYard = destPool.ChooseOne();
                 destStation = SingletonBehaviour<LogicController>.Instance.YardIdToStationController[destYard];
                 destSiding = TrackOrg.GetTrackWithEnoughFreeSpace(destStation.logicStation.yard.StorageTracks, trainLength);
 

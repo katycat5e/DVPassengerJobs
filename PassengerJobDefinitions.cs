@@ -140,7 +140,7 @@ namespace PassengerJobsMod
             // track the job if it's a special, for booklet info etc
             if( specialDefinition != null )
             {
-                SpecialConsistManager.JobToSpecialMap.Add(job.ID, specialDefinition);
+                ConsistManager.JobToSpecialMap.Add(job.ID, specialDefinition);
             }
 
             jobOriginStation.AddJobToStation(job);

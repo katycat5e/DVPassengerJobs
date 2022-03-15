@@ -320,7 +320,7 @@ namespace PassengerJobsMod
             SpecialTrain special = null;
             if( !string.IsNullOrWhiteSpace(jobData.specialName) )
             {
-                special = SpecialConsistManager.TrainDefinitions.Find(train => string.Equals(train.Name, jobData.specialName));
+                special = ConsistManager.TrainDefinitions.Find(train => string.Equals(train.Name, jobData.specialName));
             }
 
             StaticPassengerJobDefinition jobDefinition = jobChainGO.AddComponent<StaticPassengerJobDefinition>();

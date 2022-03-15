@@ -65,7 +65,7 @@ namespace PassengerJobsMod
             ModEntry.OnSaveGUI = SaveGUI;
 
             // Find companion mods
-            if( Settings.UniformConsists ) SkinManager_Patch.Initialize();
+            SkinManager_Patch.Initialize();
             DVTime_Patch.Initialize();
 
             SlicedCarsModEntry = UnityModManager.FindMod("SlicedPassengerCars");
@@ -78,7 +78,7 @@ namespace PassengerJobsMod
                 ModEntry.Logger.Log("Detected coach resize patch, making consists longer");
             }
 
-            var harmony = new Harmony("com.foxden.passenger_jobs");
+            var harmony = new Harmony(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
             Enabled = true;

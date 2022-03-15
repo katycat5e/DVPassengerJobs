@@ -170,7 +170,7 @@ namespace PassengerJobsMod
             int lastDashIdx = jobId.LastIndexOf('-');
             string trainNum = jobId.Substring(lastDashIdx + 1);
 
-            if( SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
+            if( ConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
             {
                 // Named Train
                 return $"{special.Name} {trainNum}";
@@ -267,6 +267,14 @@ namespace PassengerJobsMod
                     timeDirty = false;
                 }
 
+                // if no trains in progress, then display the default message
+                if (!(loading || unloading) && !inIdleState)
+                {
+                    ClearOverrideText();
+                    inIdleState = true;
+                    continue;
+                }
+
                 // Check for loading train, is highest priority on sign
                 loadInRange = IsAnyTrainAtPlatform(true);
                 if( loadInRange )
@@ -315,13 +323,7 @@ namespace PassengerJobsMod
                     unloadCountdown = START_XFER_DELAY;
                 }
 
-                // if no trains in progress, then display the default message
-                if( !(loading || unloading) && !inIdleState )
-                {
-                    ClearOverrideText();
-                    inIdleState = true;
-                }
-                else if( JobListDirty || timeDirty )
+                if( JobListDirty || timeDirty )
                 {
                     RefreshDisplays();
                 }
@@ -422,10 +424,18 @@ namespace PassengerJobsMod
             {
                 Transform playerTform = PlayerManager.PlayerCamera.transform;
                 LoadCompletedSound.Play(playerTform.position, parent: playerTform);
+                ApplyOverrideText($"Ready to Depart");
+                yield return WaitFor.Seconds(LOAD_DELAY * 10);
             }
 
-            loading = unloading = false;
+            ResetLoadingState();
             DelayedLoadUnloadRoutine = null;
+        }
+
+        private void ResetLoadingState()
+        {
+            loading = unloading = false;
+            loadCountdown = unloadCountdown = START_XFER_DELAY;
         }
     }
 }

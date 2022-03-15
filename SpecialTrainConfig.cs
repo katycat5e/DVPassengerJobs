@@ -119,18 +119,29 @@ namespace PassengerJobsMod
 
             foreach( SpecialTrainSkin skin in Skins )
             {
-                // cartype must be red, green, or blue
-                if( "red".Equals(skin.CarTypeString, comp) )
+                if ("red".Equals(skin.CarTypeString, comp))
                 {
                     skin.CarType = TrainCarType.PassengerRed;
                 }
-                else if( "green".Equals(skin.CarTypeString, comp) )
+                else if ("green".Equals(skin.CarTypeString, comp))
                 {
                     skin.CarType = TrainCarType.PassengerGreen;
                 }
-                else if( "blue".Equals(skin.CarTypeString, comp) )
+                else if ("blue".Equals(skin.CarTypeString, comp))
                 {
                     skin.CarType = TrainCarType.PassengerBlue;
+                }
+                else if (Enum.TryParse<TrainCarType>(skin.CarTypeString, out var carType))
+                {
+                    skin.CarType = carType;
+                }
+                else if (CCL_Patch.Enabled)
+                {
+                    if (!CCL_Patch.TryGetCarTypeById(skin.CarTypeString, out skin.CarType))
+                    {
+                        message = $"Invalid car type {skin.CarTypeString}";
+                        return false;
+                    }
                 }
                 else
                 {

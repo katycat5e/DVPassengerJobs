@@ -10,7 +10,7 @@ namespace PassengerJobsMod
 {
     internal static class Extensions
     {
-        internal static T ChooseOne<T>( this IList<T> list, Random rand, T toExclude = default )
+        internal static T ChooseOne<T>( this IList<T> list, T toExclude = default )
         {
             if( list == null || list.Count == 0 ) return default;
 
@@ -18,7 +18,7 @@ namespace PassengerJobsMod
 
             do
             {
-                int i = rand.Next(list.Count);
+                int i = UnityEngine.Random.Range(0, list.Count);
                 result = list[i];
             }
             while( Equals(result, toExclude) );
@@ -26,13 +26,13 @@ namespace PassengerJobsMod
             return result;
         }
 
-        internal static List<T> ChooseMany<T>( this IList<T> source, Random rand, int count )
+        internal static List<T> ChooseMany<T>( this IList<T> source, int count )
         {
             var result = new List<T>(count);
 
             for( int i = 0; i < count; i++ )
             {
-                result.Add(ChooseOne(source, rand));
+                result.Add(ChooseOne(source));
             }
 
             return result;
