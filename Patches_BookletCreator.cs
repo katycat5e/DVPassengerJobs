@@ -325,7 +325,7 @@ namespace PassengerJobsMod
             // check for speciality
             string coverTitle;
             string trainName;
-            if( SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
+            if (ConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special))
             {
                 coverTitle = special.Name.ToUpper();
 
@@ -619,7 +619,7 @@ namespace PassengerJobsMod
 
             // check for special
             string trainName;
-            if( (job.jobType == PassJobType.Express) && SpecialConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special) )
+            if ((job.jobType == PassJobType.Express) && ConsistManager.JobToSpecialMap.TryGetValue(job.ID, out SpecialTrain special))
             {
                 int lastDashIdx = job.ID.LastIndexOf('-');
                 string trainNum = job.ID.Substring(lastDashIdx + 1);

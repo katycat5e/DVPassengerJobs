@@ -34,11 +34,13 @@
     <Reference Include="0Harmony, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="DV.Utils, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
+    <Reference Include="DVCustomCarLoader, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="NAudio, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="SkinManagerMod, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -59,11 +61,12 @@
     <Reference Include="UnityModManager, Version=0.22.15.0, Culture=neutral, processorArchitecture=MSIL" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CCL_Patch.cs" />
     <Compile Include="CommuterChainController.cs" />
     <Compile Include="DVTime_Patch.cs" />
     <Compile Include="PJSaveLoadManager.cs" />
     <Compile Include="SignPrinter.cs" />
-    <Compile Include="SpecialConsistManager.cs" />
+    <Compile Include="ConsistManager.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="GameObjectDumper.cs" />
     <Compile Include="PassengerTransportChainController.cs" />
@@ -75,7 +78,7 @@
     <Compile Include="Patches_CareerManager.cs" />
     <Compile Include="Patches_JobSaveManager.cs" />
     <Compile Include="Patches_LicenseManager.cs" />
-    <Compile Include="Patches_SkinManager.cs" />
+    <Compile Include="SkinManager_Patch.cs" />
     <Compile Include="PJModSettings.cs" />
     <Compile Include="PlatformController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
