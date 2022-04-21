@@ -23,7 +23,7 @@ namespace PassengerJobsMod
             Enabled = false;
 
             ModEntry = UnityModManager.FindMod("SkinManagerMod");
-            if (ModEntry == null)
+            if (ModEntry == null || !ModEntry.Active)
             {
                 PassengerJobs.Log("SkinManager not found, skipping integration");
                 return;
