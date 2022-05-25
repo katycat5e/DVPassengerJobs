@@ -78,5 +78,18 @@ namespace PassengerJobsMod
                 }
             }
         }
+
+        [HarmonyPatch(nameof(LicenseManager.GetRequiredLicensesInOrderToAcquireJobLicense))]
+        [HarmonyPrefix]
+        static bool RequiredToAcquirePassLicense(JobLicenses license, ref ValueTuple<GeneralLicenseType, JobLicenses> __result)
+        {
+            if (license != PassLicenses.Passengers1)
+            {
+                return true;
+            }
+
+            __result = new ValueTuple<GeneralLicenseType, JobLicenses>(GeneralLicenseType.NotSet, JobLicenses.Shunting);
+            return false;
+        }
     }
 }
