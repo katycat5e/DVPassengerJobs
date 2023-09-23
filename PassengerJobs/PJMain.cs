@@ -1,0 +1,94 @@
+﻿using DVLangHelper.Runtime;
+using HarmonyLib;
+using PassengerJobs.Injectors;
+using System;
+using System.IO;
+using System.Reflection;
+using UnityModManagerNet;
+
+namespace PassengerJobs
+{
+    public static class PJMain
+    {
+        public static UnityModManager.ModEntry ModEntry { get; private set; } = null!;
+        public static PJModSettings Settings { get; private set; } = null!;
+        public static bool Enabled => ModEntry.Active;
+        public static TranslationInjector Translations { get; internal set; } = null!;
+
+
+        #region Enable/Disable
+
+        public static bool Load(UnityModManager.ModEntry modEntry)
+        {
+            ModEntry = modEntry;
+
+            Translations = new TranslationInjector("cc.foxden.passenger_jobs");
+
+            string fallbackCsv = Path.Combine(ModEntry.Path, "translations.csv");
+            Translations.AddTranslationsFromWebCsv("https://foxden.cc/static/derail_valley/pj_translations.csv", fallbackCsv);
+
+            BundleLoader.Initialize();
+
+            // inject licenses
+            try
+            {
+                LicenseInjector.RegisterPassengerLicenses();
+            }
+            catch (Exception ex)
+            {
+                Error("Failed to inject new license definitions into LicenseManager", ex);
+                return false;
+            }
+
+            CargoInjector.RegisterPassengerCargo();
+
+            //PlatformManager.TryLoadSignLocations();
+
+            // Initialize settings
+            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+            //Settings.DoPurge = false;
+
+            ModEntry.OnGUI = DrawGUI;
+            ModEntry.OnSaveGUI = SaveGUI;
+
+            // Find companion mods
+            //SkinManager_Patch.Initialize();
+
+            DV.Globals.G.Types.RecalculateCaches();
+
+            var harmony = new Harmony(modEntry.Info.Id);
+            harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+            return true;
+        }
+
+        #endregion
+
+        #region Settings
+
+        static void DrawGUI( UnityModManager.ModEntry entry )
+        {
+            Settings.Draw(entry);
+        }
+
+        static void SaveGUI( UnityModManager.ModEntry entry )
+        {
+            Settings.Save(entry);
+        }
+
+        #endregion
+
+        #region Logging
+
+        public static void Log( string msg ) => ModEntry.Logger.Log(msg);
+        public static void Warning( string msg ) => ModEntry.Logger.Warning(msg);
+        public static void Error( string msg ) => ModEntry.Logger.Error(msg);
+        public static void Error(string msg, Exception ex)
+        {
+            ModEntry.Logger.LogException(ex);
+            ModEntry.Logger.Error(msg);
+        }
+
+        #endregion
+    }
+}

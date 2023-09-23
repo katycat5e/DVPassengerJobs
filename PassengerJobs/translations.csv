@@ -1,0 +1,12 @@
+Keys,English
+pj/license_name,Passengers
+pj/license_description,This license grants you access to jobs hauling empty and full passenger coaches.
+pj/license_item_name,License Passengers
+pj/license_sample_item_name,License Passengers Info
+,
+pj/cargo_name_full,Passengers
+pj/cargo_name_short,Passengers
+,
+pj/job_express_name,Express Pax
+pj/job_express_description,Transport an express train to {[0]} via {[1]} (${[2]}k bonus with on-time completion)
+pj/job_express_cover,Express Passenger

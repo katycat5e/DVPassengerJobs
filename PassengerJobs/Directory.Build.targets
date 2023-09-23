@@ -1,0 +1,12 @@
+<Project>
+	<PropertyGroup>
+		<ReferencePath>
+			P:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\;
+			P:\SteamLibrary\steamapps\common\Derail Valley\DerailValley_Data\Managed\UnityModManager\;
+			P:\SteamLibrary\steamapps\common\Derail Valley\Mods\SkinManagerMod\;
+			P:\SteamLibrary\steamapps\common\Derail Valley\Mods\DVCustomCarLoader\;
+			P:\SteamLibrary\steamapps\common\Derail Valley\Mods\DVLangHelper\
+		</ReferencePath>
+		<AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);</AssemblySearchPaths>
+	</PropertyGroup>
+</Project>
