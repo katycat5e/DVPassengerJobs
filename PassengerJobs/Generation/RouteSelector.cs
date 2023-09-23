@@ -1,32 +1,52 @@
 ﻿using DV.Logic.Job;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using UnityEngine;
 
 namespace PassengerJobs.Generation
 {
     public static class RouteSelector
     {
-        public static readonly Dictionary<string, string[]> StorageTrackNames = new()
-        {
-            { "CSW",new[] { "CSW-B2SP", "CSW-B1SP" } },
-            { "MF", new[] { "MF-D4SP" } },
-            { "FF", new[] { "FF-B3SP", "FF-B5SP", "FF-B4SP" } },
-            { "HB", new[] { "HB-F4SP", "HB-F3SP" } },
-            { "GF", new[] { "GF-C1SP" } }
-        };
-
-        public static readonly Dictionary<string, string[]> PlatformTrackNames = new()
-        {
-            { "CSW",new[] { "CSW-B6LP", "CSW-B5LP", "CSW-B4LP", "CSW-B3LP" } },
-            { "MF", new[] { "MF-D1LP", "MF-D2LP" } },
-            { "FF", new[] { "FF-B1LP", "FF-B2LP" } },
-            { "HB", new[] { "HB-F1LP", "HB-F2LP" } },
-            { "GF", new[] { "GF-C3LP" } } // reserved for pass-thru: "GF-C2LP"
-        };
+        private const string ROUTE_CONFIG_FILE = "routes.json";
+        private const string DEFAULT_ROUTE_CONFIG_FILE = "default_routes.json";
+        private static RouteConfig? _routeConfig = null;
 
         private static readonly Dictionary<string, PassStationData> _stations = new();
-        private static readonly List<RouteNode> _expressGraph = new();
+
+        public static bool IsPassengerStation(string yardId) => _stations.ContainsKey(yardId);
+
+        public static bool LoadConfig()
+        {
+            try
+            {
+                string configPath = Path.Combine(PJMain.ModEntry.Path, ROUTE_CONFIG_FILE);
+                if (File.Exists(configPath))
+                {
+                    _routeConfig = JsonConvert.DeserializeObject<RouteConfig>(File.ReadAllText(configPath));
+                }
+
+                if (_routeConfig == null)
+                {
+                    configPath = Path.Combine(PJMain.ModEntry.Path, DEFAULT_ROUTE_CONFIG_FILE);
+                    _routeConfig = JsonConvert.DeserializeObject<RouteConfig>(File.ReadAllText(configPath));
+                }
+            }
+            catch (Exception ex)
+            {
+                PJMain.Error("Failed to load route config data", ex);
+                return false;
+            }
+
+            if (_routeConfig == null)
+            {
+                PJMain.Error("Failed to load route config data");
+                return false;
+            }
+            return true;
+        }
 
         public static bool Initialized { get; private set; }
         public static void Initialize()
@@ -35,14 +55,35 @@ namespace PassengerJobs.Generation
             foreach (var station in StationController.allStations)
             {
                 string yardId = station.stationInfo.YardID;
-                if (PlatformTrackNames.TryGetValue(yardId, out string[] platformIds))
+                if (_routeConfig!.platforms.FirstOrDefault(t => t.yardId == yardId) is RouteConfig.TrackSet platforms)
                 {
                     var stationData = new PassStationData(station);
-                    stationData.AddPlatforms(platformIds.Select(GetTrackById));
-                    stationData.AddStorageTracks(StorageTrackNames[yardId].Select(GetTrackById));
+                    stationData.AddPlatforms(platforms.tracks.Select(GetTrackById));
+
+                    var storage = _routeConfig.storage.FirstOrDefault(t => t.yardId == yardId);
+                    if (storage != null)
+                    {
+                        stationData.AddStorageTracks(storage.tracks.Select(GetTrackById));
+                    }
+
                     _stations.Add(yardId, stationData);
 
-                    _expressGraph.Add(new RouteNode(stationData, TrackType.Platform));
+                    // add tracks to yard organizer
+                    foreach (var track in stationData.AllTracks)
+                    {
+                        YardTracksOrganizer.Instance.InitializeYardTrack(track);
+                        YardTracksOrganizer.Instance.yardTrackIdToTrack[track.ID.FullID] = track;
+                    }
+                }
+            }
+
+            foreach (var stationData in _stations.Values)
+            {
+                var routeData = _routeConfig!.expressRoutes.FirstOrDefault(t => t.start == stationData.YardID);
+                if (routeData != null)
+                {
+                    var routeStations = routeData.routes.Select(r => r.Select(s => _stations[s]).ToArray());
+                    stationData.AddRoutes(routeStations);
                 }
             }
         }
@@ -63,61 +104,20 @@ namespace PassengerJobs.Generation
 
         public static RouteTrack[]? GetExpressRoute(PassStationData startStation, double minLength = 0)
         {
-            const int NUM_DESTINATIONS = 2;
-
             if (!Initialized) Initialize();
 
-            RecalculateGraph(_expressGraph, minLength);
+            var graph = CreateGraph(startStation, minLength);
 
-            var result = new RouteTrack[NUM_DESTINATIONS];
-            int sourceIdx = 0;
+            if (graph[0].Weight < 0.5f) return null;
 
-            for (int targetIdx = 0; targetIdx < NUM_DESTINATIONS; targetIdx++)
-            {
-                if (_expressGraph[sourceIdx].Weight < 0.5) return null;
-                if (_expressGraph[sourceIdx].Station.YardID == startStation.YardID)
-                {
-                    sourceIdx++;
-                }
-
-                result[targetIdx] = _expressGraph[sourceIdx].PickTrack();
-
-                sourceIdx++;
-            }
-
-            SortRouteByDistance(startStation, result);
-            return result;
+            return graph[0].PickTracks();
         }
 
-        private static void SortRouteByDistance(PassStationData startStation, RouteTrack[] tracks)
+        private static List<RoutePath> CreateGraph(PassStationData startStation, double minLength = 0)
         {
-            float distanceCurrent = 
-                JobPaymentCalculator.GetDistanceBetweenStations(startStation.Controller, tracks[0].Station.Controller) +
-                JobPaymentCalculator.GetDistanceBetweenStations(tracks[0].Station.Controller, tracks[1].Station.Controller);
-
-            float distanceSwapped = 
-                JobPaymentCalculator.GetDistanceBetweenStations(startStation.Controller, tracks[1].Station.Controller) +
-                JobPaymentCalculator.GetDistanceBetweenStations(tracks[1].Station.Controller, tracks[0].Station.Controller);
-
-            if (distanceCurrent > distanceSwapped)
-            {
-                (tracks[1], tracks[0]) = (tracks[0], tracks[1]);
-            }
-        }
-
-        public static double GetMaxTrainLength(Track[] tracks)
-        {
-            return tracks.Min(t => YardTracksOrganizer.Instance.GetUnreservedSpace(t));
-        }
-
-        private static void RecalculateGraph(List<RouteNode> graph, double minLength = 0)
-        {
-            foreach (var node in graph)
-            {
-                node.RecalculateWeight(minLength);
-            }
-
+            var graph = startStation.Destinations.Select(s => new RoutePath(s, TrackType.Platform, minLength)).ToList();
             graph.Sort();
+            return graph;
         }
     }
 
@@ -133,39 +133,59 @@ namespace PassengerJobs.Generation
         }
     }
 
-    public class RouteNode : IComparable<RouteNode>
+    public readonly struct RoutePath : IComparable<RoutePath>
     {
-        public readonly PassStationData Station;
-        public readonly TrackType TargetTrackType;
+        public readonly RouteNode[] Nodes;
+        public readonly TrackType TrackType;
+        public readonly float Weight;
 
-        public float Weight { get; private set; }
-
-        private readonly List<Track> Tracks;
-
-        public RouteNode(PassStationData station, TrackType targetType)
+        public RoutePath(PassStationData[] stations, TrackType trackType, double minLength = 0)
         {
-            Station = station;
-            TargetTrackType = targetType;
-            Tracks = Station.TracksOfType(TargetTrackType);
-            Weight = 0;
+            Nodes = stations.Select(s => new RouteNode(s, s.TracksOfType(trackType), minLength)).ToArray();
+            TrackType = trackType;
+            Weight = Nodes.Min(n => n.Weight);
         }
 
-        public void RecalculateWeight(double minLength = 0)
+        public RouteTrack[] PickTracks()
         {
-            var unused = Tracks.GetUnusedTracks()
-                .Where(t => t.length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
-
-            Weight = ((float)unused.Count() / Tracks.Count) + ((UnityEngine.Random.value + 1) / 4);
+            var result = new RouteTrack[Nodes.Length];
+            for (int i = 0; i < Nodes.Length; i++)
+            {
+                result[i] = Nodes[i].PickTrack();
+            }
+            return result;
         }
 
-        public RouteTrack PickTrack()
-        {
-            return new RouteTrack(Station, Tracks.GetUnusedTracks().PickOne()!);
-        }
-
-        public int CompareTo(RouteNode other)
+        public readonly int CompareTo(RoutePath other)
         {
             return other.Weight.CompareTo(Weight);
+        }
+    }
+
+    public readonly struct RouteNode
+    {
+        public readonly PassStationData Station;
+        private readonly List<Track> Tracks;
+        public readonly float Weight;
+
+        public RouteNode(PassStationData station, List<Track> tracks, double minLength = 0)
+        {
+            Station = station;
+            Tracks = tracks;
+            Weight = RecalculateWeight(tracks, minLength);
+        }
+
+        private static float RecalculateWeight(List<Track> tracks, double minLength)
+        {
+            var unused = tracks.GetUnusedTracks()
+                .Where(t => t.length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
+
+            return ((float)unused.Count() / tracks.Count) + ((UnityEngine.Random.value + 1) / 4);
+        }
+
+        public readonly RouteTrack PickTrack()
+        {
+            return new RouteTrack(Station, Tracks.GetUnusedTracks().PickOne()!);
         }
     }
 }

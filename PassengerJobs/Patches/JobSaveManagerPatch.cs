@@ -35,6 +35,11 @@ namespace PassengerJobs.Patches
                 return true;
             }
 
+            if (!RouteSelector.Initialized)
+            {
+                RouteSelector.Initialize();
+            }
+
             // instantiate chain
             var chainController = LoadPassengerChain(passChainData);
             if (chainController == null) return false;

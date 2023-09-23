@@ -3,6 +3,7 @@ using DV.InventorySystem;
 using DV.RenderTextureSystem.BookletRender;
 using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
+using System;
 using UnityEngine;
 
 namespace PassengerJobs.Injectors
@@ -30,26 +31,35 @@ namespace PassengerJobs.Injectors
     {
         public static JobLicenseType_v2 License { get; internal set; } = null!;
 
-        public static void RegisterPassengerLicenses()
+        public static bool RegisterPassengerLicenses()
         {
-            // create license data object
-            License = ScriptableObject.CreateInstance<JobLicenseType_v2>();
-            License.id = License.name = LicenseData.Name;
-            License.localizationKey = LocalizationKey.LICENSE_NAME.K();
-            License.localizationKeysDescription = new[] { LocalizationKey.LICENSE_DESCRIPTION.K() };
-            License.v1 = (JobLicenses)64;
-            
-            License.color = LicenseData.Color;
-            License.icon = BundleLoader.LicenseSprite;
-            
-            License.price = LicenseData.Cost;
-            License.insuranceFeeQuotaIncrease = LicenseData.InsuranceIncrease;
-            License.bonusTimeDecreasePercentage = LicenseData.TimeDecrease;
+            try
+            {
+                // create license data object
+                License = ScriptableObject.CreateInstance<JobLicenseType_v2>();
+                License.id = License.name = LicenseData.Name;
+                License.localizationKey = LocalizationKey.LICENSE_NAME.K();
+                License.localizationKeysDescription = new[] { LocalizationKey.LICENSE_DESCRIPTION.K() };
+                License.v1 = (JobLicenses)64;
 
-            SetupLicensePrefabs();
+                License.color = LicenseData.Color;
+                License.icon = BundleLoader.LicenseSprite;
+
+                License.price = LicenseData.Cost;
+                License.insuranceFeeQuotaIncrease = LicenseData.InsuranceIncrease;
+                License.bonusTimeDecreasePercentage = LicenseData.TimeDecrease;
+
+                SetupLicensePrefabs();
 
 
-            DV.Globals.G.Types.jobLicenses.Add(License);
+                DV.Globals.G.Types.jobLicenses.Add(License);
+            }
+            catch (Exception ex)
+            {
+                PJMain.Error("Failed to inject new license definitions into LicenseManager", ex);
+                return false;
+            }
+            return true;
         }
 
         private static void SetupLicensePrefabs()

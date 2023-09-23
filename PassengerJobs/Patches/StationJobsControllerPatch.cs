@@ -9,7 +9,7 @@ namespace PassengerJobs.Patches
         public static void Postfix(StationProceduralJobsController __instance)
         {
             string yardId = __instance.stationController.stationInfo.YardID;
-            if (!RouteSelector.PlatformTrackNames.ContainsKey(yardId)) return;
+            if (!RouteSelector.IsPassengerStation(yardId)) return;
 
             __instance.gameObject.AddComponent<PassengerJobGenerator>();
         }

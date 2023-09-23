@@ -1,5 +1,6 @@
 ﻿using DVLangHelper.Runtime;
 using HarmonyLib;
+using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
 using System;
 using System.IO;
@@ -30,15 +31,10 @@ namespace PassengerJobs
             BundleLoader.Initialize();
 
             // inject licenses
-            try
-            {
-                LicenseInjector.RegisterPassengerLicenses();
-            }
-            catch (Exception ex)
-            {
-                Error("Failed to inject new license definitions into LicenseManager", ex);
-                return false;
-            }
+            if (!LicenseInjector.RegisterPassengerLicenses()) return false;
+            
+            // load route config
+            if (!RouteSelector.LoadConfig()) return false;
 
             CargoInjector.RegisterPassengerCargo();
 

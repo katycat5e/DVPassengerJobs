@@ -13,6 +13,7 @@ namespace PassengerJobs.Generation
         public string YardID => Controller.stationInfo.YardID;
         public readonly List<Track> PlatformTracks = new();
         public readonly List<Track> StorageTracks = new();
+        public readonly List<PassStationData[]> Destinations = new();
 
         public PassStationData(StationController controller)
         {
@@ -21,6 +22,7 @@ namespace PassengerJobs.Generation
 
         public void AddPlatforms(IEnumerable<Track> platforms) => PlatformTracks.AddRange(platforms);
         public void AddStorageTracks(IEnumerable<Track> storageTracks) => StorageTracks.AddRange(storageTracks);
+        public void AddRoutes(IEnumerable<PassStationData[]> routes) => Destinations.AddRange(routes);
 
         public List<Track> TracksOfType(TrackType type) => 
             (type == TrackType.Platform) ? PlatformTracks : StorageTracks;

@@ -62,13 +62,6 @@ namespace PassengerJobs.Generation
             _stationRange = GetComponent<StationJobGenerationRange>();
             _stationData = RouteSelector.GetStationData(Controller.stationInfo.YardID);
 
-            // register tracks for train spawning, since they are ignored in the base game
-            foreach (var track in _stationData.AllTracks)
-            {
-                YardTracksOrganizer.Instance.InitializeYardTrack(track);
-                YardTracksOrganizer.Instance.yardTrackIdToTrack[track.ID.FullID] = track;
-            }
-
             // check if the player is already inside the generation zone
             float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
             _playerWasInRange = _stationRange.IsPlayerInJobGenerationZone(playerDist);
