@@ -18,7 +18,7 @@
     },
     {
       "yardId": "GF",
-      "tracks": [ "GF-C3LP" ]
+      "tracks": [ "GF-C3LP" ] // GF-C2LP reserved for pass-thru
     }
   ],
 
@@ -41,7 +41,7 @@
     },
     {
       "yardId": "GF",
-      "tracks": [ "GF-C1SP" ] // GF-C2LP reserved for pass-thru
+      "tracks": [ "GF-C1SP" ]
     }
   ],
 
@@ -50,9 +50,15 @@
       "start": "CSW",
       "routes": [
         [ "MF", "FF" ],
+        [ "MF", "FF", "GF" ],
+        [ "MF", "FF", "GF", "HB" ],
+        [ "FF" ],
         [ "FF", "GF" ],
         [ "FF", "MF" ],
+        [ "HB" ],
         [ "HB", "FF" ],
+        [ "HB", "FF", "MF" ],
+        [ "GF" ],
         [ "GF", "HB" ],
         [ "GF", "FF" ]
       ]
@@ -60,38 +66,55 @@
     {
       "start": "MF",
       "routes": [
+        [ "FF" ],
         [ "FF", "GF" ],
+        [ "FF", "GF", "CSW" ],
+        [ "GF" ],
         [ "CSW", "HB" ],
-        [ "CSW", "GF" ]
+        [ "CSW", "HB", "FF" ],
+        [ "CSW", "FF" ],
+        [ "CSW", "GF" ],
+        [ "HB" ]
       ]
     },
     {
       "start": "FF",
       "routes": [
+        [ "MF" ],
         [ "MF", "CSW" ],
         [ "CSW", "HB" ],
+        [ "CSW", "GF" ],
         [ "GF", "CSW" ],
-        [ "GF", "HB" ]
+        [ "GF", "HB" ],
+        [ "HB" ]
       ]
     },
     {
       "start": "GF",
       "routes": [
         [ "FF", "MF" ],
+        [ "FF", "MF", "CSW" ],
+        [ "FF", "MF", "CSW", "HB" ],
+        [ "FF", "CSW" ],
         [ "CSW", "MF" ],
+        [ "CSW", "FF" ],
         [ "CSW", "HB" ],
-        [ "HB", "CSW" ],
-        [ "FF", "CSW" ]
+        [ "HB" ],
+        [ "HB", "CSW" ]
       ]
     },
     {
       "start": "HB",
       "routes": [
+        [ "CSW" ],
         [ "CSW", "MF" ],
+        [ "CSW", "MF", "FF", "GF" ],
         [ "CSW", "FF" ],
         [ "CSW", "GF" ],
         [ "FF", "MF" ],
-        [ "GF", "FF" ]
+        [ "GF", "FF" ],
+        [ "GF", "FF", "MF" ],
+        [ "GF", "FF", "MF", "CSW" ]
       ]
     }
   ]

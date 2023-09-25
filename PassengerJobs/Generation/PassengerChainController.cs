@@ -27,7 +27,7 @@ namespace PassengerJobs.Generation
                 if (PassengerJobGenerator.TryGetInstance(currentYardId, out var generator))
                 {
                     var newChain = generator.GenerateExpressJob(
-                        new TrainCarsPerLogicTrack(previousJob.DestinationTrack!, trainCarsForJobChain));
+                        new TrainCarsPerLogicTrack(previousJob.DestinationTracks.Last(), trainCarsForJobChain));
 
                     if (newChain == null)
                     {

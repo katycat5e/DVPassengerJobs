@@ -22,6 +22,7 @@ namespace PassengerJobs
         // Jobs
         JOB_EXPRESS_NAME,
         JOB_EXPRESS_DESCRIPTION,
+        JOB_EXPRESS_DIRECT_DESC,
         JOB_EXPRESS_COVER,
     }
 

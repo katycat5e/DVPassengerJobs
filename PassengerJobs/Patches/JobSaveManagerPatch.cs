@@ -114,7 +114,8 @@ namespace PassengerJobs.Patches
                 return null;
             }
 
-            jobChainHolder.name = $"[LOADED] ChainJob[Passenger]: {chainData.chainOriginYardId} - {chainData.chainViaYardId} - {chainData.chainDestinationYardId}";
+            string destString = string.Join(" - ", chainData.destinationYardIds);
+            jobChainHolder.name = $"[LOADED] ChainJob[Passenger]: {chainData.chainOriginYardId} - {destString}";
             return chainController;
         }
 
@@ -142,18 +143,17 @@ namespace PassengerJobs.Patches
                 return null;
             }
 
-            // via track
-            if (JobSaveManager.Instance.GetYardTrackWithId(jobData.viaTrack) is not Track viaTrack)
-            {
-                PJMain.Error($"Couldn't find corresponding via Track with ID: {jobData.viaTrack}! Skipping load of this job chain!");
-                return null;
-            }
-
             // destination track
-            if (JobSaveManager.Instance.GetYardTrackWithId(jobData.destinationTrack) is not Track destTrack)
+            var destTracks = new Track[jobData.destinationTracks.Length];
+            for (int i = 0; i < destTracks.Length; i++)
             {
-                PJMain.Error($"Couldn't find corresponding destination Track with ID: {jobData.destinationTrack}! Skipping load of this job chain!");
-                return null;
+                if (JobSaveManager.Instance.GetYardTrackWithId(jobData.destinationTracks[i]) is not Track destTrack)
+                {
+                    PJMain.Error($"Couldn't find corresponding destination Track with ID: {jobData.destinationTracks}! Skipping load of this job chain!");
+                    return null;
+                }
+
+                destTracks[i] = destTrack;
             }
 
             // consist
@@ -164,12 +164,11 @@ namespace PassengerJobs.Patches
             }
 
             ExpressJobDefinition jobDefinition = jobChainHolder.AddComponent<ExpressJobDefinition>();
-            var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.viaStationId, jobData.destinationStationId);
+            var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.destinationStationIds);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License.v1);
 
             jobDefinition.StartingTrack = startTrack;
-            jobDefinition.ViaTrack = viaTrack;
-            jobDefinition.DestinationTrack = destTrack;
+            jobDefinition.DestinationTracks = destTracks;
             jobDefinition.TrainCarsToTransport = consist;
 
             return jobDefinition;

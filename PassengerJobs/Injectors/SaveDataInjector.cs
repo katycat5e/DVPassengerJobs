@@ -2,6 +2,7 @@
 using DV.JObjectExtstensions;
 using Newtonsoft.Json.Linq;
 using PassengerJobs.Generation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -66,13 +67,20 @@ namespace PassengerJobs.Injectors
 
         public static void MergePassengerChainData(JobsSaveGameData mainJobData)
         {
-            if (loadedData?.GetObjectViaJSON<JobsSaveGameData>(SaveGameKeys.Jobs, JobSaveManager.serializeSettings) is JobsSaveGameData jobData)
+            try
             {
-                JobChainSaveData[] combinedChains = mainJobData.jobChains
-                    .Concat(jobData.jobChains)
-                    .ToArray();
+                if (loadedData?.GetObjectViaJSON<JobsSaveGameData>(SaveGameKeys.Jobs, JobSaveManager.serializeSettings) is JobsSaveGameData jobData)
+                {
+                    JobChainSaveData[] combinedChains = mainJobData.jobChains
+                        .Concat(jobData.jobChains)
+                        .ToArray();
 
-                mainJobData.jobChains = combinedChains;
+                    mainJobData.jobChains = combinedChains;
+                }
+            }
+            catch (Exception ex)
+            {
+                PJMain.Error("Failed to extract passenger jobs save data", ex);
             }
         }
 

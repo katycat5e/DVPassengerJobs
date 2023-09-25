@@ -16,7 +16,7 @@ namespace PassengerJobs.Generation
 
         private static readonly Dictionary<string, PassStationData> _stations = new();
 
-        public static bool IsPassengerStation(string yardId) => _stations.ContainsKey(yardId);
+        public static bool IsPassengerStation(string yardId) => _routeConfig?.platforms.Any(p => p.yardId == yardId) == true;
 
         public static bool LoadConfig()
         {
@@ -143,7 +143,21 @@ namespace PassengerJobs.Generation
         {
             Nodes = stations.Select(s => new RouteNode(s, s.TracksOfType(trackType), minLength)).ToArray();
             TrackType = trackType;
-            Weight = Nodes.Min(n => n.Weight);
+
+            if (Nodes.Any(n => n.Weight == 0))
+            {
+                Weight = 0;
+            }
+            else
+            {
+                Weight = 1 + GetWeightNoise();
+            }
+        }
+
+        private static float GetWeightNoise()
+        {
+            // +/- 0.25
+            return (UnityEngine.Random.value + 1) / 4;
         }
 
         public RouteTrack[] PickTracks()
@@ -180,7 +194,8 @@ namespace PassengerJobs.Generation
             var unused = tracks.GetUnusedTracks()
                 .Where(t => t.length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
 
-            return ((float)unused.Count() / tracks.Count) + ((UnityEngine.Random.value + 1) / 4);
+            //return ((float)unused.Count() / tracks.Count) + ();
+            return (unused.Count() > 0) ? 1 : 0;
         }
 
         public readonly RouteTrack PickTrack()

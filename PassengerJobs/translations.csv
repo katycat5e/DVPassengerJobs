@@ -9,4 +9,5 @@ pj/cargo_name_short,Passengers
 ,
 pj/job_express_name,Express Pax
 pj/job_express_description,Transport an express train to {[0]} via {[1]} (${[2]}k bonus with on-time completion)
+pj/job_express_direct_desc,Transport an express train to {[0]} (${[1]}k bonus with on-time completion)
 pj/job_express_cover,Express Passenger

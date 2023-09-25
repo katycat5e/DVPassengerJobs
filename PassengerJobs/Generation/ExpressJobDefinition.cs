@@ -15,10 +15,20 @@ namespace PassengerJobs.Generation
             set => chainData = value;
         }
 
-        public List<Car>? TrainCarsToTransport = null!;
-        public Track? StartingTrack = null!;
-        public Track? ViaTrack = null!;
-        public Track? DestinationTrack = null!;
+        private List<Car>? _cars;
+        public List<Car>? TrainCarsToTransport
+        {
+            get => _cars;
+            set
+            {
+                _cars = value;
+                _cargoList = (_cars != null) ? Enumerable.Repeat(CargoInjector.PassengerCargo.v1, _cars.Count).ToList() : null;
+            }
+        }
+
+        private List<CargoType>? _cargoList = null;
+        public Track? StartingTrack = null;
+        public Track[]? DestinationTracks = null;
 
         public override JobDefinitionDataBase GetJobDefinitionSaveData()
         {
@@ -28,30 +38,25 @@ namespace PassengerJobs.Generation
             }
 
             return new ExpressJobDefinitionData(
-                timeLimitForJob, initialWage, logicStation.ID, ExpressChainData!.chainOriginYardId, ExpressChainData.chainViaYardId, ExpressChainData.chainDestinationYardId,
-                (int)requiredLicenses, guidsFromCars, StartingTrack!.ID.FullID, ViaTrack!.ID.FullID, DestinationTrack!.ID.FullID);
+                timeLimitForJob, initialWage, logicStation.ID, ExpressChainData!.chainOriginYardId, ExpressChainData.destinationYardIds,
+                (int)requiredLicenses, guidsFromCars, StartingTrack!.ID.FullID, DestinationTracks!.Select(t => t.ID.FullID).ToArray());
         }
 
         public override List<TrackReservation> GetRequiredTrackReservations()
         {
             float reservedLength = CarSpawner.Instance.GetTotalCarsLength(TrainCarsToTransport, true);
 
-            return new List<TrackReservation>
-            {
-                new TrackReservation(ViaTrack, reservedLength),
-                new TrackReservation(DestinationTrack, reservedLength),
-            };
+            return DestinationTracks.Select(t => new TrackReservation(t, reservedLength)).ToList();
         }
 
         public override void GenerateJob(Station jobOriginStation, float timeLimit = 0, float initialWage = 0, string? forcedJobId = null, JobLicenses requiredLicenses = JobLicenses.Basic)
         {
             if ((TrainCarsToTransport == null) || (TrainCarsToTransport.Count == 0) ||
-                (StartingTrack == null) || (ViaTrack == null) || (DestinationTrack == null))
+                (StartingTrack == null) || (DestinationTracks == null))
             {
                 TrainCarsToTransport = null;
                 StartingTrack = null;
-                ViaTrack = null;
-                DestinationTrack = null;
+                DestinationTracks = null;
 
                 PJMain.Warning("Failed to generate passengers job, bad data");
                 return;
@@ -68,51 +73,55 @@ namespace PassengerJobs.Generation
             var taskList = new List<Task>();
 
             // actual move between stations
-            Task firstLeg = JobsGenerator.CreateTransportTask(
-                TrainCarsToTransport, ViaTrack, StartingTrack,
-                Enumerable.Repeat(CargoInjector.PassengerCargo.v1, TrainCarsToTransport.Count).ToList());
-            taskList.Add(firstLeg);
+            var sourceTrack = StartingTrack;
+            for (int i = 0; i < DestinationTracks.Length; i++)
+            {
+                bool isLast = (i == (DestinationTracks.Length - 1));
+                var leg = CreateTransportLeg(sourceTrack, DestinationTracks[i], isLast);
+                taskList.Add(leg);
 
-            Task secondLeg = JobsGenerator.CreateTransportTask(
-                TrainCarsToTransport, DestinationTrack, ViaTrack,
-                Enumerable.Repeat(CargoInjector.PassengerCargo.v1, TrainCarsToTransport.Count).ToList(), true);
-            taskList.Add(secondLeg);
+                sourceTrack = DestinationTracks[i];
+            }
 
             var superTask = new SequentialTasks(taskList);
             job = new Job(superTask, PassJobType.Express, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
 
             jobOriginStation.AddJobToStation(job);
         }
+
+        private Task CreateTransportLeg(Track sourceTrack, Track destinationTrack, bool isFinalTask)
+        {
+            return JobsGenerator.CreateTransportTask(TrainCarsToTransport, destinationTrack, sourceTrack, _cargoList, isFinalTask);
+        }
     }
 
     public class ExpressStationsChainData : StationsChainData
     {
-        public string chainViaYardId;
+        public string[] destinationYardIds;
 
-        public ExpressStationsChainData(string chainOriginYardId, string chainViaYardId, string chainDestinationYardId) : base(chainOriginYardId, chainDestinationYardId)
+        public ExpressStationsChainData(string chainOriginYardId, string[] chainDestinationYardIds) 
+            : base(chainOriginYardId, chainDestinationYardIds.Last())
         {
-            this.chainViaYardId = chainViaYardId;
+            destinationYardIds = chainDestinationYardIds;
         }
     }
 
     public class ExpressJobDefinitionData : JobDefinitionDataBase
     {
         public string[] TrainCarGuids;
-        public string viaStationId;
+        public string[] destinationStationIds;
         public string startingTrack;
-        public string viaTrack;
-        public string destinationTrack;
+        public string[] destinationTracks;
 
         public ExpressJobDefinitionData(
-            float timeLimitForJob, float initialWage, string stationId, string originStationId, string viaStationId, string destinationStationId, int requiredLicenses,
-            string[] transportCarGuids, string startTrackId, string viaTrackId, string destTrackId) :
-            base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationId, requiredLicenses)
+            float timeLimitForJob, float initialWage, string stationId, string originStationId, string[] destinationStationIds, int requiredLicenses,
+            string[] transportCarGuids, string startTrackId, string[] destTrackIds) :
+            base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationIds.Last(), requiredLicenses)
         {
             TrainCarGuids = transportCarGuids;
-            this.viaStationId = viaStationId;
+            this.destinationStationIds = destinationStationIds;
             startingTrack = startTrackId;
-            viaTrack = viaTrackId;
-            destinationTrack = destTrackId;
+            destinationTracks = destTrackIds;
         }
     }
 }

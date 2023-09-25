@@ -184,25 +184,20 @@ namespace PassengerJobs.Generation
                 jobCarTypes = consistInfo.cars.Select(c => c.carLivery).ToList();
             }
 
-            var viaNode = destinations[0];
-            var endNode = destinations[1];
-
             // create job chain controller
-            var chainJobObject = new GameObject($"ChainJob[Passenger]: {Controller.stationInfo.YardID} - {viaNode.Station.YardID} - {endNode.Station.YardID}");
+            string destString = string.Join(" - ", destinations.Select(d => d.Station.YardID));
+            var chainJobObject = new GameObject($"ChainJob[Passenger]: {Controller.stationInfo.YardID} - {destString}");
             chainJobObject.transform.SetParent(Controller.transform);
             var chainController = new PassengerChainController(chainJobObject);
 
 
             //--------------------------------------------------------------------------------------------------------------------------------
             // Create multi stage transport job
-            var chainData = new ExpressStationsChainData(Controller.stationInfo.YardID, viaNode.Station.YardID, endNode.Station.YardID);
+            var chainData = new ExpressStationsChainData(Controller.stationInfo.YardID, destinations.Select(d => d.Station.YardID).ToArray());
             PaymentCalculationData transportPaymentData = GetJobPaymentData(jobCarTypes);
 
             // calculate haul payment
-            float haulDistance =
-                JobPaymentCalculator.GetDistanceBetweenStations(Controller, viaNode.Station.Controller) + 
-                JobPaymentCalculator.GetDistanceBetweenStations(viaNode.Station.Controller, endNode.Station.Controller);
-
+            float haulDistance = GetTotalHaulDistance(Controller, destinations);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
             float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
 
@@ -215,7 +210,7 @@ namespace PassengerJobs.Generation
             if (consistInfo == null)
             {
                 jobDefinition = PopulateExpressJobAndSpawn(
-                    chainController, Controller.logicStation, startPlatform, viaNode.Track, endNode.Track,
+                    chainController, Controller.logicStation, startPlatform, destinations.Select(t => t.Track).ToArray(),
                     jobCarTypes, chainData, bonusLimit, transportPayment);
             }
             else
@@ -223,7 +218,7 @@ namespace PassengerJobs.Generation
                 chainController.trainCarsForJobChain = consistInfo.cars;
 
                 jobDefinition = PopulateExpressJobExistingCars(
-                    chainController, Controller.logicStation, startPlatform, viaNode.Track, endNode.Track,
+                    chainController, Controller.logicStation, startPlatform, destinations.Select(t => t.Track).ToArray(),
                     consistInfo.LogicCars, chainData, bonusLimit, transportPayment);
             }
 
@@ -241,6 +236,20 @@ namespace PassengerJobs.Generation
             PJMain.Log($"Generated new passenger haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID})");
 
             return chainController;
+        }
+
+        private static float GetTotalHaulDistance(StationController startStation, IEnumerable<RouteTrack> destinations)
+        {
+            float totalDistance = 0;
+            StationController source = startStation;
+
+            foreach (var track in destinations)
+            {
+                totalDistance += JobPaymentCalculator.GetDistanceBetweenStations(source, track.Station.Controller);
+                source = track.Station.Controller;
+            }
+
+            return totalDistance;
         }
 
         private static PaymentCalculationData GetJobPaymentData(IEnumerable<TrainCarLivery> carTypes, bool empty = false)
@@ -274,16 +283,14 @@ namespace PassengerJobs.Generation
 
         private static ExpressJobDefinition? PopulateExpressJobAndSpawn(
             JobChainController chainController, Station startStation,
-            Track startTrack, Track viaTrack, Track destTrack, List<TrainCarLivery> carTypes,
+            Track startTrack, Track[] destTracks, List<TrainCarLivery> carTypes,
             ExpressStationsChainData chainData, float timeLimit, float initialPay)
         {
             // Spawn the cars
             RailTrack startRT = LogicController.Instance.LogicToRailTrack[startTrack];
             
-            Patches.CarSpawnerPatch.PJCall = true;
             var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true, 
                 true,0, false, false);
-            Patches.CarSpawnerPatch.PJCall = false;
 
             if (spawnedCars == null) return null;
 
@@ -297,13 +304,13 @@ namespace PassengerJobs.Generation
             }
 
             return PopulateExpressJobExistingCars(chainController, startStation,
-                startTrack, viaTrack, destTrack, logicCars,
+                startTrack, destTracks, logicCars,
                 chainData, timeLimit, initialPay);
         }
 
         private static ExpressJobDefinition PopulateExpressJobExistingCars(
             JobChainController chainController, Station startStation,
-            Track startTrack, Track viaTrack, Track destTrack, List<Car> logicCars,
+            Track startTrack, Track[] destTracks, List<Car> logicCars,
             StationsChainData chainData, float timeLimit, float initialPay)
         {
             // populate the actual job
@@ -312,8 +319,7 @@ namespace PassengerJobs.Generation
 
             jobDefinition.TrainCarsToTransport = logicCars;
             jobDefinition.StartingTrack = startTrack;
-            jobDefinition.ViaTrack = viaTrack;
-            jobDefinition.DestinationTrack = destTrack;
+            jobDefinition.DestinationTracks = destTracks;
 
             return jobDefinition;
         }
