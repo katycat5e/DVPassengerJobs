@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,12 +42,20 @@ namespace PassengerJobs
                     PJMain.Error("Failed to load platform sign prefab from asset bundle");
                     SignLoadFailed = true;
                 }
+                else
+                {
+                    ApplyDefaultShader(SignPrefab);
+                }
 
                 SmallSignPrefab = bundle.LoadAsset<GameObject>("Assets/SmolStationSign.prefab");
                 if (SmallSignPrefab == null)
                 {
                     PJMain.Error("Failed to load small platform sign prefab from asset bundle");
                     SignLoadFailed = true;
+                }
+                else
+                {
+                    ApplyDefaultShader(SmallSignPrefab);
                 }
 
                 LillySignPrefab = bundle.LoadAsset<GameObject>("Assets/LillySign.prefab");
@@ -54,11 +64,47 @@ namespace PassengerJobs
                     PJMain.Error("Failed to load small platform sign prefab from asset bundle");
                     SignLoadFailed = true;
                 }
+                else
+                {
+                    ApplyDefaultShader(LillySignPrefab);
+                }
             }
             else
             {
                 PJMain.Error("Failed to load asset bundle");
                 SignLoadFailed = true;
+            }
+        }
+
+        private static Shader? _engineShader = null;
+
+        private static Shader EngineShader
+        {
+            get
+            {
+                if (!_engineShader)
+                {
+                    var prefab = TrainCarType.LocoShunter.ToV2().prefab;
+                    var exterior = prefab.transform.Find("LocoDE2_Body/ext 621_exterior");
+                    var material = exterior.GetComponent<MeshRenderer>().material;
+                    _engineShader = material.shader;
+                }
+                return _engineShader!;
+            }
+        }
+
+        private static void ApplyDefaultShader(GameObject prefab)
+        {
+            foreach (var renderer in prefab.GetComponentsInChildren<Renderer>(true))
+            {
+                foreach (var material in renderer.materials)
+                {
+                    // replace opaque material shader
+                    if ((material.shader.name == "Standard") && (material.GetFloat("_Mode") == 0))
+                    {
+                        material.shader = EngineShader;
+                    }
+                }
             }
         }
     }
