@@ -3,6 +3,7 @@ using DVLangHelper.Runtime;
 using HarmonyLib;
 using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
+using PassengerJobs.Platforms;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -39,6 +40,8 @@ namespace PassengerJobs
             
             // load route config
             if (!RouteSelector.LoadConfig()) return false;
+
+            SignManager.TryLoadSignLocations();
 
             CargoInjector.RegisterPassengerCargo();
 

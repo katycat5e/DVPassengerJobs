@@ -1,7 +1,7 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
-using DV.Utils;
 using PassengerJobs.Injectors;
+using PassengerJobs.Platforms;
 using SkinManagerMod;
 using System;
 using System.Collections;
@@ -21,6 +21,25 @@ namespace PassengerJobs.Generation
         public static bool TryGetInstance(string yardId, out PassengerJobGenerator generator) =>
             _instances.TryGetValue(yardId, out generator);
 
+        static PassengerJobGenerator()
+        {
+            UnloadWatcher.UnloadRequested += HandleGameUnloading;
+        }
+
+        private static void HandleGameUnloading()
+        {
+            foreach (var instance in _instances.Values)
+            {
+                foreach (var platform in instance.PlatformControllers)
+                {
+                    Destroy(platform);
+                }
+
+                Destroy(instance);
+            }
+            _instances.Clear();
+        }
+
         public static float GetBonusPayment(float basePayment)
         {
             if (PJMain.Settings.UseCustomWages)
@@ -34,6 +53,7 @@ namespace PassengerJobs.Generation
         }
 
         public StationController Controller = null!;
+        public readonly List<PlatformController> PlatformControllers = new();
         private StationJobGenerationRange _stationRange = null!;
         private PassStationData _stationData = null!;
         private Coroutine? _generationRoutine = null;
@@ -65,6 +85,20 @@ namespace PassengerJobs.Generation
             // check if the player is already inside the generation zone
             float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
             _playerWasInRange = _stationRange.IsPlayerInJobGenerationZone(playerDist);
+
+            // create warehouse/sign controllers
+            foreach (var platform in _stationData.PlatformTracks)
+            {
+                var holder = new GameObject($"Platform_{platform.ID}");
+                holder.transform.SetParent(Controller.transform, false);
+
+                var platformController = holder.AddComponent<PlatformController>();
+                platformController.Track = platform;
+                platformController.SetSignsEnabled(_playerWasInRange);
+                PlatformControllers.Add(platformController);
+
+                PJMain.Log($"Successfully created platform controller for track {platform.ID}");
+            }
 
             var sb = new StringBuilder($"Created generator for {Controller.stationInfo.Name}:\n");
             sb.Append("Coach Storage: ");
@@ -125,7 +159,7 @@ namespace PassengerJobs.Generation
 
         private IEnumerator GeneratePassengerJobs()
         {
-            int watchdog = 10;
+            int watchdog = 15;
             while ((watchdog > 0) && _stationData.PlatformTracks.GetUnusedTracks().Any())
             {
                 yield return _generationDelay;
@@ -153,6 +187,10 @@ namespace PassengerJobs.Generation
             Track? startPlatform;
             RouteTrack[]? destinations;
 
+            var currentDests = Controller.logicStation.availableJobs
+                .Where(j => j.jobType == PassJobType.Express)
+                .Select(j => j.chainData.chainDestinationYardId);
+
             // Establish the starting consist and its storage location
             if (consistInfo == null)
             {
@@ -160,7 +198,7 @@ namespace PassengerJobs.Generation
                 startPlatform = _stationData.PlatformTracks.GetUnusedTracks().PickOne();
                 if (startPlatform == null) return null;
 
-                destinations = RouteSelector.GetExpressRoute(_stationData);
+                destinations = RouteSelector.GetExpressRoute(_stationData, currentDests);
                 if (destinations == null) return null;
 
                 double minLength = Math.Min(startPlatform.length, destinations.Min(t => t.Track.length));
@@ -178,7 +216,7 @@ namespace PassengerJobs.Generation
                 startPlatform = consistInfo.track;
 
                 double consistLength = CarSpawner.Instance.GetTotalTrainCarsLength(consistInfo.cars, true);
-                destinations = RouteSelector.GetExpressRoute(_stationData, consistLength);
+                destinations = RouteSelector.GetExpressRoute(_stationData, currentDests, consistLength);
                 if (destinations == null) return null;
 
                 jobCarTypes = consistInfo.cars.Select(c => c.carLivery).ToList();

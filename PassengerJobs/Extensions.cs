@@ -11,6 +11,22 @@ namespace PassengerJobs
     {
         private static readonly Random R = new();
 
+        public static void AddToFront<T>(this IList<T> list, T newItem)
+        {
+            if (list.Count == 0)
+            {
+                list.Add(newItem);
+                return;
+            }
+
+            list.Add(list[list.Count - 1]);
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                list[i] = list[i - 1];
+            }
+            list[0] = newItem;
+        }
+
         public static T? PickOne<T>(this IList<T> values)
             where T : class
         {

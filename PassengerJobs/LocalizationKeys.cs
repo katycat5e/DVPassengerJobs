@@ -24,6 +24,13 @@ namespace PassengerJobs
         JOB_EXPRESS_DESCRIPTION,
         JOB_EXPRESS_DIRECT_DESC,
         JOB_EXPRESS_COVER,
+
+        // Signs
+        SIGN_INCOMING_TRAIN,
+        SIGN_OUTGOING_TRAIN,
+        SIGN_EXPRESS_NAME,
+        SIGN_BOARDING,
+        SIGN_DEPARTING,
     }
 
     public static class LocalizationKeyExtensions

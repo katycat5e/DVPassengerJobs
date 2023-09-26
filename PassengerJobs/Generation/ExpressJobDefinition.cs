@@ -1,7 +1,9 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
 using PassengerJobs.Injectors;
+using PassengerJobs.Platforms;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -77,8 +79,11 @@ namespace PassengerJobs.Generation
             for (int i = 0; i < DestinationTracks.Length; i++)
             {
                 bool isLast = (i == (DestinationTracks.Length - 1));
-                var leg = CreateTransportLeg(sourceTrack, DestinationTracks[i], isLast);
+                var leg = CreateTransportLeg(sourceTrack, DestinationTracks[i]);
                 taskList.Add(leg);
+
+                var loadTask = CreateBoardingTask(DestinationTracks[i], totalCapacity, isLast);
+                taskList.Add(loadTask);
 
                 sourceTrack = DestinationTracks[i];
             }
@@ -86,12 +91,28 @@ namespace PassengerJobs.Generation
             var superTask = new SequentialTasks(taskList);
             job = new Job(superTask, PassJobType.Express, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
 
+            // add to signs along route
+            PlatformController.GetControllerForTrack(StartingTrack).AddOutgoingJobToSigns(job);
+            for (int i = 0; i < DestinationTracks.Length - 1; i++)
+            {
+                job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks[i]).AddOutgoingJobToSigns;
+            }
+            job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks.Last()).AddIncomingJobToSigns;
+
             jobOriginStation.AddJobToStation(job);
         }
 
-        private Task CreateTransportLeg(Track sourceTrack, Track destinationTrack, bool isFinalTask)
+        private Task CreateTransportLeg(Track sourceTrack, Track destinationTrack)
         {
-            return JobsGenerator.CreateTransportTask(TrainCarsToTransport, destinationTrack, sourceTrack, _cargoList, isFinalTask);
+            return JobsGenerator.CreateTransportTask(TrainCarsToTransport, destinationTrack, sourceTrack, _cargoList);
+        }
+
+        private Task CreateBoardingTask(Track platform, float totalCapacity, bool isFinal)
+        {
+            var warehouse = PlatformController.GetControllerForTrack(platform).Warehouse;
+            var taskType = isFinal ? WarehouseTaskType.Unloading : WarehouseTaskType.Loading;
+
+            return new WarehouseTask(TrainCarsToTransport, taskType, warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
         }
     }
 

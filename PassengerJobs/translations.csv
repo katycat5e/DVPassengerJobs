@@ -11,3 +11,9 @@ pj/job_express_name,Express Pax
 pj/job_express_description,Transport an express train to {[0]} via {[1]} (${[2]}k bonus with on-time completion)
 pj/job_express_direct_desc,Transport an express train to {[0]} (${[1]}k bonus with on-time completion)
 pj/job_express_cover,Express Passenger
+,
+pj/sign_incoming_train,{[0]} from {[1]}
+pj/sign_outgoing_train,{[0]} to {[1]}
+pj/sign_express_name,Express {[0]}
+pj/sign_boarding,Now Boarding
+pj/sign_departing,Ready To Depart

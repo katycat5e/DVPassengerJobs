@@ -12,14 +12,14 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<Publicize Include="Assembly-CSharp" />
+		<Publicize Include="Assembly-CSharp" IncludeCompilerGeneratedMembers="false" />
 	</ItemGroup>
 	<ItemGroup>
 		<Reference Include="0Harmony" />
 		<Reference Include="Assembly-CSharp" />
 		<Reference Include="DV.Common" />
 		<Reference Include="DV.Utils" />
-		<Reference Include="CCL.Importer" />
+		<Reference Include="DV.WeatherSystem" />
 		<Reference Include="DVLangHelper.Data" />
 		<Reference Include="DVLangHelper.Runtime" />
 		<Reference Include="DV.Inventory" />
@@ -50,6 +50,9 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="default_routes.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="platform_signs.csv">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="translations.csv">

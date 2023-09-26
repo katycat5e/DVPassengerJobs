@@ -102,20 +102,30 @@ namespace PassengerJobs.Generation
             return _stations[yardId];
         }
 
-        public static RouteTrack[]? GetExpressRoute(PassStationData startStation, double minLength = 0)
+        public static RouteTrack[]? GetExpressRoute(PassStationData startStation, IEnumerable<string> existingDests, double minLength = 0)
         {
             if (!Initialized) Initialize();
 
-            var graph = CreateGraph(startStation, minLength);
+            var graph = CreateGraph(startStation, existingDests, minLength);
 
             if (graph[0].Weight < 0.5f) return null;
 
             return graph[0].PickTracks();
         }
 
-        private static List<RoutePath> CreateGraph(PassStationData startStation, double minLength = 0)
+        private static List<RoutePath> CreateGraph(PassStationData startStation, IEnumerable<string> existingDests, double minLength = 0)
         {
             var graph = startStation.Destinations.Select(s => new RoutePath(s, TrackType.Platform, minLength)).ToList();
+
+            foreach (var route in graph)
+            {
+                // give extra weight to unused stations
+                if (!existingDests.Contains(route.Nodes.Last().Station.YardID))
+                {
+                    route.Weight *= 2;
+                }
+            }
+
             graph.Sort();
             return graph;
         }
@@ -133,11 +143,11 @@ namespace PassengerJobs.Generation
         }
     }
 
-    public readonly struct RoutePath : IComparable<RoutePath>
+    public class RoutePath : IComparable<RoutePath>
     {
         public readonly RouteNode[] Nodes;
         public readonly TrackType TrackType;
-        public readonly float Weight;
+        public float Weight;
 
         public RoutePath(PassStationData[] stations, TrackType trackType, double minLength = 0)
         {
@@ -170,7 +180,7 @@ namespace PassengerJobs.Generation
             return result;
         }
 
-        public readonly int CompareTo(RoutePath other)
+        public int CompareTo(RoutePath other)
         {
             return other.Weight.CompareTo(Weight);
         }
