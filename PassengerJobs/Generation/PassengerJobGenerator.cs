@@ -30,14 +30,12 @@ namespace PassengerJobs.Generation
         {
             foreach (var instance in _instances.Values)
             {
-                foreach (var platform in instance.PlatformControllers)
-                {
-                    Destroy(platform);
-                }
-
                 Destroy(instance);
             }
+
             _instances.Clear();
+
+            PlatformController.HandleGameUnloading();
         }
 
         public static float GetBonusPayment(float basePayment)

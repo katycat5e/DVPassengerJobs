@@ -27,6 +27,16 @@ namespace PassengerJobs.Platforms
             return _trackToControllerMap[platform.ID.ToString()];
         }
 
+        public static void HandleGameUnloading()
+        {
+            foreach (var platform in _trackToControllerMap.Values)
+            {
+                Destroy(platform);
+            }
+
+            _trackToControllerMap.Clear();
+        }
+
         public WarehouseMachine Warehouse { get; private set; } = null!;
         public Track Track = null!;
         public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();

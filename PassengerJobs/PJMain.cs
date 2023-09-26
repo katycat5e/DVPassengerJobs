@@ -29,9 +29,7 @@ namespace PassengerJobs
             ModEntry = modEntry;
 
             Translations = new TranslationInjector("cc.foxden.passenger_jobs");
-
-            string fallbackCsv = Path.Combine(ModEntry.Path, "translations.csv");
-            Translations.AddTranslationsFromWebCsv("https://foxden.cc/static/derail_valley/pj_translations.csv", fallbackCsv);
+            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv");
 
             BundleLoader.Initialize();
 

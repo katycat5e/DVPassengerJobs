@@ -43,7 +43,7 @@ namespace PassengerJobs
                 .Cast<LocalizationKey>()
                 .ToDictionary(
                     k => k,
-                    k => $"pj/{Enum.GetName(typeof(LocalizationKey), k).ToLower()}"
+                    k => $"passjobs/{Enum.GetName(typeof(LocalizationKey), k).ToLower()}"
                 );
         }
 
