@@ -1,0 +1,120 @@
+﻿{
+  "platforms": [
+    {
+      "yardId": "CSW",
+      "tracks": [ "CSW-B6LP", "CSW-B5LP", "CSW-B4LP", "CSW-B3LP" ]
+    },
+    {
+      "yardId": "MF",
+      "tracks": [ "MF-D1LP", "MF-D2LP" ]
+    },
+    {
+      "yardId": "FF",
+      "tracks": [ "FF-B1LP", "FF-B2LP" ]
+    },
+    {
+      "yardId": "HB",
+      "tracks": [ "HB-F1LP", "HB-F2LP" ]
+    },
+    {
+      "yardId": "GF",
+      "tracks": [ "GF-C3LP" ] // GF-C2LP reserved for pass-thru
+    }
+  ],
+
+  "storage": [
+    {
+      "yardId": "CSW",
+      "tracks": [ "CSW-B2SP", "CSW-B1SP" ]
+    },
+    {
+      "yardId": "MF",
+      "tracks": [ "MF-D4SP" ]
+    },
+    {
+      "yardId": "FF",
+      "tracks": [ "FF-B3SP", "FF-B5SP", "FF-B4SP" ]
+    },
+    {
+      "yardId": "HB",
+      "tracks": [ "HB-F4SP", "HB-F3SP" ]
+    },
+    {
+      "yardId": "GF",
+      "tracks": [ "GF-C1SP" ]
+    }
+  ],
+
+  "expressRoutes": [
+    {
+      "start": "CSW",
+      "routes": [
+        [ "MF", "FF" ],
+        [ "MF", "FF", "GF" ],
+        [ "MF", "FF", "GF", "HB" ],
+        [ "FF" ],
+        [ "FF", "GF" ],
+        [ "HB" ],
+        [ "HB", "FF" ],
+        [ "HB", "FF", "MF" ],
+        [ "GF" ],
+        [ "GF", "HB" ],
+        [ "GF", "FF" ]
+      ]
+    },
+    {
+      "start": "MF",
+      "routes": [
+        [ "FF" ],
+        [ "FF", "GF" ],
+        [ "FF", "GF", "CSW" ],
+        [ "GF" ],
+        [ "CSW", "HB" ],
+        [ "CSW", "HB", "FF" ],
+        [ "CSW", "FF" ],
+        [ "CSW", "GF" ],
+        [ "HB" ]
+      ]
+    },
+    {
+      "start": "FF",
+      "routes": [
+        [ "MF" ],
+        [ "MF", "CSW" ],
+        [ "CSW", "HB" ],
+        [ "CSW", "GF" ],
+        [ "GF", "CSW" ],
+        [ "GF", "HB" ],
+        [ "HB" ]
+      ]
+    },
+    {
+      "start": "GF",
+      "routes": [
+        [ "FF", "MF" ],
+        [ "FF", "MF", "CSW" ],
+        [ "FF", "MF", "CSW", "HB" ],
+        [ "FF", "CSW" ],
+        [ "CSW", "MF" ],
+        [ "CSW", "FF" ],
+        [ "CSW", "HB" ],
+        [ "HB" ],
+        [ "HB", "CSW" ]
+      ]
+    },
+    {
+      "start": "HB",
+      "routes": [
+        [ "CSW" ],
+        [ "CSW", "MF" ],
+        [ "CSW", "MF", "FF", "GF" ],
+        [ "CSW", "FF" ],
+        [ "CSW", "GF" ],
+        [ "FF", "MF" ],
+        [ "GF", "FF" ],
+        [ "GF", "FF", "MF" ],
+        [ "GF", "FF", "MF", "CSW" ]
+      ]
+    }
+  ]
+}

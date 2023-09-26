@@ -1,0 +1,62 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyName>PassengerJobs</AssemblyName>
+		<TargetFramework>netframework4.8</TargetFramework>
+		<LangVersion>9</LangVersion>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Krafs.Publicizer" Version="2.2.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<Publicize Include="Assembly-CSharp" IncludeCompilerGeneratedMembers="false" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="0Harmony" />
+		<Reference Include="Assembly-CSharp" />
+		<Reference Include="DV.Common" />
+		<Reference Include="DV.Utils" />
+		<Reference Include="DV.WeatherSystem" />
+		<Reference Include="DVLangHelper.Data" />
+		<Reference Include="DVLangHelper.Runtime" />
+		<Reference Include="DV.Inventory" />
+		<Reference Include="DV.NAudio" />
+		<Reference Include="DV.ThingTypes" />
+		<Reference Include="DV.Localization" />
+		<Reference Include="I2.Localization" />
+		<Reference Include="Newtonsoft.Json" />
+		<Reference Include="SkinManagerMod" />
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
+		<Reference Include="System.Xml.Linq" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="System.Data" />
+		<Reference Include="System.Net.Http" />
+		<Reference Include="System.Xml" />
+		<Reference Include="Unity.TextMeshPro" />
+		<Reference Include="UnityEngine" />
+		<Reference Include="UnityEngine.AssetBundleModule" />
+		<Reference Include="UnityEngine.AudioModule" />
+		<Reference Include="UnityEngine.CoreModule" />
+		<Reference Include="UnityEngine.ImageConversionModule" />
+		<Reference Include="UnityEngine.IMGUIModule" />
+		<Reference Include="UnityEngine.PhysicsModule" />
+		<Reference Include="UnityEngine.UI" />
+		<Reference Include="UnityModManager" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="default_routes.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="platform_signs.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="translations.csv">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+</Project>
