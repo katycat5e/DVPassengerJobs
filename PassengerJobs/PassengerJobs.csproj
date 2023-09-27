@@ -28,7 +28,6 @@
 		<Reference Include="DV.Localization" />
 		<Reference Include="I2.Localization" />
 		<Reference Include="Newtonsoft.Json" />
-		<Reference Include="SkinManagerMod" />
 		<Reference Include="System" />
 		<Reference Include="System.Core" />
 		<Reference Include="System.Xml.Linq" />

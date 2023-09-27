@@ -2,7 +2,6 @@
 using DV.ThingTypes;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
-using SkinManagerMod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -72,7 +71,7 @@ namespace PassengerJobs.Generation
             Controller = GetComponent<StationController>();
             if (!Controller)
             {
-                Main.Error("Can't find StationController when creating PassengerJobGenerator");
+                PJMain.Error("Can't find StationController when creating PassengerJobGenerator");
                 enabled = false;
                 return;
             }
