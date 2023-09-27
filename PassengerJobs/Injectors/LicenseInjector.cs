@@ -33,6 +33,8 @@ namespace PassengerJobs.Injectors
 
         public static bool RegisterPassengerLicenses()
         {
+            BundleLoader.EnsureInitialized();
+
             try
             {
                 // create license data object

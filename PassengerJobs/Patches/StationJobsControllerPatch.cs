@@ -11,6 +11,7 @@ namespace PassengerJobs.Patches
             string yardId = __instance.stationController.stationInfo.YardID;
             if (!RouteSelector.IsPassengerStation(yardId)) return;
 
+            RouteSelector.OnStationControllerStart(__instance.stationController);
             __instance.gameObject.AddComponent<PassengerJobGenerator>();
         }
     }

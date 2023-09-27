@@ -104,6 +104,7 @@ namespace PassengerJobs.Platforms
 
         public static IEnumerable<SignPrinter> CreatePlatformSigns(string trackId)
         {
+            BundleLoader.EnsureInitialized();
             if (BundleLoader.SignLoadFailed || !_signLocations.TryGetValue(trackId, out var definitions))
             {
                 yield break;

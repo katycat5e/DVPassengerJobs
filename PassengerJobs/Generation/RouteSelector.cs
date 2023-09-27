@@ -18,6 +18,11 @@ namespace PassengerJobs.Generation
 
         public static bool IsPassengerStation(string yardId) => _routeConfig?.platforms.Any(p => p.yardId == yardId) == true;
 
+        static RouteSelector()
+        {
+            UnloadWatcher.UnloadRequested += HandleGameUnloading;
+        }
+
         public static bool LoadConfig()
         {
             try
@@ -48,34 +53,35 @@ namespace PassengerJobs.Generation
             return true;
         }
 
-        public static bool Initialized { get; private set; }
-        public static void Initialize()
+        public static void OnStationControllerStart(StationController station)
         {
-            Initialized = true;
-            foreach (var station in StationController.allStations)
+            string yardId = station.stationInfo.YardID;
+            if (_routeConfig!.platforms.FirstOrDefault(t => t.yardId == yardId) is RouteConfig.TrackSet platforms)
             {
-                string yardId = station.stationInfo.YardID;
-                if (_routeConfig!.platforms.FirstOrDefault(t => t.yardId == yardId) is RouteConfig.TrackSet platforms)
+                var stationData = new PassStationData(station);
+                stationData.AddPlatforms(platforms.tracks.Select(GetTrackById));
+
+                var storage = _routeConfig.storage.FirstOrDefault(t => t.yardId == yardId);
+                if (storage != null)
                 {
-                    var stationData = new PassStationData(station);
-                    stationData.AddPlatforms(platforms.tracks.Select(GetTrackById));
+                    stationData.AddStorageTracks(storage.tracks.Select(GetTrackById));
+                }
 
-                    var storage = _routeConfig.storage.FirstOrDefault(t => t.yardId == yardId);
-                    if (storage != null)
-                    {
-                        stationData.AddStorageTracks(storage.tracks.Select(GetTrackById));
-                    }
+                _stations.Add(yardId, stationData);
 
-                    _stations.Add(yardId, stationData);
-
-                    // add tracks to yard organizer
-                    foreach (var track in stationData.AllTracks)
-                    {
-                        YardTracksOrganizer.Instance.InitializeYardTrack(track);
-                        YardTracksOrganizer.Instance.yardTrackIdToTrack[track.ID.FullID] = track;
-                    }
+                // add tracks to yard organizer
+                foreach (var track in stationData.AllTracks)
+                {
+                    YardTracksOrganizer.Instance.InitializeYardTrack(track);
+                    YardTracksOrganizer.Instance.yardTrackIdToTrack[track.ID.FullID] = track;
                 }
             }
+        }
+
+        private static bool _routesInitialized = false;
+        public static void EnsureInitialized()
+        {
+            if (_routesInitialized) return;
 
             foreach (var stationData in _stations.Values)
             {
@@ -86,6 +92,14 @@ namespace PassengerJobs.Generation
                     stationData.AddRoutes(routeStations);
                 }
             }
+
+            _routesInitialized = true;
+        }
+
+        private static void HandleGameUnloading()
+        {
+            _stations.Clear();
+            _routesInitialized = false;
         }
 
         private static Track GetTrackById(string id)
@@ -97,14 +111,12 @@ namespace PassengerJobs.Generation
 
         public static PassStationData GetStationData(string yardId)
         {
-            if (!Initialized) Initialize();
-
             return _stations[yardId];
         }
 
         public static RouteTrack[]? GetExpressRoute(PassStationData startStation, IEnumerable<string> existingDests, double minLength = 0)
         {
-            if (!Initialized) Initialize();
+            EnsureInitialized();
 
             var graph = CreateGraph(startStation, existingDests, minLength);
 

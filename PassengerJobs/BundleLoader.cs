@@ -19,8 +19,10 @@ namespace PassengerJobs
         public static GameObject SmallSignPrefab { get; private set; } = null!;
         public static GameObject LillySignPrefab { get; private set; } = null!;
 
-        public static void Initialize()
+        public static void EnsureInitialized()
         {
+            if (SignPrefab) return;
+
             string bundlePath = Path.Combine(PJMain.ModEntry.Path, "passengerjobs");
             PJMain.Log("Attempting to load platform sign prefab");
 
