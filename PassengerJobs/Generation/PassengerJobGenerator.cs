@@ -134,6 +134,14 @@ namespace PassengerJobs.Generation
                 StartGenerationAsync();
             }
 
+            if (_playerWasInRange != nowInRange)
+            {
+                foreach (var platform in PlatformControllers)
+                {
+                    platform.SetSignsEnabled(nowInRange);
+                }
+            }
+
             _playerWasInRange = nowInRange;
         }
 
