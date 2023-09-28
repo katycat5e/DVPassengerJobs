@@ -2,12 +2,13 @@
 using HarmonyLib;
 using PassengerJobs.Injectors;
 using System;
+using System.Collections.Generic;
 using static Oculus.Avatar.CAPI;
 
 namespace PassengerJobs.Patches
 {
     [HarmonyPatch(typeof(Enum))]
-    internal class EnumPatch
+    internal static class EnumPatch
     {
         [HarmonyPatch(nameof(Enum.GetValues))]
         [HarmonyPostfix]
@@ -29,6 +30,20 @@ namespace PassengerJobs.Patches
             Array.Copy(source, result, source.Length);
             Array.Copy(newValues, 0, result, source.Length, newValues.Length);
             return result;
+        }
+    }
+
+    [HarmonyPatch(typeof(JobLicenseType_v2))]
+    internal static class JobLicenseType_v2Patch
+    {
+        [HarmonyPatch(nameof(JobLicenseType_v2.ToV2List))]
+        [HarmonyPostfix]
+        public static void ToV2ListPostfix(JobLicenses flags, ref List<JobLicenseType_v2> __result)
+        {
+            if ((flags & LicenseInjector.License.v1) != JobLicenses.Basic)
+            {
+                __result.Add(LicenseInjector.License);
+            }
         }
     }
 }
