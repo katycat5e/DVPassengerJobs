@@ -184,7 +184,7 @@ namespace PassengerJobs.Generation
             _generationRoutine = null;
         }
 
-        public PassengerChainController? GenerateExpressJob(TrainCarsPerLogicTrack? consistInfo = null)
+        public PassengerChainController? GenerateExpressJob(CarsPerTrack? consistInfo = null)
         {
             int nTotalCars;
             List<TrainCarLivery> jobCarTypes;
@@ -220,11 +220,11 @@ namespace PassengerJobs.Generation
                 nTotalCars = consistInfo.cars.Count;
                 startPlatform = consistInfo.track;
 
-                double consistLength = CarSpawner.Instance.GetTotalTrainCarsLength(consistInfo.cars, true);
+                double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
                 destinations = RouteSelector.GetExpressRoute(_stationData, currentDests, consistLength);
                 if (destinations == null) return null;
 
-                jobCarTypes = consistInfo.cars.Select(c => c.carLivery).ToList();
+                jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();
             }
 
             // create job chain controller
@@ -258,11 +258,11 @@ namespace PassengerJobs.Generation
             }
             else
             {
-                chainController.trainCarsForJobChain = consistInfo.cars;
+                chainController.trainCarsForJobChain = consistInfo.cars.Select(c => IdGenerator.Instance.logicCarToTrainCar[c]).ToList();
 
                 jobDefinition = PopulateExpressJobExistingCars(
                     chainController, Controller.logicStation, startPlatform, destinations.Select(t => t.Track).ToArray(),
-                    consistInfo.LogicCars, chainData, bonusLimit, transportPayment);
+                    consistInfo.cars, chainData, bonusLimit, transportPayment);
             }
 
             if (jobDefinition == null)
