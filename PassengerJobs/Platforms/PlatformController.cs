@@ -19,7 +19,7 @@ namespace PassengerJobs.Platforms
         private const float TRAIN_CHECK_INTERVAL = 1f;
         private const float LOAD_DELAY = 1f;
 
-        private static AudioClip? _loadCompletedSound = null;
+        private static readonly AudioClip? _loadCompletedSound = null;
         private static readonly Dictionary<string, PlatformController> _trackToControllerMap = new();
 
         public static PlatformController GetControllerForTrack(Track platform)
@@ -135,7 +135,7 @@ namespace PassengerJobs.Platforms
 
         public void RemoveJobFromSigns(Job job)
         {
-            _currentJobs.RemoveAll(j => j.ID == job.ID);
+            _currentJobs.RemoveAll(j => j.OriginalID == job.ID);
             _displayDataDirty = true;
         }
 

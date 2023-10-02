@@ -125,11 +125,13 @@ namespace PassengerJobs.Platforms
             public readonly string Src;
             public readonly string Dest;
             public readonly string Name;
+            public readonly string OriginalID;
             public readonly string ID;
 
             public JobInfo(Job job, bool incoming)
             {
                 Incoming = incoming;
+                OriginalID = job.ID;
                 if (job.ID.Count(c => c == '-') > 1)
                 {
                     ID = job.ID.Substring(job.ID.IndexOf('-') + 1); // remove yard ID

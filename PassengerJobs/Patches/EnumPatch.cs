@@ -31,6 +31,22 @@ namespace PassengerJobs.Patches
             Array.Copy(newValues, 0, result, source.Length, newValues.Length);
             return result;
         }
+
+        [HarmonyPatch(nameof(Enum.IsDefined))]
+        [HarmonyPrefix]
+        public static bool IsDefinedPrefix(Type enumType, object value, ref bool __result)
+        {
+            if (enumType == typeof(CargoType))
+            {
+                if (((value is int iVal) && ((CargoType)iVal == CargoInjector.PassengerCargo.v1)) ||
+                    ((value is CargoType cVal) && (cVal == CargoInjector.PassengerCargo.v1)))
+                {
+                    __result = true;
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     [HarmonyPatch(typeof(JobLicenseType_v2))]
