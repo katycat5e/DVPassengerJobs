@@ -173,29 +173,7 @@ namespace PassengerJobs.Platforms
                 inIdleState = true;
             }
 
-            // Check for loading train, is highest priority on sign
-            if (IsAnyTrainAtPlatform(true))
-            {
-                if (_loadCountdown == 0)
-                {
-                    if (_loadUnloadRoutine == null)
-                    {
-                        inIdleState = false;
-                        _loadUnloadRoutine = StartCoroutine(DelayedLoadUnload(true));
-                    }
-                    return;
-                }
-                else
-                {
-                    _loadCountdown -= 1;
-                }
-            }
-            else
-            {
-                _loadCountdown = START_XFER_DELAY;
-            }
-
-            // check for unloading train
+            // check for unloading train, we need to unload before trying to re-load train
             if (IsAnyTrainAtPlatform(false))
             {
                 if (_unloadCountdown == 0)
@@ -215,6 +193,28 @@ namespace PassengerJobs.Platforms
             else
             {
                 _unloadCountdown = START_XFER_DELAY;
+            }
+
+            // Check for loading train
+            if (IsAnyTrainAtPlatform(true))
+            {
+                if (_loadCountdown == 0)
+                {
+                    if (_loadUnloadRoutine == null)
+                    {
+                        inIdleState = false;
+                        _loadUnloadRoutine = StartCoroutine(DelayedLoadUnload(true));
+                    }
+                    return;
+                }
+                else
+                {
+                    _loadCountdown -= 1;
+                }
+            }
+            else
+            {
+                _loadCountdown = START_XFER_DELAY;
             }
 
             if (_displayDataDirty)
@@ -308,6 +308,16 @@ namespace PassengerJobs.Platforms
                 }
             }
             // all jobs processed
+
+            if (completedTransfer && !isLoading && IsAnyTrainAtPlatform(true))
+            {
+                var loadRoutine = DelayedLoadUnload(true);
+                while (loadRoutine.MoveNext())
+                {
+                    yield return loadRoutine.Current;
+                }
+                yield break;
+            }
 
             if (completedTransfer && _loadCompletedSound)
             {

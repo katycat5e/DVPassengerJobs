@@ -2,17 +2,11 @@
 using DV.Localization;
 using DV.Logic.Job;
 using DV.RenderTextureSystem.BookletRender;
-using DV.ThingTypes;
-using HarmonyLib;
 using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Unity.Jobs;
-using Unity.Jobs.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -27,8 +21,8 @@ namespace PassengerJobs
                 throw new Exception($"Wrong format of Passenger Job. Job id: {job.ID}");
             }
 
-            var startTask = sequence.nestedTasks.First();
             var transportTasks = sequence.nestedTasks.Where(t => t.instanceTaskType == TaskType.Transport);
+            var startTask = transportTasks.First();
             var destTracks = transportTasks.Select(t => t.destinationTrackID).ToArray();
             return new PassengerJobData(job, startTask.startTrackID, destTracks, startTask.cars);
         }
