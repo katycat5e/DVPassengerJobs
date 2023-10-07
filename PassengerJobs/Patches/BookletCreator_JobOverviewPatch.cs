@@ -13,7 +13,7 @@ namespace PassengerJobs.Patches
         [HarmonyPrefix]
         public static bool GetJobOverviewTemplateDataPrefix(Job_data job, ref List<TemplatePaperData> __result)
         {
-            if (job.type == PassJobType.Express)
+            if (PassJobType.IsPJType(job.type))
             {
                 __result = GetOverviewTemplateData(job);
                 return false;

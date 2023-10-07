@@ -1,11 +1,6 @@
 ﻿using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -15,9 +10,11 @@ namespace PassengerJobs
         public static Sprite LicenseSprite { get; private set; } = null!;
 
         public static bool SignLoadFailed { get; private set; }
-        public static GameObject SignPrefab { get; private set; } = null!;
-        public static GameObject SmallSignPrefab { get; private set; } = null!;
-        public static GameObject LillySignPrefab { get; private set; } = null!;
+        public static GameObject SignPrefab = null!;
+        public static GameObject SmallSignPrefab = null!;
+        public static GameObject LillySignPrefab = null!;
+
+        public static GameObject RuralPlatform = null!;
 
         public static void EnsureInitialized()
         {
@@ -29,53 +26,38 @@ namespace PassengerJobs
             var bytes = File.ReadAllBytes(bundlePath);
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
-            if (bundle != null)
-            {
-                LicenseSprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-                UnityEngine.Object.DontDestroyOnLoad(LicenseSprite);
-                if (LicenseSprite == null)
-                {
-                    PJMain.Error("Failed to load license sprite from asset bundle");
-                }
-
-                SignPrefab = bundle.LoadAsset<GameObject>("Assets/FlatscreenSign.prefab");
-                if (SignPrefab == null)
-                {
-                    PJMain.Error("Failed to load platform sign prefab from asset bundle");
-                    SignLoadFailed = true;
-                }
-                else
-                {
-                    ApplyDefaultShader(SignPrefab);
-                }
-
-                SmallSignPrefab = bundle.LoadAsset<GameObject>("Assets/SmolStationSign.prefab");
-                if (SmallSignPrefab == null)
-                {
-                    PJMain.Error("Failed to load small platform sign prefab from asset bundle");
-                    SignLoadFailed = true;
-                }
-                else
-                {
-                    ApplyDefaultShader(SmallSignPrefab);
-                }
-
-                LillySignPrefab = bundle.LoadAsset<GameObject>("Assets/LillySign.prefab");
-                if (LillySignPrefab == null)
-                {
-                    PJMain.Error("Failed to load small platform sign prefab from asset bundle");
-                    SignLoadFailed = true;
-                }
-                else
-                {
-                    ApplyDefaultShader(LillySignPrefab);
-                }
-            }
-            else
+            if (bundle == null)
             {
                 PJMain.Error("Failed to load asset bundle");
                 SignLoadFailed = true;
+                return;
             }
+
+            LicenseSprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
+            UnityEngine.Object.DontDestroyOnLoad(LicenseSprite);
+            if (LicenseSprite == null)
+            {
+                PJMain.Error("Failed to load license sprite from asset bundle");
+            }
+
+            SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/FlatscreenSign.prefab", ref SignPrefab);
+            SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/SmolStationSign.prefab", ref SmallSignPrefab);
+            SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/LillySign.prefab", ref LillySignPrefab);
+
+            TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
+        }
+
+        private static bool TryLoadPrefab(AssetBundle bundle, string assetPath, ref GameObject prefab)
+        {
+            prefab = bundle.LoadAsset<GameObject>(assetPath);
+            if (prefab)
+            {
+                ApplyDefaultShader(prefab);
+                return true;
+            }
+
+            PJMain.Error($"Failed to load {prefab} from asset bundle");
+            return false;
         }
 
         private static Shader? _engineShader = null;

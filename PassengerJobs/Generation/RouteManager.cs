@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using Newtonsoft.Json;
+using PassengerJobs.Platforms;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,17 +9,17 @@ using UnityEngine;
 
 namespace PassengerJobs.Generation
 {
-    public static class RouteSelector
+    public static class RouteManager
     {
         private const string ROUTE_CONFIG_FILE = "routes.json";
         private const string DEFAULT_ROUTE_CONFIG_FILE = "default_routes.json";
         private static RouteConfig? _routeConfig = null;
 
-        private static readonly Dictionary<string, PassStationData> _stations = new();
+        private static readonly Dictionary<string, IPassDestination> _stations = new();
 
         public static bool IsPassengerStation(string yardId) => _routeConfig?.platforms.Any(p => p.yardId == yardId) == true;
 
-        static RouteSelector()
+        static RouteManager()
         {
             UnloadWatcher.UnloadRequested += HandleGameUnloading;
         }
@@ -78,18 +79,52 @@ namespace PassengerJobs.Generation
             }
         }
 
+        public static void CreateRuralStations()
+        {
+            foreach (var station in _routeConfig!.ruralStations)
+            {
+                var track = GetTrackById(station.trackId);
+                var railTrack = track.GetRailTrack();
+
+                var controller = railTrack.gameObject.AddComponent<PlatformController>();
+                var platform = new RuralPlatformWrapper(station, track);
+                controller.Platform = platform;
+
+                _stations.Add(station.id, new RuralStationData(platform.LoadingMachine));
+
+                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine);
+
+                PJMain.Log($"Created rural station {station.id} on {track.ID} {station.lowIdx}-{station.highIdx}");
+            }
+        }
+
         private static bool _routesInitialized = false;
         public static void EnsureInitialized()
         {
             if (_routesInitialized) return;
 
-            foreach (var stationData in _stations.Values)
+            static IEnumerable<RouteData> GetRoutes(RouteType routeType, string[][] destIds)
+            {
+                foreach (var route in destIds)
+                {
+                    yield return new RouteData(routeType, route.Select(s => _stations[s]).ToArray());
+                }
+            }
+
+            foreach (var stationData in _stations.Values.OfType<PassStationData>())
             {
                 var routeData = _routeConfig!.expressRoutes.FirstOrDefault(t => t.start == stationData.YardID);
                 if (routeData != null)
                 {
-                    var routeStations = routeData.routes.Select(r => r.Select(s => _stations[s]).ToArray());
-                    stationData.AddRoutes(routeStations);
+                    var routeStations = GetRoutes(RouteType.Express, routeData.routes);
+                    stationData.Routes.AddRange(routeStations);
+                }
+
+                var localRoutes = _routeConfig!.localRoutes.FirstOrDefault(t => t.start == stationData.YardID);
+                if (localRoutes != null)
+                {
+                    var routeStations = GetRoutes(RouteType.Local, localRoutes.routes);
+                    stationData.Routes.AddRange(routeStations);
                 }
             }
 
@@ -111,23 +146,23 @@ namespace PassengerJobs.Generation
 
         public static PassStationData GetStationData(string yardId)
         {
-            return _stations[yardId];
+            return (PassStationData)_stations[yardId];
         }
 
-        public static RouteTrack[]? GetExpressRoute(PassStationData startStation, IEnumerable<string> existingDests, double minLength = 0)
+        public static RouteResult? GetExpressRoute(PassStationData startStation, IEnumerable<string> existingDests, double minLength = 0)
         {
             EnsureInitialized();
 
-            var graph = CreateGraph(startStation, existingDests, minLength);
+            var graph = CreateGraph(startStation.Routes, existingDests, minLength);
 
             if (graph[0].Weight < 0.5f) return null;
 
-            return graph[0].PickTracks();
+            return new RouteResult(graph[0].RouteType, graph[0].PickTracks());
         }
 
-        private static List<RoutePath> CreateGraph(PassStationData startStation, IEnumerable<string> existingDests, double minLength = 0)
+        private static List<RoutePath> CreateGraph(IEnumerable<RouteData> routes, IEnumerable<string> existingDests, double minLength = 0)
         {
-            var graph = startStation.Destinations.Select(s => new RoutePath(s, TrackType.Platform, minLength)).ToList();
+            var graph = routes.Select(s => new RoutePath(s, TrackType.Platform, minLength)).ToList();
 
             foreach (var route in graph)
             {
@@ -143,27 +178,74 @@ namespace PassengerJobs.Generation
         }
     }
 
+    public sealed class RouteResult
+    {
+        public readonly RouteType RouteType;
+        public readonly RouteTrack[] Tracks;
+
+        public RouteResult(RouteType routeType, RouteTrack[] tracks)
+        {
+            RouteType = routeType;
+            Tracks = tracks;
+        }
+
+        public double MinTrackLength => Tracks.Min(t => t.Track.length);
+    }
+
     public readonly struct RouteTrack
     {
-        public readonly PassStationData Station;
+        public readonly IPassDestination Station;
         public readonly Track Track;
+        public readonly int LowBound;
+        public readonly int HighBound;
 
-        public RouteTrack(PassStationData station, Track track)
+        public bool IsSegment => (LowBound >= 0) && (HighBound >= 0);
+
+        public double Length
+        {
+            get
+            {
+                if (IsSegment)
+                {
+                    var rail = Track.GetRailTrack().GetPointSet();
+                    return rail.points[HighBound].span - rail.points[LowBound].span;
+                }
+                else
+                {
+                    return Track.length;
+                }
+            }
+        }
+
+        public string SaveID => IsSegment ? Station.YardID : Track.ID.FullID;
+        public string DisplayID => IsSegment ? $"{Station.YardID}-LP" : Track.ID.ToString();
+
+        public RouteTrack(IPassDestination station, Track track)
         {
             Station = station;
             Track = track;
+            LowBound = HighBound = -1;
+        }
+
+        public RouteTrack(IPassDestination station, Track track, int lowBound, int highBound) :
+            this(station, track)
+        {
+            LowBound = lowBound;
+            HighBound = highBound;
         }
     }
 
     public class RoutePath : IComparable<RoutePath>
     {
+        public readonly RouteType RouteType;
         public readonly RouteNode[] Nodes;
         public readonly TrackType TrackType;
         public float Weight;
 
-        public RoutePath(PassStationData[] stations, TrackType trackType, double minLength = 0)
+        public RoutePath(RouteData stations, TrackType trackType, double minLength = 0)
         {
-            Nodes = stations.Select(s => new RouteNode(s, s.TracksOfType(trackType), minLength)).ToArray();
+            RouteType = stations.RouteType;
+            Nodes = stations.Destinations.Select(s => new RouteNode(s, minLength)).ToArray();
             TrackType = trackType;
 
             if (Nodes.Any(n => n.Weight == 0))
@@ -200,29 +282,29 @@ namespace PassengerJobs.Generation
 
     public readonly struct RouteNode
     {
-        public readonly PassStationData Station;
-        private readonly List<Track> Tracks;
+        public readonly IPassDestination Station;
+        public readonly IEnumerable<RouteTrack> Tracks;
         public readonly float Weight;
 
-        public RouteNode(PassStationData station, List<Track> tracks, double minLength = 0)
+        public RouteNode(IPassDestination station, double minLength = 0)
         {
             Station = station;
-            Tracks = tracks;
-            Weight = RecalculateWeight(tracks, minLength);
+            Tracks = station.GetPlatforms();
+            Weight = RecalculateWeight(Tracks, minLength);
         }
 
-        private static float RecalculateWeight(List<Track> tracks, double minLength)
+        private static float RecalculateWeight(IEnumerable<RouteTrack> tracks, double minLength)
         {
             var unused = tracks.GetUnusedTracks()
-                .Where(t => t.length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
+                .Where(t => t.Length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
 
             //return ((float)unused.Count() / tracks.Count) + ();
-            return (unused.Count() > 0) ? 1 : 0;
+            return unused.Any() ? 1 : 0;
         }
 
         public readonly RouteTrack PickTrack()
         {
-            return new RouteTrack(Station, Tracks.GetUnusedTracks().PickOne()!);
+            return Tracks.GetUnusedTracks().PickOneValue()!.Value;
         }
     }
 }

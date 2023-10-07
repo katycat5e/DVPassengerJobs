@@ -18,7 +18,7 @@
     },
     {
       "yardId": "GF",
-      "tracks": [ "GF-C3LP" ] // GF-C2LP reserved for pass-thru
+      "tracks": [ "GF-C3LP" ]
     }
   ],
 
@@ -114,6 +114,25 @@
         [ "GF", "FF" ],
         [ "GF", "FF", "MF" ],
         [ "GF", "FF", "MF", "CSW" ]
+      ]
+    }
+  ],
+
+  "ruralStations": [
+    {
+      "id": "WF",
+      "name": "Wheat Field",
+      "trackId": "#Y-#S143#T",
+      "lowIdx": 4336,
+      "highIdx": 4589
+    }
+  ],
+
+  "localRoutes": [
+    {
+      "start": "CSW",
+      "routes": [
+        [ "WF" ]
       ]
     }
   ]

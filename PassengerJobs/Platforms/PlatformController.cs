@@ -37,8 +37,7 @@ namespace PassengerJobs.Platforms
             _trackToControllerMap.Clear();
         }
 
-        public WarehouseMachine Warehouse { get; private set; } = null!;
-        public Track Track = null!;
+        public IPlatformWrapper Platform = null!;
         public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
 
         public bool IsLoading { get; private set; } = false;
@@ -77,9 +76,8 @@ namespace PassengerJobs.Platforms
 
         public void Start()
         {
-            _trackToControllerMap.Add(Track.ID.ToString(), this);
-            Warehouse = new WarehouseMachine(Track, new() { CargoInjector.PassengerCargo.v1 });
-            Signs = SignManager.CreatePlatformSigns(Track.ID.ToString()).ToArray();
+            _trackToControllerMap.Add(Platform.Id, this);
+            Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
         }
 
         private void OnDisable()
@@ -106,7 +104,7 @@ namespace PassengerJobs.Platforms
         private void RefreshDisplays()
         {
             _lastTimeString = CurrentTimeString;
-            var data = new SignData(Track.ID.TrackPartOnly, _lastTimeString, _currentJobs, _overrideText);
+            var data = new SignData(Platform.DisplayId, _lastTimeString, _currentJobs, _overrideText);
 
             foreach (var sign in Signs)
             {
@@ -174,7 +172,7 @@ namespace PassengerJobs.Platforms
             }
 
             // check for unloading train, we need to unload before trying to re-load train
-            if (IsAnyTrainAtPlatform(false))
+            if (Platform.IsAnyTrainPresent(false))
             {
                 if (_unloadCountdown == 0)
                 {
@@ -196,7 +194,7 @@ namespace PassengerJobs.Platforms
             }
 
             // Check for loading train
-            if (IsAnyTrainAtPlatform(true))
+            if (Platform.IsAnyTrainPresent(true))
             {
                 if (_loadCountdown == 0)
                 {
@@ -226,9 +224,9 @@ namespace PassengerJobs.Platforms
         private IEnumerator DelayedLoadUnload(bool isLoading)
         {
             WarehouseTaskType taskType = isLoading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-            var currentLoadData = Warehouse.GetCurrentLoadUnloadData(taskType);
+            var currentTasks = Platform.GetLoadableTasks(isLoading);
 
-            if (currentLoadData.Count == 0)
+            if (currentTasks.Count == 0)
             {
                 ResetLoadingState();
                 yield break;
@@ -239,77 +237,69 @@ namespace PassengerJobs.Platforms
 
             bool completedTransfer = false;
 
-            foreach (var data in currentLoadData)
+            foreach (var task in currentTasks)
             {
                 yield return _loadUnloadDelay;
 
-                if (data.state == WMDataState.FullLoadUnloadPossible)
+                // make double sure that the cars are able to be loaded
+                bool allCarsStopped = Platform.AreCarsStoppedAtPlatform(task.Cars);
+                if (!allCarsStopped)
                 {
-                    // all cars ready to load
-                    foreach (WarehouseTask task in data.tasksAvailableToProcess)
+                    // this kills the passengers
+                    continue;
+                }
+
+                // display the current transferring train
+                string message = LocalizationKey.SIGN_BOARDING.L() + '\n';
+                if (task.IsLoadTask)
+                {
+                    message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
+                }
+                else
+                {
+                    message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
+                }
+                OverrideText = message;
+                RefreshDisplays();
+
+                // now that we verified that the cars are okay, actually transfer the passengers to/from the cars
+                for (int nToProcess = task.Cars.Count; nToProcess > 0; nToProcess--)
+                {
+                    Car? result = Platform.TransferOneCarOfTask(task, isLoading);
+
+                    if (result == null)
                     {
-                        // make double sure that the cars are able to be loaded
-                        bool allCarsStopped = AreCarsStoppedAtPlatform(task.cars);
-                        if (!allCarsStopped)
-                        {
-                            // this kills the passengers
-                            continue;
-                        }
+                        PJMain.Error("Tried to (un)load a car that wasn't there :(");
 
-                        // display the current transferring train
-                        string message = LocalizationKey.SIGN_BOARDING.L() + '\n';
-                        if (task.warehouseTaskType == WarehouseTaskType.Loading)
+                        // fail into safe state by completing task
+                        task.State = TaskState.Done;
+                        foreach (Car car in task.Cars)
                         {
-                            message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
-                        }
-                        else
-                        {
-                            message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
-                        }
-                        OverrideText = message;
-                        RefreshDisplays();
-
-                        // now that we verified that the cars are okay, actually transfer the passengers to/from the cars
-                        for (int nToProcess = task.cars.Count; nToProcess > 0; nToProcess--)
-                        {
-                            Car result = (isLoading) ?
-                                Warehouse.LoadOneCarOfTask(task) :
-                                Warehouse.UnloadOneCarOfTask(task);
-
-                            if (result == null)
+                            if (isLoading)
                             {
-                                PJMain.Error("Tried to (un)load a car that wasn't there :(");
-
-                                // fail into safe state by completing task
-                                task.state = TaskState.Done;
-                                foreach (Car car in task.cars)
-                                {
-                                    if (isLoading)
-                                    {
-                                        car.DumpCargo();
-                                        car.LoadCargo(car.capacity, CargoInjector.PassengerCargo.v1);
-                                    }
-                                    else
-                                    {
-                                        car.DumpCargo();
-                                    }
-                                }
-                                Warehouse.RemoveWarehouseTask(task);
-
-                                break;
+                                car.DumpCargo();
+                                car.LoadCargo(car.capacity, CargoInjector.PassengerCargo.v1);
                             }
-
-                            yield return _loadUnloadDelay;
+                            else
+                            {
+                                car.DumpCargo();
+                            }
                         }
+                        Platform.RemoveTask(task);
+
+                        break;
                     }
 
-                    OverrideText = null;
-                    completedTransfer = true;
+                    yield return _loadUnloadDelay;
                 }
             }
+
+            OverrideText = null;
+            completedTransfer = true;
+
             // all jobs processed
 
-            if (completedTransfer && !isLoading && IsAnyTrainAtPlatform(true))
+            if (completedTransfer && !isLoading && Platform.IsAnyTrainPresent(true))
             {
                 var loadRoutine = DelayedLoadUnload(true);
                 while (loadRoutine.MoveNext())
@@ -333,41 +323,6 @@ namespace PassengerJobs.Platforms
             }
 
             ResetLoadingState();
-        }
-
-        private bool IsAnyTrainAtPlatform(bool loading)
-        {
-            WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-
-            foreach (WarehouseTask warehouseTask in Warehouse.currentTasks)
-            {
-                if (warehouseTask.readyForMachine && (warehouseTask.warehouseTaskType == taskType) && AreCarsStoppedAtPlatform(warehouseTask.cars))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private bool AreCarsStoppedAtPlatform(List<Car> cars)
-        {
-            // do it in two stages to exit early before speed lookup
-            if (!Warehouse.CarsPresentOnWarehouseTrack(cars))
-            {
-                return false;
-            }
-
-            foreach (var car in cars)
-            {
-                if (!IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) ||
-                    Mathf.Abs(trainCar.GetForwardSpeed()) > 0.05f)
-                {
-                    // couldn't find physical car or car was moving
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         private void ResetLoadingState()

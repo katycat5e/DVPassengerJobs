@@ -35,7 +35,7 @@ namespace PassengerJobs
             if (!LicenseInjector.RegisterPassengerLicenses()) return false;
             
             // load route config
-            if (!RouteSelector.LoadConfig()) return false;
+            if (!RouteManager.LoadConfig()) return false;
 
             SignManager.TryLoadSignLocations();
 

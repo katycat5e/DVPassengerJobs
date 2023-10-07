@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
 
 namespace PassengerJobs.Patches
@@ -9,6 +10,7 @@ namespace PassengerJobs.Patches
         public static void Postfix()
         {
             SaveDataInjector.AcquirePassengerLicense();
+            RouteManager.CreateRuralStations();
         }
     }
 }

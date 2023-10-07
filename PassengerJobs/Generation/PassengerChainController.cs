@@ -10,6 +10,12 @@ namespace PassengerJobs.Generation
     public static class PassJobType
     {
         public const JobType Express = (JobType)101;
+        public const JobType Local = (JobType)102;
+
+        public static bool IsPJType(JobType type)
+        {
+            return (type == Express) || (type == Local);
+        }
     }
 
     public class PassengerChainController : JobChainController
@@ -20,7 +26,7 @@ namespace PassengerJobs.Generation
 
         public override void OnLastJobInChainCompleted(Job lastJobInChain)
         {
-            if ((jobChain.Last() is ExpressJobDefinition previousJob) && (previousJob.job == lastJobInChain))
+            if ((jobChain.Last() is PassengerHaulJobDefinition previousJob) && (previousJob.job == lastJobInChain))
             {
                 string currentYardId = previousJob.chainData.chainDestinationYardId;
 

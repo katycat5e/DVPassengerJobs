@@ -35,7 +35,7 @@ namespace PassengerJobs.Patches
                 return true;
             }
 
-            RouteSelector.EnsureInitialized();
+            RouteManager.EnsureInitialized();
 
             // instantiate chain
             var chainController = LoadPassengerChain(passChainData);
@@ -92,7 +92,7 @@ namespace PassengerJobs.Patches
                     continue;
                 }
 
-                if (LoadSavedExpressJob(jobChainHolder, expressJobSaveData) is ExpressJobDefinition definition)
+                if (LoadSavedExpressJob(jobChainHolder, expressJobSaveData) is PassengerHaulJobDefinition definition)
                 {
                     if (firstJob)
                     {
@@ -116,7 +116,7 @@ namespace PassengerJobs.Patches
             return chainController;
         }
 
-        public static ExpressJobDefinition? LoadSavedExpressJob(GameObject jobChainHolder, ExpressJobDefinitionData jobData)
+        public static PassengerHaulJobDefinition? LoadSavedExpressJob(GameObject jobChainHolder, ExpressJobDefinitionData jobData)
         {
             // associated station
             if (JobSaveManager.Instance.GetStationWithId(jobData.stationId) is not Station logicStation)
@@ -160,7 +160,7 @@ namespace PassengerJobs.Patches
                 return null;
             }
 
-            ExpressJobDefinition jobDefinition = jobChainHolder.AddComponent<ExpressJobDefinition>();
+            PassengerHaulJobDefinition jobDefinition = jobChainHolder.AddComponent<PassengerHaulJobDefinition>();
             var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.destinationStationIds);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License.v1);
 
