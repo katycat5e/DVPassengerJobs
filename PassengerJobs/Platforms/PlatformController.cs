@@ -11,8 +11,6 @@ using UnityEngine;
 
 namespace PassengerJobs.Platforms
 {
-    using WMDataState = WarehouseMachine.WarehouseLoadUnloadDataPerJob.State;
-
     public class PlatformController : MonoBehaviour
     {
         public const int START_XFER_DELAY = 5;
@@ -22,9 +20,9 @@ namespace PassengerJobs.Platforms
         private static readonly AudioClip? _loadCompletedSound = null;
         private static readonly Dictionary<string, PlatformController> _trackToControllerMap = new();
 
-        public static PlatformController GetControllerForTrack(Track platform)
+        public static PlatformController GetControllerForTrack(string id)
         {
-            return _trackToControllerMap[platform.ID.ToString()];
+            return _trackToControllerMap[id];
         }
 
         public static void HandleGameUnloading()

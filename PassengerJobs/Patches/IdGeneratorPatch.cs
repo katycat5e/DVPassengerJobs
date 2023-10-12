@@ -17,7 +17,7 @@ namespace PassengerJobs.Patches
         [HarmonyPrefix]
         public static bool GenerateJobIdPrefix(IdGenerator __instance, JobType jobType, StationsChainData jobStationsInfo, ref string __result)
         {
-            if (jobType != PassJobType.Express)
+            if (!PassJobType.IsPJType(jobType))
             {
                 return true;
             }
@@ -28,7 +28,7 @@ namespace PassengerJobs.Patches
                 yardId = jobStationsInfo.chainOriginYardId;
             }
 
-            string typeStr = "PE";
+            string typeStr = (jobType == PassJobType.Express) ? "PE" : "PL";
             string? idStr = FindUnusedID(typeStr, yardId);
 
             if (idStr != null)

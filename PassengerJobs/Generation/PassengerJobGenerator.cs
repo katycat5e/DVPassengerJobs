@@ -184,29 +184,30 @@ namespace PassengerJobs.Generation
             _generationRoutine = null;
         }
 
-        public PassengerChainController? GenerateExpressJob(CarsPerTrack? consistInfo = null)
+        public PassengerChainController? GenerateExpressJob(PassConsistInfo? consistInfo = null)
         {
             int nTotalCars;
             List<TrainCarLivery> jobCarTypes;
             
-            Track? startPlatform;
+            RouteTrack startPlatform;
             RouteResult? destinations;
 
             var currentDests = Controller.logicStation.availableJobs
-                .Where(j => j.jobType == PassJobType.Express)
+                .Where(j => (j.jobType == PassJobType.Express) || (j.jobType == PassJobType.Local))
                 .Select(j => j.chainData.chainDestinationYardId);
 
             // Establish the starting consist and its storage location
             if (consistInfo == null)
             {
                 // generate a new consist
-                startPlatform = _stationData.PlatformTracks.GetUnusedTracks().PickOne();
-                if (startPlatform == null) return null;
+                var potentialStart = _stationData.GetPlatforms().GetUnusedTracks().PickOneValue();
+                if (potentialStart == null) return null;
+                startPlatform = potentialStart.Value;
 
                 destinations = RouteManager.GetExpressRoute(_stationData, currentDests);
                 if (destinations == null) return null;
 
-                double minLength = Math.Min(startPlatform.length, destinations.MinTrackLength);
+                double minLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
 
                 TrainCarLivery livery = ConsistManager.GetPassengerCars().PickOne()!;
                 double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
@@ -326,11 +327,11 @@ namespace PassengerJobs.Generation
 
         private static PassengerHaulJobDefinition? PopulateExpressJobAndSpawn(
             JobChainController chainController, Station startStation,
-            Track startTrack, RouteResult route, List<TrainCarLivery> carTypes,
+            RouteTrack startTrack, RouteResult route, List<TrainCarLivery> carTypes,
             ExpressStationsChainData chainData, float timeLimit, float initialPay)
         {
             // Spawn the cars
-            RailTrack startRT = LogicController.Instance.LogicToRailTrack[startTrack];
+            RailTrack startRT = LogicController.Instance.LogicToRailTrack[startTrack.Track];
             
             var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true, 
                 true,0, false, false);
@@ -353,7 +354,7 @@ namespace PassengerJobs.Generation
 
         private static PassengerHaulJobDefinition PopulateExpressJobExistingCars(
             JobChainController chainController, Station startStation,
-            Track startTrack, RouteResult route, List<Car> logicCars,
+            RouteTrack startTrack, RouteResult route, List<Car> logicCars,
             StationsChainData chainData, float timeLimit, float initialPay)
         {
             // populate the actual job

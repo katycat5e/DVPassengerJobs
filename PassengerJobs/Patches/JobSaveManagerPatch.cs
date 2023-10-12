@@ -134,17 +134,17 @@ namespace PassengerJobs.Patches
             }
 
             // starting track
-            if (JobSaveManager.Instance.GetYardTrackWithId(jobData.startingTrack) is not Track startTrack)
+            if (RouteManager.GetRouteTrackById(jobData.startingTrack) is not RouteTrack startTrack)
             {
                 PJMain.Error($"Couldn't find corresponding start Track with ID: {jobData.startingTrack}! Skipping load of this job chain!");
                 return null;
             }
 
             // destination track
-            var destTracks = new Track[jobData.destinationTracks.Length];
+            var destTracks = new RouteTrack[jobData.destinationTracks.Length];
             for (int i = 0; i < destTracks.Length; i++)
             {
-                if (JobSaveManager.Instance.GetYardTrackWithId(jobData.destinationTracks[i]) is not Track destTrack)
+                if (RouteManager.GetRouteTrackById(jobData.destinationTracks[i]) is not RouteTrack destTrack)
                 {
                     PJMain.Error($"Couldn't find corresponding destination Track with ID: {jobData.destinationTracks}! Skipping load of this job chain!");
                     return null;

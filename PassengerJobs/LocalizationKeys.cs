@@ -25,6 +25,10 @@ namespace PassengerJobs
         JOB_EXPRESS_DIRECT_DESC,
         JOB_EXPRESS_COVER,
 
+        JOB_LOCAL_NAME,
+        JOB_LOCAL_DESCRIPTION,
+        JOB_LOCAL_COVER,
+
         // Signs
         SIGN_INCOMING_TRAIN,
         SIGN_OUTGOING_TRAIN,

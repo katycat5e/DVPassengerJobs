@@ -144,6 +144,14 @@ namespace PassengerJobs.Generation
                 .logicTrack;
         }
 
+        public static RouteTrack? GetRouteTrackById(string trackId)
+        {
+            return _stations.Values
+                .SelectMany(s => s.GetPlatforms())
+                .Cast<RouteTrack?>()
+                .FirstOrDefault(t => t!.Value.PlatformID == trackId);
+        }
+
         public static PassStationData GetStationData(string yardId)
         {
             return (PassStationData)_stations[yardId];
@@ -217,6 +225,7 @@ namespace PassengerJobs.Generation
             }
         }
 
+        public string PlatformID => IsSegment ? Station.YardID : Track.ID.ToString();
         public string SaveID => IsSegment ? Station.YardID : Track.ID.FullID;
         public string DisplayID => IsSegment ? $"{Station.YardID}-LP" : Track.ID.ToString();
 
