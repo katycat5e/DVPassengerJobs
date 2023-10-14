@@ -28,7 +28,7 @@ namespace PassengerJobs.Patches
                 yardId = jobStationsInfo.chainOriginYardId;
             }
 
-            string typeStr = (jobType == PassJobType.Express) ? "PE" : "PL";
+            string typeStr = (jobType == PassJobType.Express) ? "PE" : "PR";
             string? idStr = FindUnusedID(typeStr, yardId);
 
             if (idStr != null)

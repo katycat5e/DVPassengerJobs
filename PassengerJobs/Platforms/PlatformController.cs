@@ -315,7 +315,9 @@ namespace PassengerJobs.Platforms
                     _loadCompletedSound.Play(playerTform.position, parent: playerTform);
                 }
 
-                OverrideText = LocalizationKey.SIGN_DEPARTING.L();
+                OverrideText = isLoading ?
+                    LocalizationKey.SIGN_DEPARTING.L() :
+                    LocalizationKey.SIGN_EMPTY.L();
                 RefreshDisplays();
                 yield return WaitFor.Seconds(LOAD_DELAY * 10);
             }

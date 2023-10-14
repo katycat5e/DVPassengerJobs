@@ -14,8 +14,8 @@ namespace PassengerJobs
 {
     internal static class BookletUtility
     {
-        private static readonly Color _expressColor = LicenseData.Color;
-        private static readonly Color _localColor = new Color32(147, 112, 219, 255);
+        private static readonly Color _expressColor = new Color32(96, 165, 215, 255);
+        private static readonly Color _localColor = new Color32(151, 121, 210, 255);
 
         public static PassengerJobData ExtractPassengerJobData(Job_data job)
         {
@@ -52,7 +52,10 @@ namespace PassengerJobs
 
         public static TemplatePaperData CreateCoverPage(PassengerJobData jobData, int pageNum, int totalPages)
         {
-            string coverText = LocalizationKey.JOB_EXPRESS_COVER.L();
+            var key = (jobData.job.type == PassJobType.Express) ?
+                LocalizationKey.JOB_EXPRESS_COVER :
+                LocalizationKey.JOB_LOCAL_COVER;
+            string coverText = key.L();
             return new CoverPageTemplatePaperData(jobData.job.ID.ToString(), coverText, pageNum.ToString(), totalPages.ToString());
         }
 

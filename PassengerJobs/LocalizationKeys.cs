@@ -33,8 +33,10 @@ namespace PassengerJobs
         SIGN_INCOMING_TRAIN,
         SIGN_OUTGOING_TRAIN,
         SIGN_EXPRESS_NAME,
+        SIGN_LOCAL_NAME,
         SIGN_BOARDING,
         SIGN_DEPARTING,
+        SIGN_EMPTY,
     }
 
     public static class LocalizationKeyExtensions

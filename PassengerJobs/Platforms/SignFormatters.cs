@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.WeatherSystem;
+using PassengerJobs.Generation;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -160,7 +161,11 @@ namespace PassengerJobs.Platforms
                 //// Ordinary boring train
                 //char jobTypeChar = (job.jobType == PassJobType.Commuter) ? 'C' : 'E';
 
-                return LocalizationKey.SIGN_EXPRESS_NAME.L(trainNum);
+                var key = (job.jobType == PassJobType.Express) ?
+                    LocalizationKey.SIGN_EXPRESS_NAME :
+                    LocalizationKey.SIGN_LOCAL_NAME;
+
+                return key.L(trainNum);
             }
         }
     }

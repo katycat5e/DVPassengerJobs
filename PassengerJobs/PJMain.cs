@@ -29,7 +29,7 @@ namespace PassengerJobs
             ModEntry = modEntry;
 
             Translations = new TranslationInjector("cc.foxden.passenger_jobs");
-            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv");
+            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&gid=633527484");
 
             // inject licenses
             if (!LicenseInjector.RegisterPassengerLicenses()) return false;

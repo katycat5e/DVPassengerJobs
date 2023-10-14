@@ -16,13 +16,13 @@ namespace PassengerJobs.Platforms
 
             // Setup track signs
             var lowSignPosition = (Vector3)lowPoint.position + WorldMover.currentMove;
-            var lowSignRotation = Quaternion.LookRotation(lowPoint.forward, Vector3.up);
+            var lowSignRotation = Quaternion.LookRotation(-lowPoint.forward, Vector3.up);
             var lowSign = UnityEngine.Object.Instantiate(signPrefab, lowSignPosition, lowSignRotation, railTrack.transform);
             lowSign.name = $"[track id] {platform.Id} 0";
             SetTrackSignText(lowSign, platform.Id);
 
             var highSignPosition = (Vector3)highPoint.position + WorldMover.currentMove;
-            var highSignRotation = Quaternion.LookRotation(-highPoint.forward, Vector3.up);
+            var highSignRotation = Quaternion.LookRotation(highPoint.forward, Vector3.up);
             var highSign = UnityEngine.Object.Instantiate(signPrefab, highSignPosition, highSignRotation, railTrack.transform);
             highSign.name = $"[track id] {platform.Id} 1";
             SetTrackSignText(highSign, platform.Id);

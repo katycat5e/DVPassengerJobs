@@ -197,7 +197,7 @@ namespace PassengerJobs.Generation
             Tracks = tracks;
         }
 
-        public double MinTrackLength => Tracks.Min(t => t.Track.length);
+        public double MinTrackLength => Tracks.Min(t => t.Length);
     }
 
     public readonly struct RouteTrack
