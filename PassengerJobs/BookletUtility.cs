@@ -25,8 +25,8 @@ namespace PassengerJobs
                 throw new Exception($"Wrong format of Passenger Job. Job id: {job.ID}");
             }
 
+            PassStopInfo? startStop = null;
             var destinations = new List<PassStopInfo>();
-            TrackID? startTrackId = null;
             TrackID? endTrackId = null;
             List<Car_data>? cars = null;
 
@@ -36,18 +36,28 @@ namespace PassengerJobs
                 {
                     destinations.Add(new PassStopInfo(ruralTask.stationId));
                 }
-                else if ((task.instanceTaskType == TaskType.Warehouse) && (task.warehouseTaskType == WarehouseTaskType.Unloading))
+                else if (task.instanceTaskType == TaskType.Warehouse)
                 {
-                    var stationInfo = StationController.GetStationByYardID(task.destinationTrackID.yardId).stationInfo;
-                    destinations.Add(new PassStopInfo(task.destinationTrackID, stationInfo));
-                    endTrackId = task.destinationTrackID;
+                    if (task.warehouseTaskType == WarehouseTaskType.Unloading)
+                    {
+                        var stationInfo = StationController.GetStationByYardID(task.destinationTrackID.yardId).stationInfo;
+                        var stopInfo = new PassStopInfo(task.destinationTrackID, stationInfo);
 
-                    startTrackId ??= task.destinationTrackID;
-                    cars ??= task.cars;
+                        destinations.Add(stopInfo);
+                        endTrackId = task.destinationTrackID;
+                    }
+                    else if (startStop == null)
+                    {
+                        var stationInfo = StationController.GetStationByYardID(task.destinationTrackID.yardId).stationInfo;
+                        var stopInfo = new PassStopInfo(task.destinationTrackID, stationInfo);
+
+                        startStop = stopInfo;
+                        cars = task.cars;
+                    }
                 }
             }
 
-            return new PassengerJobData(job, startTrackId!, endTrackId!, destinations.ToArray(), cars!);
+            return new PassengerJobData(job, startStop!, endTrackId!, destinations.ToArray(), cars!);
         }
 
         public static TemplatePaperData CreateCoverPage(PassengerJobData jobData, int pageNum, int totalPages)
@@ -162,7 +172,7 @@ namespace PassengerJobs
 
         public static IEnumerable<TemplatePaperData> CreateExpressJobBooklet(PassengerJobData jobData)
         {
-            const int BASE_PAGES = 4;
+            const int BASE_PAGES = 5;
             const int PAGES_PER_DESTINATION = 1;
 
             int totalPages = BASE_PAGES + (jobData.destinationStops.Length * PAGES_PER_DESTINATION);
@@ -173,7 +183,8 @@ namespace PassengerJobs
 
             int taskNum = 1;
             yield return CreateCoupleTaskPage(jobData, taskNum++, pageNum++, totalPages);
-            
+            yield return CreateLoadTaskPage(jobData, jobData.initialStop, taskNum++, pageNum++, totalPages);
+
             for (int i = 0; i < jobData.destinationStops.Length; i++)
             {
                 //yield return CreateHaulTaskPage(jobData, jobData.destinationStations[i], taskNum++, pageNum++, totalPages);
@@ -194,12 +205,14 @@ namespace PassengerJobs
 
     internal class PassengerJobData : TransportJobData
     {
+        public readonly PassStopInfo initialStop;
         public readonly PassStopInfo[] destinationStops;
 
-        public PassengerJobData(Job_data job, TrackID startingTrack, TrackID destinationTrack, PassStopInfo[] viaStops, List<Car_data> transportingCars) 
-            : base(job, startingTrack, destinationTrack, transportingCars, 
+        public PassengerJobData(Job_data job, PassStopInfo initialStop, TrackID destinationTrack, PassStopInfo[] viaStops, List<Car_data> transportingCars) 
+            : base(job, initialStop.TrackID, destinationTrack, transportingCars, 
                   Enumerable.Repeat(CargoInjector.PassengerCargo.v1, transportingCars.Count).ToList())
         {
+            this.initialStop = initialStop;
             destinationStops = viaStops;
         }
 
@@ -208,12 +221,14 @@ namespace PassengerJobs
 
     internal class PassStopInfo
     {
+        public readonly TrackID? TrackID;
         public readonly string YardID;
         public readonly Color StationColor;
         public readonly string TrackDisplayId;
 
         public PassStopInfo(TrackID trackId, StationInfo station)
         {
+            TrackID = trackId;
             YardID = station.YardID;
             StationColor = station.StationColor;
             TrackDisplayId = trackId.TrackPartOnly;
@@ -221,6 +236,7 @@ namespace PassengerJobs
 
         public PassStopInfo(string stopID)
         {
+            TrackID = null;
             YardID = stopID;
             StationColor = LicenseData.Color;
             TrackDisplayId = "1LP";

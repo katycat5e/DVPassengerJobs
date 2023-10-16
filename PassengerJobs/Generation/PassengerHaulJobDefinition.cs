@@ -43,7 +43,8 @@ namespace PassengerJobs.Generation
 
             return new ExpressJobDefinitionData(
                 timeLimitForJob, initialWage, logicStation.ID, ExpressChainData!.chainOriginYardId, ExpressChainData.destinationYardIds,
-                (int)requiredLicenses, guidsFromCars, StartingTrack!.Value.PlatformID, DestinationTracks!.Select(t => t.PlatformID).ToArray());
+                (int)requiredLicenses, guidsFromCars, StartingTrack!.Value.PlatformID, DestinationTracks!.Select(t => t.PlatformID).ToArray(),
+                (int)RouteType);
         }
 
         public override List<TrackReservation> GetRequiredTrackReservations()
@@ -145,6 +146,7 @@ namespace PassengerJobs.Generation
 
     public class ExpressJobDefinitionData : JobDefinitionDataBase
     {
+        public int routeType;
         public string[] TrainCarGuids;
         public string[] destinationStationIds;
         public string startingTrack;
@@ -152,13 +154,14 @@ namespace PassengerJobs.Generation
 
         public ExpressJobDefinitionData(
             float timeLimitForJob, float initialWage, string stationId, string originStationId, string[] destinationStationIds, int requiredLicenses,
-            string[] transportCarGuids, string startTrackId, string[] destTrackIds) :
+            string[] transportCarGuids, string startTrackId, string[] destTrackIds, int routeType) :
             base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationIds.Last(), requiredLicenses)
         {
             TrainCarGuids = transportCarGuids;
             this.destinationStationIds = destinationStationIds;
             startingTrack = startTrackId;
             destinationTracks = destTrackIds;
+            this.routeType = routeType;
         }
     }
 }

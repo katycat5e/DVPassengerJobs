@@ -61,6 +61,34 @@ namespace PassengerJobs.Platforms
         {
             return new RuralTaskData(this);
         }
+
+        public override void OverrideTaskState(TaskSaveData data)
+        {
+            base.OverrideTaskState(data);
+            if (data.state == TaskState.Done)
+            {
+                LoadingMachine.RemoveTask(this);
+            }
+        }
+
+        public override void SetJobBelonging(Job job)
+        {
+            base.SetJobBelonging(job);
+            job.JobAbandoned += OnJobAbandoned;
+            job.JobTaken += OnJobTaken;
+        }
+
+        private void OnJobTaken(Job takenJob, bool _)
+        {
+            takenJob.JobTaken -= OnJobTaken;
+            LoadingMachine.AddTask(this);
+        }
+
+        private void OnJobAbandoned(Job abandonedJob)
+        {
+            abandonedJob.JobAbandoned -= OnJobAbandoned;
+            LoadingMachine.RemoveTask(this);
+        }
     }
 
     public class RuralTaskData : TaskData

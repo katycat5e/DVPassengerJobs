@@ -164,9 +164,13 @@ namespace PassengerJobs.Patches
             var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.destinationStationIds);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License.v1);
 
+            jobDefinition.RouteType = (RouteType)jobData.routeType;
             jobDefinition.StartingTrack = startTrack;
             jobDefinition.DestinationTracks = destTracks;
             jobDefinition.TrainCarsToTransport = consist;
+
+            string dests = string.Join(", ", destTracks.Select(t => t.DisplayID));
+            PJMain.Log($"Loaded job definition {jobDefinition.forcedJobId}: {jobDefinition.RouteType} {jobDefinition.StartingTrack} {dests}");
 
             return jobDefinition;
         }

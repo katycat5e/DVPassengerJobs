@@ -88,7 +88,7 @@ namespace PassengerJobs.Platforms
 
             if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar))
             {
-                return (Mathf.Abs(trainCar.GetForwardSpeed()) <= 0.05f) &&
+                return (Mathf.Abs(trainCar.GetForwardSpeed()) <= 0.3f) &&
                     IsBetween(trainCar.Bogies[1].point1.index) &&
                     IsBetween(trainCar.Bogies[0].point1.index);
             }
