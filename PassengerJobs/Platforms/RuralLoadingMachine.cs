@@ -22,10 +22,11 @@ namespace PassengerJobs.Platforms
 
         public Vector3? PlatformOffset;
         public Vector3? PlatformRotation;
+        public float? MarkerAngle;
 
-        private readonly List<RuralLoadingTask> _tasks = new();
+        public readonly List<RuralLoadingTask> Tasks = new();
 
-        public RuralLoadingMachine(RouteConfig.RuralStation stationData, Track track)
+        public RuralLoadingMachine(StationConfig.RuralStation stationData, Track track)
         {
             Id = stationData.id;
             Track = track;
@@ -34,16 +35,17 @@ namespace PassengerJobs.Platforms
 
             PlatformOffset = stationData.platformOffset;
             PlatformRotation = stationData.platformRotation;
+            MarkerAngle = stationData.markerAngle;
         }
 
         public void AddTask(RuralLoadingTask task)
         {
-            _tasks.Add(task);
+            Tasks.Add(task);
         }
 
         public void RemoveTask(RuralLoadingTask task)
         {
-            if (!_tasks.Remove(task))
+            if (!Tasks.Remove(task))
             {
                 PJMain.Error("Tried to remove task that wasn't assigned to this platform");
             }
@@ -51,7 +53,7 @@ namespace PassengerJobs.Platforms
 
         public IEnumerable<PlatformTask> GetLoadableTasks(bool loading)
         {
-            foreach (var task in _tasks.Where(t => t.IsLoading == loading))
+            foreach (var task in Tasks.Where(t => t.IsLoading == loading))
             {
                 if (AreCarsStoppedAtPlatform(task.Cars))
                 {
@@ -62,7 +64,7 @@ namespace PassengerJobs.Platforms
 
         public bool AnyLoadableTrainPresent(bool loading)
         {
-            foreach (var task in _tasks)
+            foreach (var task in Tasks)
             {
                 if (task.readyForMachine && (task.IsLoading == loading) && AreCarsStoppedAtPlatform(task.Cars))
                 {
@@ -74,7 +76,7 @@ namespace PassengerJobs.Platforms
 
         public bool AreCarsStoppedAtPlatform(IEnumerable<Car> cars)
         {
-            return cars.All(IsCarStoppedOnTrack);
+            return cars.All(IsCarStoppedOnTrack) && PlatformWrapperUtil.IsConsistAttachedToLoco(cars);
         }
 
         private bool IsBetween(int test)
@@ -99,7 +101,7 @@ namespace PassengerJobs.Platforms
 
         public Car? TransferOneCarOfTask(RuralLoadingTask task, bool loading)
         {
-            if (!_tasks.Contains(task))
+            if (!Tasks.Contains(task))
             {
                 PJMain.Warning($"task is not assigned to platform {Id}! Either loading was interrupted by game quit or something is bad!");
                 return null;

@@ -56,6 +56,7 @@ namespace PassengerJobs.Generation
         private Coroutine? _generationRoutine = null;
 
         private bool _playerWasInRange = false;
+        private JobType _nextJobType;
 
         private bool PlayerIsInRange
         {
@@ -82,6 +83,8 @@ namespace PassengerJobs.Generation
             // check if the player is already inside the generation zone
             float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
             _playerWasInRange = _stationRange.IsPlayerInJobGenerationZone(playerDist);
+
+            _nextJobType = (new[] { PassJobType.Express, PassJobType.Local }).PickOneValue()!.Value;
 
             // create warehouse/sign controllers
             foreach (var platform in _stationData.PlatformTracks)
@@ -171,7 +174,8 @@ namespace PassengerJobs.Generation
 
                 try
                 {
-                    GenerateExpressJob();
+                    GenerateJob(_nextJobType);
+                    _nextJobType = (_nextJobType == PassJobType.Express) ? PassJobType.Local : PassJobType.Express;
                 }
                 catch (Exception ex)
                 {
@@ -184,7 +188,7 @@ namespace PassengerJobs.Generation
             _generationRoutine = null;
         }
 
-        public PassengerChainController? GenerateExpressJob(PassConsistInfo? consistInfo = null)
+        public PassengerChainController? GenerateJob(JobType jobType, PassConsistInfo? consistInfo = null)
         {
             int nTotalCars;
             List<TrainCarLivery> jobCarTypes;
@@ -193,7 +197,7 @@ namespace PassengerJobs.Generation
             RouteResult? destinations;
 
             var currentDests = Controller.logicStation.availableJobs
-                .Where(j => (j.jobType == PassJobType.Express) || (j.jobType == PassJobType.Local))
+                .Where(j => PassJobType.IsPJType(j.jobType))
                 .Select(j => j.chainData.chainDestinationYardId);
 
             // Establish the starting consist and its storage location
@@ -204,14 +208,15 @@ namespace PassengerJobs.Generation
                 if (potentialStart == null) return null;
                 startPlatform = potentialStart.Value;
 
-                destinations = RouteManager.GetExpressRoute(_stationData, currentDests);
+                destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests);
                 if (destinations == null) return null;
 
                 double minLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
 
                 TrainCarLivery livery = ConsistManager.GetPassengerCars().PickOne()!;
                 double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
-                nTotalCars = ((int)Math.Floor((minLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS) / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS))) - 2;
+                nTotalCars = (int)Math.Floor((minLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS) / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
+                nTotalCars -= (jobType == PassJobType.Express) ? 2 : 1;
 
                 jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
             }
@@ -222,7 +227,7 @@ namespace PassengerJobs.Generation
                 startPlatform = consistInfo.track;
 
                 double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
-                destinations = RouteManager.GetExpressRoute(_stationData, currentDests, consistLength);
+                destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests, consistLength);
                 if (destinations == null) return null;
 
                 jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();

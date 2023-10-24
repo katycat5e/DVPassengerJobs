@@ -33,7 +33,8 @@ namespace PassengerJobs.Generation
         public string YardID => Controller.stationInfo.YardID;
         public readonly List<Track> PlatformTracks = new();
         public readonly List<Track> StorageTracks = new();
-        public readonly List<RouteData> Routes = new();
+        public readonly List<RouteData> ExpressRoutes = new();
+        public readonly List<RouteData> RegionalRoutes = new();
 
         public PassStationData(StationController controller)
         {

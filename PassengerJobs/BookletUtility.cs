@@ -14,8 +14,8 @@ namespace PassengerJobs
 {
     internal static class BookletUtility
     {
-        private static readonly Color _expressColor = new Color32(96, 165, 215, 255);
-        private static readonly Color _localColor = new Color32(151, 121, 210, 255);
+        public static readonly Color ExpressColor = new Color32(96, 165, 215, 255);
+        public static readonly Color LocalColor = new Color32(151, 121, 210, 255);
 
         public static PassengerJobData ExtractPassengerJobData(Job_data job)
         {
@@ -84,7 +84,7 @@ namespace PassengerJobs
 
             if (jobData.job.type == PassJobType.Express)
             {
-                jobColor = _expressColor;
+                jobColor = ExpressColor;
                 jobTitle = LocalizationKey.JOB_EXPRESS_NAME.L();
 
                 if (viaStations.Any())
@@ -99,7 +99,7 @@ namespace PassengerJobs
             }
             else
             {
-                jobColor = _localColor;
+                jobColor = LocalColor;
                 jobTitle = LocalizationKey.JOB_LOCAL_NAME.L();
 
                 string viaYards = string.Join(", ", viaStations.Select(s => s.YardID));
@@ -238,7 +238,7 @@ namespace PassengerJobs
         {
             TrackID = null;
             YardID = stopID;
-            StationColor = LicenseData.Color;
+            StationColor = BookletUtility.LocalColor;
             TrackDisplayId = "1LP";
         }
     }

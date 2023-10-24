@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using PassengerJobs.Generation;
 using UnityModManagerNet;
 
 namespace PassengerJobs
@@ -11,6 +8,14 @@ namespace PassengerJobs
         [Draw("Use custom wage scaling for (new) passenger haul jobs")]
         public bool UseCustomWages = true;
 
+        [Draw("Disable passenger coach interior lights")]
+        public bool DisableCoachLights = false;
+
+#if DEBUG
+        [Draw("Reload rural stations config")]
+        public bool ReloadStations = false;
+#endif
+
         public override void Save( UnityModManager.ModEntry modEntry )
         {
             Save(this, modEntry);
@@ -18,6 +23,11 @@ namespace PassengerJobs
 
         public void OnChange()
         {
+            if (ReloadStations)
+            {
+                RouteManager.ReloadStations();
+                ReloadStations = false;
+            }
         }
     }
 }

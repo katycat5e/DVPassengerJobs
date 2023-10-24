@@ -16,6 +16,16 @@ namespace PassengerJobs.Generation
         {
             return (type == Express) || (type == Local);
         }
+
+        public static RouteType GetRouteType(this JobType type)
+        {
+            return type switch
+            {
+                Express => RouteType.Express,
+                Local => RouteType.Local,
+                _ => throw new System.ArgumentException("Not a passenger job type, can't get route type")
+            };
+        }
     }
 
     public class PassengerChainController : JobChainController
@@ -32,7 +42,8 @@ namespace PassengerJobs.Generation
 
                 if (PassengerJobGenerator.TryGetInstance(currentYardId, out var generator))
                 {
-                    var newChain = generator.GenerateExpressJob(
+                    var newChain = generator.GenerateJob(
+                        lastJobInChain.jobType,
                         new PassConsistInfo(previousJob.DestinationTracks.Last(), trainCarsForJobChain.Select(c => c.logicCar).ToList()));
 
                     if (newChain == null)

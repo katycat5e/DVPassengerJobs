@@ -24,6 +24,19 @@ namespace PassengerJobs.Platforms
 
     }
 
+    public static class PlatformWrapperUtil
+    {
+        public static bool IsConsistAttachedToLoco(IEnumerable<Car> cars)
+        {
+            if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(cars.First(), out var trainCar))
+            {
+                return trainCar.trainset.locoIndices.Any();
+            }
+            PJMain.Error($"Couldn't get physical car for logic car {cars.First().ID}");
+            return false;
+        }
+    }
+
     public sealed class StationPlatformWrapper : IPlatformWrapper
     {
         public readonly Track Track;
@@ -116,6 +129,11 @@ namespace PassengerJobs.Platforms
                 return false;
             }
 
+            if (!PlatformWrapperUtil.IsConsistAttachedToLoco(cars))
+            {
+                return false;
+            }
+
             foreach (var car in cars)
             {
                 if (!IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) ||
@@ -134,7 +152,7 @@ namespace PassengerJobs.Platforms
     {
         public readonly RuralLoadingMachine LoadingMachine;
 
-        public RuralPlatformWrapper(RouteConfig.RuralStation stationData, Track track)
+        public RuralPlatformWrapper(StationConfig.RuralStation stationData, Track track)
         {
             LoadingMachine = new RuralLoadingMachine(stationData, track);
         }

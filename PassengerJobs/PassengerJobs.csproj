@@ -17,6 +17,7 @@
 	<ItemGroup>
 		<Reference Include="0Harmony" />
 		<Reference Include="Assembly-CSharp" />
+		<Reference Include="DV.BrakeSystem" />
 		<Reference Include="DV.Common" />
 		<Reference Include="DV.PointSet" />
 		<Reference Include="DV.Utils" />
@@ -51,6 +52,9 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="default_routes.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="default_stations.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="platform_signs.csv">
