@@ -64,7 +64,7 @@ namespace PassengerJobs
         {
             var key = (jobData.job.type == PassJobType.Express) ?
                 LocalizationKey.JOB_EXPRESS_COVER :
-                LocalizationKey.JOB_LOCAL_COVER;
+                LocalizationKey.JOB_REGIONAL_COVER;
             string coverText = key.L();
             return new CoverPageTemplatePaperData(jobData.job.ID.ToString(), coverText, pageNum.ToString(), totalPages.ToString());
         }
@@ -100,10 +100,10 @@ namespace PassengerJobs
             else
             {
                 jobColor = LocalColor;
-                jobTitle = LocalizationKey.JOB_LOCAL_NAME.L();
+                jobTitle = LocalizationKey.JOB_REGIONAL_NAME.L();
 
                 string viaYards = string.Join(", ", viaStations.Select(s => s.YardID));
-                description = LocalizationKey.JOB_LOCAL_DESCRIPTION.L(destYard, viaYards, bonusPayment.ToString());
+                description = LocalizationKey.JOB_REGIONAL_DESCRIPTION.L(destYard, viaYards, bonusPayment.ToString());
             }
             
             string trainLength = $"{C.GetCarsTotalLength(jobData.transportingCars):F} m";
