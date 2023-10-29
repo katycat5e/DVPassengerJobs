@@ -23,11 +23,13 @@ namespace PassengerJobs
 
         public void OnChange()
         {
+#if DEBUG
             if (ReloadStations)
             {
                 RouteManager.ReloadStations();
                 ReloadStations = false;
             }
+#endif
         }
     }
 }
