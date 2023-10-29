@@ -11,7 +11,7 @@ namespace PassengerJobs.Patches
         [HarmonyPrefix]
         public static bool GetPotentialBonusPrefix(Job __instance, ref float __result)
         {
-            if (__instance.jobType == PassJobType.Express)
+            if (PassJobType.IsPJType(__instance.jobType))
             {
                 __result = PassengerJobGenerator.GetBonusPayment(__instance.initialWage);
                 return false;

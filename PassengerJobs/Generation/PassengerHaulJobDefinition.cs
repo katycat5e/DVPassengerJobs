@@ -9,8 +9,10 @@ using System.Linq;
 
 namespace PassengerJobs.Generation
 {
-    public class ExpressJobDefinition : StaticJobDefinition
+    public class PassengerHaulJobDefinition : StaticJobDefinition
     {
+        public RouteType RouteType = RouteType.Express;
+
         public ExpressStationsChainData? ExpressChainData
         {
             get => chainData as ExpressStationsChainData;
@@ -29,8 +31,8 @@ namespace PassengerJobs.Generation
         }
 
         private List<CargoType>? _cargoList = null;
-        public Track? StartingTrack = null;
-        public Track[]? DestinationTracks = null;
+        public RouteTrack? StartingTrack = null;
+        public RouteTrack[]? DestinationTracks = null;
 
         public override JobDefinitionDataBase GetJobDefinitionSaveData()
         {
@@ -41,14 +43,17 @@ namespace PassengerJobs.Generation
 
             return new ExpressJobDefinitionData(
                 timeLimitForJob, initialWage, logicStation.ID, ExpressChainData!.chainOriginYardId, ExpressChainData.destinationYardIds,
-                (int)requiredLicenses, guidsFromCars, StartingTrack!.ID.FullID, DestinationTracks!.Select(t => t.ID.FullID).ToArray());
+                (int)requiredLicenses, guidsFromCars, StartingTrack!.Value.PlatformID, DestinationTracks!.Select(t => t.PlatformID).ToArray(),
+                (int)RouteType);
         }
 
         public override List<TrackReservation> GetRequiredTrackReservations()
         {
             float reservedLength = CarSpawner.Instance.GetTotalCarsLength(TrainCarsToTransport, true);
 
-            return DestinationTracks.Select(t => new TrackReservation(t, reservedLength)).ToList();
+            return DestinationTracks
+                .Where(t => !t.IsSegment)
+                .Select(t => new TrackReservation(t.Track, reservedLength)).ToList();
         }
 
         public override void GenerateJob(Station jobOriginStation, float timeLimit = 0, float initialWage = 0, string? forcedJobId = null, JobLicenses requiredLicenses = JobLicenses.Basic)
@@ -75,39 +80,40 @@ namespace PassengerJobs.Generation
             var taskList = new List<Task>();
             
             // initial boarding
-            var initialLoad = CreateBoardingTask(StartingTrack, totalCapacity, WarehouseTaskType.Loading, false);
+            var initialLoad = CreateBoardingTask(StartingTrack.Value, totalCapacity, true, false);
             taskList.Add(initialLoad);
 
             // actual move between stations
-            var sourceTrack = StartingTrack;
+            //var sourceTrack = StartingTrack;
             for (int i = 0; i < DestinationTracks.Length; i++)
             {
                 bool isLast = (i == (DestinationTracks.Length - 1));
-                var leg = CreateTransportLeg(sourceTrack, DestinationTracks[i]);
-                taskList.Add(leg);
+                //var leg = CreateTransportLeg(sourceTrack, DestinationTracks[i]);
+                //taskList.Add(leg);
 
-                var unloadTask = CreateBoardingTask(DestinationTracks[i], totalCapacity, WarehouseTaskType.Unloading, isLast);
+                var unloadTask = CreateBoardingTask(DestinationTracks[i], totalCapacity, false, isLast);
                 taskList.Add(unloadTask);
 
                 if (!isLast)
                 {
-                    var loadTask = CreateBoardingTask(DestinationTracks[i], totalCapacity, WarehouseTaskType.Loading, false);
+                    var loadTask = CreateBoardingTask(DestinationTracks[i], totalCapacity, true, false);
                     taskList.Add(loadTask);
                 }
 
-                sourceTrack = DestinationTracks[i];
+                //sourceTrack = DestinationTracks[i];
             }
 
             var superTask = new SequentialTasks(taskList);
-            job = new Job(superTask, PassJobType.Express, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
+            var jobType = (RouteType == RouteType.Express) ? PassJobType.Express : PassJobType.Local;
+            job = new Job(superTask, jobType, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
 
             // add to signs along route
-            PlatformController.GetControllerForTrack(StartingTrack).AddOutgoingJobToSigns(job);
+            PlatformController.GetControllerForTrack(StartingTrack.Value.PlatformID).AddOutgoingJobToSigns(job);
             for (int i = 0; i < DestinationTracks.Length - 1; i++)
             {
-                job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks[i]).AddOutgoingJobToSigns;
+                job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks[i].PlatformID).AddOutgoingJobToSigns;
             }
-            job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks.Last()).AddIncomingJobToSigns;
+            job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks.Last().PlatformID).AddIncomingJobToSigns;
 
             jobOriginStation.AddJobToStation(job);
         }
@@ -117,11 +123,13 @@ namespace PassengerJobs.Generation
             return JobsGenerator.CreateTransportTask(TrainCarsToTransport, destinationTrack, sourceTrack, _cargoList);
         }
 
-        private Task CreateBoardingTask(Track platform, float totalCapacity, WarehouseTaskType taskType, bool isFinal)
+        private Task CreateBoardingTask(RouteTrack platform, float totalCapacity, bool loading, bool isFinal)
         {
-            var warehouse = PlatformController.GetControllerForTrack(platform).Warehouse;
+            //var warehouse = PlatformController.GetControllerForTrack(platform).Warehouse;
 
-            return new WarehouseTask(TrainCarsToTransport, taskType, warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
+            //return new WarehouseTask(TrainCarsToTransport, taskType, warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
+            var wrapper = PlatformController.GetControllerForTrack(platform.PlatformID).Platform;
+            return wrapper.GenerateBoardingTask(TrainCarsToTransport!, loading, totalCapacity, isFinal);
         }
     }
 
@@ -138,6 +146,7 @@ namespace PassengerJobs.Generation
 
     public class ExpressJobDefinitionData : JobDefinitionDataBase
     {
+        public int routeType;
         public string[] TrainCarGuids;
         public string[] destinationStationIds;
         public string startingTrack;
@@ -145,13 +154,14 @@ namespace PassengerJobs.Generation
 
         public ExpressJobDefinitionData(
             float timeLimitForJob, float initialWage, string stationId, string originStationId, string[] destinationStationIds, int requiredLicenses,
-            string[] transportCarGuids, string startTrackId, string[] destTrackIds) :
+            string[] transportCarGuids, string startTrackId, string[] destTrackIds, int routeType) :
             base(timeLimitForJob, initialWage, stationId, originStationId, destinationStationIds.Last(), requiredLicenses)
         {
             TrainCarGuids = transportCarGuids;
             this.destinationStationIds = destinationStationIds;
             startingTrack = startTrackId;
             destinationTracks = destTrackIds;
+            this.routeType = routeType;
         }
     }
 }

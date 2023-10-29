@@ -35,7 +35,7 @@ namespace PassengerJobs.Patches
                 return true;
             }
 
-            RouteSelector.EnsureInitialized();
+            RouteManager.EnsureInitialized();
 
             // instantiate chain
             var chainController = LoadPassengerChain(passChainData);
@@ -92,7 +92,7 @@ namespace PassengerJobs.Patches
                     continue;
                 }
 
-                if (LoadSavedExpressJob(jobChainHolder, expressJobSaveData) is ExpressJobDefinition definition)
+                if (LoadSavedExpressJob(jobChainHolder, expressJobSaveData) is PassengerHaulJobDefinition definition)
                 {
                     if (firstJob)
                     {
@@ -116,7 +116,7 @@ namespace PassengerJobs.Patches
             return chainController;
         }
 
-        public static ExpressJobDefinition? LoadSavedExpressJob(GameObject jobChainHolder, ExpressJobDefinitionData jobData)
+        public static PassengerHaulJobDefinition? LoadSavedExpressJob(GameObject jobChainHolder, ExpressJobDefinitionData jobData)
         {
             // associated station
             if (JobSaveManager.Instance.GetStationWithId(jobData.stationId) is not Station logicStation)
@@ -134,17 +134,17 @@ namespace PassengerJobs.Patches
             }
 
             // starting track
-            if (JobSaveManager.Instance.GetYardTrackWithId(jobData.startingTrack) is not Track startTrack)
+            if (RouteManager.GetRouteTrackById(jobData.startingTrack) is not RouteTrack startTrack)
             {
                 PJMain.Error($"Couldn't find corresponding start Track with ID: {jobData.startingTrack}! Skipping load of this job chain!");
                 return null;
             }
 
             // destination track
-            var destTracks = new Track[jobData.destinationTracks.Length];
+            var destTracks = new RouteTrack[jobData.destinationTracks.Length];
             for (int i = 0; i < destTracks.Length; i++)
             {
-                if (JobSaveManager.Instance.GetYardTrackWithId(jobData.destinationTracks[i]) is not Track destTrack)
+                if (RouteManager.GetRouteTrackById(jobData.destinationTracks[i]) is not RouteTrack destTrack)
                 {
                     PJMain.Error($"Couldn't find corresponding destination Track with ID: {jobData.destinationTracks}! Skipping load of this job chain!");
                     return null;
@@ -160,13 +160,17 @@ namespace PassengerJobs.Patches
                 return null;
             }
 
-            ExpressJobDefinition jobDefinition = jobChainHolder.AddComponent<ExpressJobDefinition>();
+            PassengerHaulJobDefinition jobDefinition = jobChainHolder.AddComponent<PassengerHaulJobDefinition>();
             var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.destinationStationIds);
             jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License.v1);
 
+            jobDefinition.RouteType = (RouteType)jobData.routeType;
             jobDefinition.StartingTrack = startTrack;
             jobDefinition.DestinationTracks = destTracks;
             jobDefinition.TrainCarsToTransport = consist;
+
+            string dests = string.Join(", ", destTracks.Select(t => t.DisplayID));
+            PJMain.Log($"Loaded job definition {jobDefinition.forcedJobId}: {jobDefinition.RouteType} {jobDefinition.StartingTrack} {dests}");
 
             return jobDefinition;
         }

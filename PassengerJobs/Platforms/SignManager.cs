@@ -2,6 +2,7 @@
 using DV.Utils;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -71,7 +72,7 @@ namespace PassengerJobs.Platforms
                     float[] fVals = new float[5];
                     for (int colIdx = 0; colIdx < 5; colIdx++)
                     {
-                        if (float.TryParse(columns[colIdx + 2], out float fVal))
+                        if (float.TryParse(columns[colIdx + 2], NumberStyles.Float, CultureInfo.InvariantCulture, out float fVal))
                         {
                             fVals[colIdx] = fVal;
                         }

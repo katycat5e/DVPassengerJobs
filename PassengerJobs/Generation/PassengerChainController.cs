@@ -10,6 +10,22 @@ namespace PassengerJobs.Generation
     public static class PassJobType
     {
         public const JobType Express = (JobType)101;
+        public const JobType Local = (JobType)102;
+
+        public static bool IsPJType(JobType type)
+        {
+            return (type == Express) || (type == Local);
+        }
+
+        public static RouteType GetRouteType(this JobType type)
+        {
+            return type switch
+            {
+                Express => RouteType.Express,
+                Local => RouteType.Local,
+                _ => throw new System.ArgumentException("Not a passenger job type, can't get route type")
+            };
+        }
     }
 
     public class PassengerChainController : JobChainController
@@ -20,14 +36,15 @@ namespace PassengerJobs.Generation
 
         public override void OnLastJobInChainCompleted(Job lastJobInChain)
         {
-            if ((jobChain.Last() is ExpressJobDefinition previousJob) && (previousJob.job == lastJobInChain))
+            if ((jobChain.Last() is PassengerHaulJobDefinition previousJob) && (previousJob.job == lastJobInChain))
             {
                 string currentYardId = previousJob.chainData.chainDestinationYardId;
 
                 if (PassengerJobGenerator.TryGetInstance(currentYardId, out var generator))
                 {
-                    var newChain = generator.GenerateExpressJob(
-                        new CarsPerTrack(previousJob.DestinationTracks.Last(), trainCarsForJobChain.Select(c => c.logicCar).ToList()));
+                    var newChain = generator.GenerateJob(
+                        lastJobInChain.jobType,
+                        new PassConsistInfo(previousJob.DestinationTracks.Last(), trainCarsForJobChain.Select(c => c.logicCar).ToList()));
 
                     if (newChain == null)
                     {

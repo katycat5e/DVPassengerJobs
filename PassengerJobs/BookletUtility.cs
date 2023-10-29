@@ -4,6 +4,7 @@ using DV.Logic.Job;
 using DV.RenderTextureSystem.BookletRender;
 using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
+using PassengerJobs.Platforms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,9 @@ namespace PassengerJobs
 {
     internal static class BookletUtility
     {
+        public static readonly Color ExpressColor = new Color32(96, 165, 215, 255);
+        public static readonly Color LocalColor = new Color32(151, 121, 210, 255);
+
         public static PassengerJobData ExtractPassengerJobData(Job_data job)
         {
             Task_data? sequence = job.tasksData.FirstOrDefault();
@@ -21,48 +25,96 @@ namespace PassengerJobs
                 throw new Exception($"Wrong format of Passenger Job. Job id: {job.ID}");
             }
 
-            var transportTasks = sequence.nestedTasks.Where(t => t.instanceTaskType == TaskType.Transport);
-            var startTask = transportTasks.First();
-            var destTracks = transportTasks.Select(t => t.destinationTrackID).ToArray();
-            return new PassengerJobData(job, startTask.startTrackID, destTracks, startTask.cars);
+            PassStopInfo? startStop = null;
+            var destinations = new List<PassStopInfo>();
+            TrackID? endTrackId = null;
+            List<Car_data>? cars = null;
+
+            foreach (var task in sequence.nestedTasks)
+            {
+                if ((task is RuralTask_data ruralTask) && !ruralTask.isLoading)
+                {
+                    destinations.Add(new PassStopInfo(ruralTask.stationId));
+                }
+                else if (task.instanceTaskType == TaskType.Warehouse)
+                {
+                    if (task.warehouseTaskType == WarehouseTaskType.Unloading)
+                    {
+                        var stationInfo = StationController.GetStationByYardID(task.destinationTrackID.yardId).stationInfo;
+                        var stopInfo = new PassStopInfo(task.destinationTrackID, stationInfo);
+
+                        destinations.Add(stopInfo);
+                        endTrackId = task.destinationTrackID;
+                    }
+                    else if (startStop == null)
+                    {
+                        var stationInfo = StationController.GetStationByYardID(task.destinationTrackID.yardId).stationInfo;
+                        var stopInfo = new PassStopInfo(task.destinationTrackID, stationInfo);
+
+                        startStop = stopInfo;
+                        cars = task.cars;
+                    }
+                }
+            }
+
+            return new PassengerJobData(job, startStop!, endTrackId!, destinations.ToArray(), cars!);
         }
 
         public static TemplatePaperData CreateCoverPage(PassengerJobData jobData, int pageNum, int totalPages)
         {
-            string coverText = LocalizationKey.JOB_EXPRESS_COVER.L();
+            var key = (jobData.job.type == PassJobType.Express) ?
+                LocalizationKey.JOB_EXPRESS_COVER :
+                LocalizationKey.JOB_REGIONAL_COVER;
+            string coverText = key.L();
             return new CoverPageTemplatePaperData(jobData.job.ID.ToString(), coverText, pageNum.ToString(), totalPages.ToString());
         }
 
         public static TemplatePaperData CreatePassengerOverviewPage(PassengerJobData jobData, int pageNum = 0, int totalPages = 0)
         {
-            string jobTitle = LocalizationKey.JOB_EXPRESS_NAME.L();
-            string trainLength = $"{C.GetCarsTotalLength(jobData.transportingCars):F} m";
-            string trainMass = $"{C.GetCarsTotalMass(jobData.transportingCars, jobData.transportedCargoPerCar) * 0.001f:F} t";
-            string trainValue = $"${C.GetTrainValue(jobData.transportingCars, jobData.transportedCargoPerCar) / 1_000_000:F}m";
-            
+            Color jobColor;
+            string jobTitle;
+            string description;
+
+            string destYard = jobData.job.chainDestinationStationInfo.YardID;
+            var viaStations = jobData.destinationStops.Take(jobData.destinationStops.Length - 1);
+
             string bonusTime = $"{Mathf.FloorToInt(jobData.job.timeLimit / 60f)} min";
             float payment = jobData.job.basePayment;
             float bonusPayment = Mathf.Round(PassengerJobGenerator.GetBonusPayment(payment) / 1_000);
 
-            string destYard = jobData.job.chainDestinationStationInfo.YardID;
-            var viaStations = jobData.destinationStations.Take(jobData.destinationStations.Length - 1);
-
-            string description;
-            if (viaStations.Any())
+            if (jobData.job.type == PassJobType.Express)
             {
-                string viaYards = string.Join(", ", viaStations.Select(s => s.YardID));
-                description = LocalizationKey.JOB_EXPRESS_DESCRIPTION.L(destYard, viaYards, bonusPayment.ToString());
+                jobColor = ExpressColor;
+                jobTitle = LocalizationKey.JOB_EXPRESS_NAME.L();
+
+                if (viaStations.Any())
+                {
+                    string viaYards = string.Join(", ", viaStations.Select(s => s.YardID));
+                    description = LocalizationKey.JOB_EXPRESS_DESCRIPTION.L(destYard, viaYards, bonusPayment.ToString());
+                }
+                else
+                {
+                    description = LocalizationKey.JOB_EXPRESS_DIRECT_DESC.L(destYard, bonusPayment.ToString());
+                }
             }
             else
             {
-                description = LocalizationKey.JOB_EXPRESS_DIRECT_DESC.L(destYard, bonusPayment.ToString());
+                jobColor = LocalColor;
+                jobTitle = LocalizationKey.JOB_REGIONAL_NAME.L();
+
+                string viaYards = string.Join(", ", viaStations.Select(s => s.YardID));
+                description = LocalizationKey.JOB_REGIONAL_DESCRIPTION.L(destYard, viaYards, bonusPayment.ToString());
             }
+            
+            string trainLength = $"{C.GetCarsTotalLength(jobData.transportingCars):F} m";
+            string trainMass = $"{C.GetCarsTotalMass(jobData.transportingCars, jobData.transportedCargoPerCar) * 0.001f:F} t";
+            string trainValue = $"${C.GetTrainValue(jobData.transportingCars, jobData.transportedCargoPerCar) / 1_000_000:F}m";
 
             var startStation = jobData.job.chainOriginStationInfo;
             var endStation = jobData.job.chainDestinationStationInfo;
 
             return new FrontPageTemplatePaperData(
-                jobTitle, string.Empty, jobData.job.ID, LicenseData.Color,
+                jobTitle, string.Empty, jobData.job.ID, jobColor,
                 description, jobData.job.requiredLicenses,
                 new() { CargoInjector.PassengerCargo.v1 }, jobData.transportedCargoPerCar,
                 string.Empty, string.Empty, TemplatePaperData.NOT_USED_COLOR,
@@ -83,28 +135,28 @@ namespace PassengerJobs
                 jobData.transportingCars, jobData.transportedCargoPerCar, pageNum, totalPages);
         }
 
-        public static TemplatePaperData CreateHaulTaskPage(PassengerJobData jobData, StationInfo destStation, int taskNum, int pageNum, int totalPages)
-        {
-            string taskType = LocalizationAPI.L("job/task_type_haul");
-            string taskDescription = LocalizationAPI.L("job/task_desc_haul");
-            string destStationName = LocalizationAPI.L(destStation.LocalizationKey);
+        //public static TemplatePaperData CreateHaulTaskPage(PassengerJobData jobData, StationInfo destStation, int taskNum, int pageNum, int totalPages)
+        //{
+        //    string taskType = LocalizationAPI.L("job/task_type_haul");
+        //    string taskDescription = LocalizationAPI.L("job/task_desc_haul");
+        //    string destStationName = LocalizationAPI.L(destStation.LocalizationKey);
 
-            return new TaskTemplatePaperData(
-                taskNum.ToString(), taskType, taskDescription,
-                string.Empty, TemplatePaperData.NOT_USED_COLOR, string.Empty, TemplatePaperData.NOT_USED_COLOR,
-                destStationName, destStation.Type, destStation.StationColor,
-                jobData.transportingCars, jobData.transportedCargoPerCar,
-                pageNum.ToString(), totalPages.ToString());
-        }
+        //    return new TaskTemplatePaperData(
+        //        taskNum.ToString(), taskType, taskDescription,
+        //        string.Empty, TemplatePaperData.NOT_USED_COLOR, string.Empty, TemplatePaperData.NOT_USED_COLOR,
+        //        destStationName, destStation.Type, destStation.StationColor,
+        //        jobData.transportingCars, jobData.transportedCargoPerCar,
+        //        pageNum.ToString(), totalPages.ToString());
+        //}
 
-        public static TemplatePaperData CreateLoadTaskPage(PassengerJobData jobData, StationInfo station, TrackID track, int taskNum, int pageNum, int totalPages)
+        public static TemplatePaperData CreateLoadTaskPage(PassengerJobData jobData, PassStopInfo stopInfo, int taskNum, int pageNum, int totalPages)
         {
             string taskType = LocalizationAPI.L("job/task_type_load");
             string taskDescription = LocalizationAPI.L("job/task_desc_load");
 
             return new TaskTemplatePaperData(
                 taskNum.ToString(), taskType, taskDescription,
-                station.YardID, station.StationColor, track.TrackPartOnly, C.TRACK_COLOR,
+                stopInfo.YardID, stopInfo.StationColor, stopInfo.TrackDisplayId, C.TRACK_COLOR,
                 string.Empty, string.Empty, TemplatePaperData.NOT_USED_COLOR,
                 jobData.transportingCars, jobData.transportedCargoPerCar,
                 pageNum.ToString(), totalPages.ToString());
@@ -120,10 +172,10 @@ namespace PassengerJobs
 
         public static IEnumerable<TemplatePaperData> CreateExpressJobBooklet(PassengerJobData jobData)
         {
-            const int BASE_PAGES = 4;
-            const int PAGES_PER_DESTINATION = 2;
+            const int BASE_PAGES = 5;
+            const int PAGES_PER_DESTINATION = 1;
 
-            int totalPages = BASE_PAGES + (jobData.destinationStations.Length * PAGES_PER_DESTINATION);
+            int totalPages = BASE_PAGES + (jobData.destinationStops.Length * PAGES_PER_DESTINATION);
 
             int pageNum = 1;
             yield return CreateCoverPage(jobData, pageNum++, totalPages);
@@ -131,18 +183,19 @@ namespace PassengerJobs
 
             int taskNum = 1;
             yield return CreateCoupleTaskPage(jobData, taskNum++, pageNum++, totalPages);
-            
-            for (int i = 0; i < jobData.destinationStations.Length; i++)
-            {
-                yield return CreateHaulTaskPage(jobData, jobData.destinationStations[i], taskNum++, pageNum++, totalPages);
+            yield return CreateLoadTaskPage(jobData, jobData.initialStop, taskNum++, pageNum++, totalPages);
 
-                if (i == jobData.destinationStations.Length - 1)
+            for (int i = 0; i < jobData.destinationStops.Length; i++)
+            {
+                //yield return CreateHaulTaskPage(jobData, jobData.destinationStations[i], taskNum++, pageNum++, totalPages);
+
+                if (i == jobData.destinationStops.Length - 1)
                 {
                     yield return CreateUncoupleTaskPage(jobData, taskNum++, pageNum++, totalPages);
                 }
                 else
                 {
-                    yield return CreateLoadTaskPage(jobData, jobData.destinationStations[i], jobData.destinationTrackIds[i], taskNum++, pageNum++, totalPages);
+                    yield return CreateLoadTaskPage(jobData, jobData.destinationStops[i], taskNum++, pageNum++, totalPages);
                 }
             }
 
@@ -152,15 +205,41 @@ namespace PassengerJobs
 
     internal class PassengerJobData : TransportJobData
     {
-        public readonly TrackID[] destinationTrackIds;
-        public readonly StationInfo[] destinationStations;
+        public readonly PassStopInfo initialStop;
+        public readonly PassStopInfo[] destinationStops;
 
-        public PassengerJobData(Job_data job, TrackID startingTrack, TrackID[] destinationTracks, List<Car_data> transportingCars) 
-            : base(job, startingTrack, destinationTracks.Last(), transportingCars, 
+        public PassengerJobData(Job_data job, PassStopInfo initialStop, TrackID destinationTrack, PassStopInfo[] viaStops, List<Car_data> transportingCars) 
+            : base(job, initialStop.TrackID, destinationTrack, transportingCars, 
                   Enumerable.Repeat(CargoInjector.PassengerCargo.v1, transportingCars.Count).ToList())
         {
-            destinationStations = destinationTracks.Select(t => StationController.GetStationByYardID(t.yardId).stationInfo).ToArray();
-            destinationTrackIds = destinationTracks;
+            this.initialStop = initialStop;
+            destinationStops = viaStops;
+        }
+
+        
+    }
+
+    internal class PassStopInfo
+    {
+        public readonly TrackID? TrackID;
+        public readonly string YardID;
+        public readonly Color StationColor;
+        public readonly string TrackDisplayId;
+
+        public PassStopInfo(TrackID trackId, StationInfo station)
+        {
+            TrackID = trackId;
+            YardID = station.YardID;
+            StationColor = station.StationColor;
+            TrackDisplayId = trackId.TrackPartOnly;
+        }
+
+        public PassStopInfo(string stopID)
+        {
+            TrackID = null;
+            YardID = stopID;
+            StationColor = BookletUtility.LocalColor;
+            TrackDisplayId = "1LP";
         }
     }
 }
