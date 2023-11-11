@@ -137,7 +137,7 @@ namespace PassengerJobs.Generation
                 ruralData = new RuralStationData(platform.LoadingMachine);
                 _stations.Add(station.id, ruralData);
 
-                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine, station.name);
+                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine);
 
                 var routeTrack = new RouteTrack(ruralData, track, station.lowIdx, station.highIdx);
                 PJMain.Log($"Created rural station {station.id} on {track.ID} {station.lowIdx}-{station.highIdx}, {routeTrack.Length}m");
