@@ -15,7 +15,7 @@ namespace PassengerJobs.Platforms
         private static readonly Vector3 LABEL_RADIUS = new(0.01f, 0, 0);
         private static readonly Vector3 LABEL_OFFSET_SCALE = new(1, 1, 0.6f);
 
-        public static void GenerateDecorations(RuralLoadingMachine platform, string name)
+        public static void GenerateDecorations(RuralLoadingMachine platform)
         {
             var signPrefab = Resources.Load<GameObject>("TrackSignSide");
             var railTrack = platform.Track.GetRailTrack();
@@ -52,7 +52,8 @@ namespace PassengerJobs.Platforms
             platformObj.transform.localRotation = platform.PlatformRotation.HasValue ? Quaternion.Euler(platform.PlatformRotation.Value) : Quaternion.identity;
             platformObj.AddComponent<PlatformLightController>();
 
-            SetPlatformSignText(platformObj, name);
+            string localName = LocalizationKeyExtensions.StationName(platform.Id);
+            SetPlatformSignText(platformObj, localName);
 
             CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(platformHolder.transform, platform.Id, platform.MarkerAngle));
         }

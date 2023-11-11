@@ -58,5 +58,8 @@ namespace PassengerJobs
 
         /// <summary>Get localized string</summary>
         public static string L(this LocalizationKey key, params string[] values) => LocalizationAPI.L(K(key), values);
+
+        /// <summary>Get localized name for rural station</summary>
+        public static string StationName(string yardId) => LocalizationAPI.L($"passjobs/station_{yardId.ToLower()}");
     }
 }
