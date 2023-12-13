@@ -346,27 +346,25 @@ namespace PassengerJobs.Generation
     {
         public readonly IPassDestination Station;
         public readonly IEnumerable<RouteTrack> Tracks;
+        public readonly double MinLength;
         public readonly float Weight;
 
         public RouteNode(IPassDestination station, double minLength = 0)
         {
             Station = station;
-            Tracks = station.GetPlatforms();
-            Weight = RecalculateWeight(Tracks, minLength);
-        }
+            MinLength = minLength;
 
-        private static float RecalculateWeight(IEnumerable<RouteTrack> tracks, double minLength)
-        {
-            var unused = tracks.GetUnusedTracks()
+            Tracks = station.GetPlatforms()
+                .GetUnusedTracks()
                 .Where(t => t.Length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
 
             //return ((float)unused.Count() / tracks.Count) + ();
-            return unused.Any() ? 1 : 0;
+            Weight = Tracks.Any() ? 1 : 0;
         }
 
         public readonly RouteTrack PickTrack()
         {
-            return Tracks.GetUnusedTracks().PickOneValue()!.Value;
+            return Tracks.PickOneValue()!.Value;
         }
     }
 }
