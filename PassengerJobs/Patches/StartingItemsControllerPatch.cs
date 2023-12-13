@@ -9,6 +9,7 @@ namespace PassengerJobs.Patches
     {
         public static void Postfix()
         {
+            BundleLoader.HandleSaveReload();
             SaveDataInjector.AcquirePassengerLicense();
             RouteManager.CreateRuralStations();
         }

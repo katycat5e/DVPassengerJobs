@@ -1,5 +1,6 @@
 ﻿using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
+using PassengerJobs.Injectors;
 using System.IO;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace PassengerJobs
 
         public static void EnsureInitialized()
         {
-            if (SignPrefab) return;
+            if (SignPrefab && RuralPlatform) return;
 
             string bundlePath = Path.Combine(PJMain.ModEntry.Path, "passengerjobs");
             PJMain.Log("Attempting to load platform sign prefab");
@@ -33,18 +34,13 @@ namespace PassengerJobs
                 return;
             }
 
-            LicenseSprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            UnityEngine.Object.DontDestroyOnLoad(LicenseSprite);
-            if (LicenseSprite == null)
-            {
-                PJMain.Error("Failed to load license sprite from asset bundle");
-            }
-
             SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/FlatscreenSign.prefab", ref SignPrefab);
             SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/SmolStationSign.prefab", ref SmallSignPrefab);
             SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/LillySign.prefab", ref LillySignPrefab);
 
             TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
+
+            bundle.Unload(false);
         }
 
         private static bool TryLoadPrefab(AssetBundle bundle, string assetPath, ref GameObject prefab)
@@ -58,6 +54,27 @@ namespace PassengerJobs
 
             PJMain.Error($"Failed to load {prefab} from asset bundle");
             return false;
+        }
+
+        public static void HandleSaveReload()
+        {
+            string bundlePath = Path.Combine(PJMain.ModEntry.Path, "passengerjobs");
+
+            var bytes = File.ReadAllBytes(bundlePath);
+            var bundle = AssetBundle.LoadFromMemory(bytes);
+
+            LicenseSprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
+            UnityEngine.Object.DontDestroyOnLoad(LicenseSprite);
+            if (LicenseSprite == null)
+            {
+                PJMain.Error("Failed to load license sprite from asset bundle");
+            }
+            else
+            {
+                LicenseInjector.License.icon = LicenseSprite;
+            }
+
+            bundle.Unload(false);
         }
 
         private static Shader? _engineShader = null;
