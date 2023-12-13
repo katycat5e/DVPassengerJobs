@@ -45,7 +45,6 @@ namespace PassengerJobs.Injectors
                 License.v1 = (JobLicenses)64;
 
                 License.color = LicenseData.Color;
-                License.icon = BundleLoader.LicenseSprite;
 
                 License.price = LicenseData.Cost;
                 License.insuranceFeeQuotaIncrease = LicenseData.InsuranceIncrease;

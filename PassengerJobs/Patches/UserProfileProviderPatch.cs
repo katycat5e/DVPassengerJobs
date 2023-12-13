@@ -12,6 +12,7 @@ namespace PassengerJobs.Patches
     internal static class UserProfileProviderPatch
     {
         [HarmonyPatch(nameof(UserProfileProvider.IsCustomCareerUnlocked), MethodType.Getter)]
+        [HarmonyPrefix]
         public static bool Get_IsCustomCareerUnlockedPrefix(UserProfileProvider __instance, ref bool __result)
         {
             bool allJobLicenses = true;
@@ -29,7 +30,8 @@ namespace PassengerJobs.Patches
             }
 
             int genLicenseCount = SingletonBehaviour<UnlockablesManager>.Instance.UnlockedGeneralLicenses.Count;
-            return allJobLicenses && (genLicenseCount >= __instance.TotalGeneralLicensesCount);
+            __result = allJobLicenses && (genLicenseCount >= __instance.TotalGeneralLicensesCount);
+            return false;
         }
     }
 }
