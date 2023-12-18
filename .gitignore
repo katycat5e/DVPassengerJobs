@@ -542,4 +542,8 @@ $RECYCLE.BIN/
 # Ionide (cross platform F# VS Code tools) working folder
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudio,csharp
+
 Directory.Build.targets
+
+# jetbrains rider
+.idea
