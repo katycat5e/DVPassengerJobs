@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using UnityEngine;
+using DV.Utils;
 
 namespace PassengerJobs.Generation
 {
@@ -106,6 +106,13 @@ namespace PassengerJobs.Generation
 
         public static void CreateRuralStations()
         {
+            //only generate rural stations on the default map
+            if (SingletonBehaviour<SaveGameManager>.Instance.IsMapifyMap())
+            {
+                PJMain.Log("Skipping rural stations generation because this is a Mapify map");
+                return;
+            }
+
             foreach (var station in _stationConfig!.ruralStations)
             {
                 var track = GetTrackById(station.trackId);

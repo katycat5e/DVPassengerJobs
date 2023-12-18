@@ -3,14 +3,19 @@ using PassengerJobs.Generation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace PassengerJobs
 {
     internal static class Extensions
     {
         private static readonly Random R = new();
+        
+        public static bool IsMapifyMap(this SaveGameManager saveGameManager)
+        {
+            JObject mapify = saveGameManager.data.GetJObject("mapify");
+            return mapify != null;
+        }
 
         public static void AddToFront<T>(this IList<T> list, T newItem)
         {
