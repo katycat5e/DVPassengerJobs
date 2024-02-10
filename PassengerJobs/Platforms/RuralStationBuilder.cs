@@ -20,9 +20,20 @@ namespace PassengerJobs.Platforms
             var signPrefab = Resources.Load<GameObject>("TrackSignSide");
             var railTrack = platform.Track.GetRailTrack();
 
-            var pointSet = railTrack.GetPointSet(0).points;
-            var lowPoint = pointSet[platform.LowerBound];
-            var highPoint = pointSet[platform.UpperBound];
+            DV.PointSet.EquiPointSet.Point[] pointSet;
+            DV.PointSet.EquiPointSet.Point lowPoint, highPoint;
+
+            try
+            {
+                pointSet = railTrack.GetPointSet(0).points;
+                lowPoint = pointSet[platform.LowerBound];
+                highPoint = pointSet[platform.UpperBound];
+            }
+            catch (System.IndexOutOfRangeException)
+            {
+                PJMain.Error($"Rural station {platform.Id} track points don't exist!");
+                return;
+            }
 
             // Setup track signs
             var lowSignPosition = (Vector3)lowPoint.position + WorldMover.currentMove;

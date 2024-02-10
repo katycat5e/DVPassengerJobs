@@ -49,7 +49,7 @@
     {
       "id": "HN",
       "name": "Highlands North",
-      "trackId": "#Y-#S418#T",
+      "trackId": "#Y-#S301#T",
       "lowIdx": 9740,
       "highIdx": 9980,
       "platformRotation": {
@@ -68,7 +68,7 @@
     {
       "id": "MR",
       "name": "Mountain Retreat",
-      "trackId": "#Y-#S133#T",
+      "trackId": "#Y-#S369#T",
       "lowIdx": 3760,
       "highIdx": 4000,
       "platformRotation": {
@@ -87,7 +87,7 @@
     {
       "id": "SO",
       "name": "Spiral Overlook",
-      "trackId": "#Y-#S304#T",
+      "trackId": "#Y-#S480#T",
       "lowIdx": 3960,
       "highIdx": 4200,
       "platformRotation": {
@@ -106,7 +106,7 @@
     {
       "id": "NP",
       "name": "Northern Pass",
-      "trackId": "#Y-#S133#T",
+      "trackId": "#Y-#S369#T",
       "lowIdx": 12795,
       "highIdx": 13035,
       "platformRotation": {
@@ -125,7 +125,7 @@
     {
       "id": "RJ",
       "name": "Riverside Junction",
-      "trackId": "#Y-#S230#T",
+      "trackId": "#Y-#S311#T",
       "lowIdx": 12970,
       "highIdx": 13210,
       "platformRotation": {
@@ -144,7 +144,7 @@
     {
       "id": "GFO",
       "name": "Goods Factory Overlook",
-      "trackId": "#Y-#S388#T",
+      "trackId": "#Y-#S418#T",
       "lowIdx": 7820,
       "highIdx": 8060,
       "platformRotation": {
@@ -163,7 +163,7 @@
     {
       "id": "FW",
       "name": "Western Forest",
-      "trackId": "#Y-#S365#T",
+      "trackId": "#Y-#S70#T",
       "lowIdx": 5880,
       "highIdx": 6120,
       "platformRotation": {
@@ -182,7 +182,7 @@
     {
       "id": "WF",
       "name": "Wheat Fields",
-      "trackId": "#Y-#S143#T",
+      "trackId": "#Y-#S491#T",
       "lowIdx": 4336,
       "highIdx": 4589
     },
@@ -190,7 +190,7 @@
     {
       "id": "WL",
       "name": "Western Lake",
-      "trackId": "#Y-#S230#T",
+      "trackId": "#Y-#S311#T",
       "lowIdx": 2100,
       "highIdx": 2340,
       "platformRotation": {
@@ -209,7 +209,7 @@
     {
       "id": "HV",
       "name": "Hidden Valley",
-      "trackId": "#Y-#S491#T",
+      "trackId": "#Y-#S378#T",
       "lowIdx": 9050,
       "highIdx": 9290,
       "platformRotation": {
@@ -227,7 +227,7 @@
     {
       "id": "RS",
       "name": "Radio Summit",
-      "trackId": "#Y-#S482#T",
+      "trackId": "#Y-#S249#T",
       "lowIdx": 1310,
       "highIdx": 1550,
       "platformRotation": {
@@ -246,7 +246,7 @@
     {
       "id": "CI",
       "name": "Central Industries",
-      "trackId": "#Y-#S224#T",
+      "trackId": "#Y-#S344#T",
       "lowIdx": 60,
       "highIdx": 300,
       "platformRotation": {
@@ -265,7 +265,7 @@
     {
       "id": "SL",
       "name": "Southern Lakes",
-      "trackId": "#Y-#S247#T",
+      "trackId": "#Y-#S502#T",
       "lowIdx": 3700,
       "highIdx": 3940,
       "platformRotation": {
@@ -284,7 +284,7 @@
     {
       "id": "VSW",
       "name": "Valley Southwest",
-      "trackId": "#Y-#S421#T",
+      "trackId": "#Y-#S362#T",
       "lowIdx": 4980,
       "highIdx": 5220,
       "platformRotation": {
@@ -302,7 +302,7 @@
     {
       "id": "OV",
       "name": "Ocean View",
-      "trackId": "#Y-#S345#T",
+      "trackId": "#Y-#S63#T",
       "lowIdx": 9530,
       "highIdx": 9770,
       "platformRotation": {
@@ -340,7 +340,7 @@
     {
       "id": "AM",
       "name": "Alpine Meadows",
-      "trackId": "#Y-#S403#T",
+      "trackId": "#Y-#S448#T",
       "lowIdx": 2030,
       "highIdx": 2270,
       "platformRotation": {
