@@ -139,7 +139,7 @@ namespace PassengerJobs.Platforms
 
         #region Coroutines
 
-        private static readonly WaitForSecondsRealtime _loadUnloadDelay = WaitFor.SecondsRealtime(LOAD_DELAY);
+        private static readonly DV.Utils.ReusableWaitForSecondsRealtime _loadUnloadDelay = WaitFor.SecondsRealtime(LOAD_DELAY);
 
         private Coroutine? _loadUnloadRoutine = null;
 
