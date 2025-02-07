@@ -87,7 +87,6 @@ namespace PassengerJobs
             ModEntry.Logger.LogException(ex);
             ModEntry.Logger.Error(msg);
         }
-
         #endregion
     }
 

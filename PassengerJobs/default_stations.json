@@ -1,8 +1,8 @@
 ﻿{
   "platforms": [
     {
-      "yardId": "CSW",
-      "tracks": [ "CSW-B6LP", "CSW-B5LP", "CSW-B4LP", "CSW-B3LP" ]
+      "yardId": "CW",
+      "tracks": [ "CW-B6LP", "CW-B5LP", "CW-B4LP", "CW-B3LP" ]
     },
     {
       "yardId": "MF",
@@ -19,13 +19,17 @@
     {
       "yardId": "GF",
       "tracks": [ "GF-C3LP" ]
+    },
+    {
+      "yardId": "CS",
+      "tracks": [ "CS-A1LP", "CS-A2LP" ]
     }
   ],
 
   "storage": [
     {
-      "yardId": "CSW",
-      "tracks": [ "CSW-B2SP", "CSW-B1SP" ]
+      "yardId": "CW",
+      "tracks": [ "CW-B2SP", "CW-B1SP" ]
     },
     {
       "yardId": "MF",
@@ -45,315 +49,10 @@
     }
   ],
 
-  "ruralStations": [
-    {
-      "id": "HN",
-      "name": "Highlands North",
-      "trackId": "#Y-#S301#T",
-      "lowIdx": 9740,
-      "highIdx": 9980,
-      "platformRotation": {
-        "x": 0,
-        "y": 1.8,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1,
-        "y": -0.2,
-        "z": 5
-      },
-      "markerAngle": -45
-    },
+  "ruralStations": 
+  [
 
-    {
-      "id": "MR",
-      "name": "Mountain Retreat",
-      "trackId": "#Y-#S369#T",
-      "lowIdx": 3760,
-      "highIdx": 4000,
-      "platformRotation": {
-        "x": 0,
-        "y": 179.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.7,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 45
-    },
 
-    {
-      "id": "SO",
-      "name": "Spiral Overlook",
-      "trackId": "#Y-#S480#T",
-      "lowIdx": 3960,
-      "highIdx": 4200,
-      "platformRotation": {
-        "x": 0,
-        "y": 179,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.3,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": -100
-    },
-
-    {
-      "id": "NP",
-      "name": "Northern Pass",
-      "trackId": "#Y-#S369#T",
-      "lowIdx": 12795,
-      "highIdx": 13035,
-      "platformRotation": {
-        "x": 0,
-        "y": 185.6,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.1,
-        "y": -0.3,
-        "z": 0
-      },
-      "markerAngle": 90
-    },
-
-    {
-      "id": "RJ",
-      "name": "Riverside Junction",
-      "trackId": "#Y-#S311#T",
-      "lowIdx": 12970,
-      "highIdx": 13210,
-      "platformRotation": {
-        "x": 0,
-        "y": 179,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.9,
-        "y": -0.3,
-        "z": 5
-      },
-      "markerAngle": 45
-    },
-
-    {
-      "id": "GFO",
-      "name": "Goods Factory Overlook",
-      "trackId": "#Y-#S418#T",
-      "lowIdx": 7820,
-      "highIdx": 8060,
-      "platformRotation": {
-        "x": 0,
-        "y": 181,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.5,
-        "y": -0.2,
-        "z": 0
-      },
-      "markerAngle": 180
-    },
-
-    {
-      "id": "FW",
-      "name": "Western Forest",
-      "trackId": "#Y-#S70#T",
-      "lowIdx": 5880,
-      "highIdx": 6120,
-      "platformRotation": {
-        "x": 0,
-        "y": 181,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.3,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 180
-    },
-
-    {
-      "id": "WF",
-      "name": "Wheat Fields",
-      "trackId": "#Y-#S491#T",
-      "lowIdx": 4336,
-      "highIdx": 4589
-    },
-
-    {
-      "id": "WL",
-      "name": "Western Lake",
-      "trackId": "#Y-#S311#T",
-      "lowIdx": 2100,
-      "highIdx": 2340,
-      "platformRotation": {
-        "x": 0,
-        "y": -1.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.9,
-        "y": -0.2,
-        "z": -5
-      },
-      "markerAngle": 90
-    },
-
-    {
-      "id": "HV",
-      "name": "Hidden Valley",
-      "trackId": "#Y-#S378#T",
-      "lowIdx": 9050,
-      "highIdx": 9290,
-      "platformRotation": {
-        "x": 0,
-        "y": 181.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.6,
-        "y": 0,
-        "z": 0
-      }
-    },
-
-    {
-      "id": "RS",
-      "name": "Radio Summit",
-      "trackId": "#Y-#S249#T",
-      "lowIdx": 1310,
-      "highIdx": 1550,
-      "platformRotation": {
-        "x": 0,
-        "y": 179.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.1,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": -90
-    },
-
-    {
-      "id": "CI",
-      "name": "Central Industries",
-      "trackId": "#Y-#S344#T",
-      "lowIdx": 60,
-      "highIdx": 300,
-      "platformRotation": {
-        "x": 0,
-        "y": 180,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 1,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 70
-    },
-
-    {
-      "id": "SL",
-      "name": "Southern Lakes",
-      "trackId": "#Y-#S502#T",
-      "lowIdx": 3700,
-      "highIdx": 3940,
-      "platformRotation": {
-        "x": 0,
-        "y": 178.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.5,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": -80
-    },
-
-    {
-      "id": "VSW",
-      "name": "Valley Southwest",
-      "trackId": "#Y-#S362#T",
-      "lowIdx": 4980,
-      "highIdx": 5220,
-      "platformRotation": {
-        "x": 0,
-        "y": 0.4,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 0.5,
-        "y": 0,
-        "z": 0
-      }
-    },
-
-    {
-      "id": "OV",
-      "name": "Ocean View",
-      "trackId": "#Y-#S63#T",
-      "lowIdx": 9530,
-      "highIdx": 9770,
-      "platformRotation": {
-        "x": 0,
-        "y": 4.3,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.4,
-        "y": 0,
-        "z": 5
-      },
-      "markerAngle": -90
-    },
-
-    {
-      "id": "CMP",
-      "name": "Coal Mine",
-      "trackId": "CM-A3L",
-      "lowIdx": 1160,
-      "highIdx": 1400,
-      "platformRotation": {
-        "x": 0,
-        "y": 0.4,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.8,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 200
-    },
-
-    {
-      "id": "AM",
-      "name": "Alpine Meadows",
-      "trackId": "#Y-#S448#T",
-      "lowIdx": 2030,
-      "highIdx": 2270,
-      "platformRotation": {
-        "x": 0,
-        "y": -0.7,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.9,
-        "y": -0.5,
-        "z": 0
-      },
-      "markerAngle": -45
-    }
+   
   ]
 }

@@ -28,6 +28,7 @@
 		<Reference Include="DV.NAudio" />
 		<Reference Include="DV.ThingTypes" />
 		<Reference Include="DV.Localization" />
+		<Reference Include="DV.UIFramework" />
 		<Reference Include="I2.Localization" />
 		<Reference Include="net.smkd.vector3d" />
 		<Reference Include="Newtonsoft.Json" />
@@ -61,4 +62,7 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
+	</Target>
 </Project>

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using DV.Teleporters;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -8,7 +9,7 @@ namespace PassengerJobs.Platforms
 {
     public static class RuralStationBuilder
     {
-        public static readonly List<MapMarkersController.MapMarker> MapMarkers = new();
+        public static readonly List<MapMarker> MapMarkers = new();
         private static readonly Color MarkerColor = new Color32(220, 204, 255, 255);
 
         private static readonly Vector3 LABEL_CENTER_RESET = new(0.0125f, 0.001f, 0);
@@ -17,6 +18,7 @@ namespace PassengerJobs.Platforms
 
         public static void GenerateDecorations(RuralLoadingMachine platform)
         {
+            StationFastTravelDestination travelDestination;
             var signPrefab = Resources.Load<GameObject>("TrackSignSide");
             var railTrack = platform.Track.GetRailTrack();
 
@@ -66,7 +68,16 @@ namespace PassengerJobs.Platforms
             string localName = LocalizationKeyExtensions.StationName(platform.Id);
             SetPlatformSignText(platformObj, localName);
 
-            CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(platformHolder.transform, platform.Id, platform.MarkerAngle));
+            var middle = platformHolder.gameObject.GetComponentsInChildren<Transform>().Where(t => t.gameObject.name == "middle").FirstOrDefault();
+
+            if (middle != null) 
+            { 
+                travelDestination = middle.gameObject.AddComponent<StationFastTravelDestination>();
+                travelDestination.playerTeleportAnchor = middle;
+
+                
+            }
+               CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(platformHolder.transform, platform.Id, platform.MarkerAngle));
         }
 
         public static void DestroyDecorations(RuralLoadingMachine platform)
@@ -79,13 +90,14 @@ namespace PassengerJobs.Platforms
             var sign1 = trackTransform.Find($"[track id] {platform.Id} 1");
             if (sign1) Object.Destroy(sign1.gameObject);
 
-            MarkerController.stationAndPlayerHouseMarkers.RemoveAll(m => m.name == platform.Id);
+            // B99 has removedstationAndPlayerHouseMarkers
+            // MarkerController.stationAndPlayerHouseMarkers.RemoveAll(m => m.name == platform.Id);
 
-            var marker = MarkerController.map.transform.Find($"MapMarker_{platform.Id}");
+            /*var marker = MarkerController.map.transform.Find($"MapMarker_{platform.Id}");
             if (marker) Object.Destroy(marker.gameObject);
 
             var mapName = MarkerController.map.transform.Find($"MapLabel_{platform.Id}");
-            if (mapName) Object.Destroy(mapName.gameObject);
+            if (mapName) Object.Destroy(mapName.gameObject);*/
 
             var concrete = trackTransform.Find($"[platform] {platform.Id}");
             if (concrete) Object.Destroy(concrete.gameObject);
@@ -93,14 +105,15 @@ namespace PassengerJobs.Platforms
 
         private static IEnumerator InitStationLabelCoro(Transform anchor, string id, float? labelAngle)
         {
-            //PJMain.Log($"{id} {(bool)anchor}, {(bool)MarkerController}, {(bool)MarkerController.map}, {MarkerController.stationMapMarkerPrefab}");
+            // B99 PJMain.Log($"{id} {(bool)anchor}, {(bool)MarkerController}, {(bool)MarkerController.map}, {MarkerController.stationMapMarkerPrefab}");
 
-            var prefab = MarkerController.stationAndPlayerHouseMarkers.First().prefab;
+            // B99 var prefab = MarkerController.stationAndPlayerHouseMarkers.First().prefab;
 
             // Setup Map Marker
-            var marker = new MapMarkersController.MapMarker(MarkerController, MarkerController.map, anchor, anchor,
+            /* B99 var marker = new MapMarkersController.MapMarker(MarkerController, MarkerController.map, anchor, anchor,
                 id, prefab);
             MarkerController.stationAndPlayerHouseMarkers.Add(marker);
+           
 
             yield return null;
             yield return null;
@@ -129,6 +142,17 @@ namespace PassengerJobs.Platforms
 
             var nameText = nameObj.GetComponent<TextMeshPro>();
             nameText.text = id;
+        */
+            //MapMarkersController mapcontroller = GameObject.FindObjectOfType<MapMarkersController>();
+            GameObject newmarker = GameObject.Instantiate(MarkerController.stationMarkerPrefab.gameObject, MarkerController.transform);
+            newmarker.name = id;
+
+            Vector3 position = MarkerController.GetMapPosition(anchor.position - WorldMover.currentMove, true);
+            newmarker.transform.position = position;
+            //refs.text.localPosition = position with { y = position.y + 0.025f };
+
+
+            yield return null; // B99 
         }
 
         private static MapMarkersController? _markerController;

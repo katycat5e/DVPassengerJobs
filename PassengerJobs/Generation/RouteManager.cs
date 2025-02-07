@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DV.Utils;
+using UnityEngine;
 
 namespace PassengerJobs.Generation
 {
@@ -101,6 +102,8 @@ namespace PassengerJobs.Generation
                     YardTracksOrganizer.Instance.InitializeYardTrack(track);
                     YardTracksOrganizer.Instance.yardTrackIdToTrack[track.ID.FullID] = track;
                 }
+
+
             }
         }
 
@@ -116,6 +119,9 @@ namespace PassengerJobs.Generation
             foreach (var station in _stationConfig!.ruralStations)
             {
                 var track = GetTrackById(station.trackId);
+                if (track == null)
+                     continue; 
+
                 var railTrack = track.GetRailTrack();
 
                 PlatformController controller;
@@ -172,19 +178,24 @@ namespace PassengerJobs.Generation
 
             foreach (var stationData in _stations.Values.OfType<PassStationData>())
             {
-                var routeData = _routeConfig!.expressRoutes.FirstOrDefault(t => t.start == stationData.YardID);
+                PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID}");
+                var routeData = _routeConfig!.expressRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (routeData != null)
                 {
+                    PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} route data !null");
                     var routeStations = GetRoutes(RouteType.Express, routeData.routes);
                     stationData.ExpressRoutes.AddRange(routeStations);
                 }
+                else { PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} route data null"); }
 
-                var localRoutes = _routeConfig!.localRoutes.FirstOrDefault(t => t.start == stationData.YardID);
+                var localRoutes = _routeConfig!.localRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (localRoutes != null)
                 {
+                    PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} localroutes !null");
                     var routeStations = GetRoutes(RouteType.Local, localRoutes.routes);
                     stationData.RegionalRoutes.AddRange(routeStations);
                 }
+                else { PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} localroutes null"); }
             }
 
             _routesInitialized = true;
@@ -198,9 +209,13 @@ namespace PassengerJobs.Generation
 
         private static Track GetTrackById(string id)
         {
-            return RailTrackRegistry.Instance.AllTracks
-                .First(rt => rt.logicTrack.ID.ToString() == id)
-                .logicTrack;
+            RailTrack railTrack = RailTrackRegistry.Instance.AllTracks
+                .FirstOrDefault(rt => rt.logicTrack.ID.ToString() == id);
+                
+            if (railTrack == null)
+                PJMain.Error($"GetTrackById({id}) not found");
+
+            return railTrack?.logicTrack;   
         }
 
         public static RouteTrack? GetRouteTrackById(string trackId)
@@ -218,12 +233,14 @@ namespace PassengerJobs.Generation
 
         public static RouteResult? GetRoute(PassStationData startStation, RouteType routeType, IEnumerable<string> existingDests, double minLength = 0)
         {
+            PJMain.Log($"RouteManager.GetRoute({startStation?.YardID}, {routeType}, {existingDests != null}, {minLength})");
             EnsureInitialized();
-
+            PJMain.Log($"RouteManager.GetRoute() initialized");
             var routeOptions = (routeType == RouteType.Express) ? startStation.ExpressRoutes : startStation.RegionalRoutes;
+            PJMain.Log($"RouteManager.GetRoute() routeOptions: {routeOptions?.Count}");
             var graph = CreateGraph(routeOptions, existingDests, minLength);
-
-            if (graph[0].Weight < 0.5f) return null;
+            PJMain.Log($"RouteManager.GetRoute() Graph: {graph?.Count}");
+            if (graph?.Count == 0 || graph[0].Weight < 0.5f) return null;
 
             return new RouteResult(graph[0].RouteType, graph[0].PickTracks());
         }
