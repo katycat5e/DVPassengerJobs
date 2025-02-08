@@ -112,58 +112,32 @@ namespace PassengerJobs.Patches
 
         private static void AddRedLights(Transform carRoot, CoachLightController controller)
         {
-            var t = new GameObject("[PJ Red Lights]").transform;
-            t.parent = carRoot;
-            t.localPosition = Vector3.zero;
-            t.localRotation = Quaternion.identity;
+            var holder = new GameObject("[PJ Red Lights]").transform;
+            holder.parent = carRoot;
+            holder.localPosition = Vector3.zero;
+            holder.localRotation = Quaternion.identity;
 
-            var g1 = Object.Instantiate(RedGlare.glare, t);
-            var g2 = Object.Instantiate(RedGlare.glare, t);
-            var g3 = Object.Instantiate(RedGlare.glare, t);
-            var g4 = Object.Instantiate(RedGlare.glare, t);
+            CreateLightSet(holder, RedPos1, RedPosMesh1, true, out var g1, out var l1);
+            CreateLightSet(holder, RedPos2, RedPosMesh2, true, out var g2, out var l2);
+            CreateLightSet(holder, RedPos3, RedPosMesh3, false, out var g3, out var l3);
+            CreateLightSet(holder, RedPos4, RedPosMesh4, false, out var g4, out var l4);
 
-            g1.transform.localPosition = RedPos1;
-            g2.transform.localPosition = RedPos2;
-            g3.transform.localPosition = RedPos3;
-            g4.transform.localPosition = RedPos4;
-
-            g1.transform.localRotation = Quaternion.identity;
-            g2.transform.localRotation = Quaternion.identity;
-            g3.transform.localRotation = Flipped;
-            g4.transform.localRotation = Flipped;
-
-            g1.transform.localScale = RedGlareScale;
-            g2.transform.localScale = RedGlareScale;
-            g3.transform.localScale = RedGlareScale;
-            g4.transform.localScale = RedGlareScale;
-
-            g1.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
-            g2.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
-            g3.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
-            g4.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
-
-            var l1 = Object.Instantiate(RedLamp, t);
-            var l2 = Object.Instantiate(RedLamp, t);
-            var l3 = Object.Instantiate(RedLamp, t);
-            var l4 = Object.Instantiate(RedLamp, t);
-
-            l1.transform.localPosition = RedPosMesh1;
-            l2.transform.localPosition = RedPosMesh2;
-            l3.transform.localPosition = RedPosMesh3;
-            l4.transform.localPosition = RedPosMesh4;
-
-            l1.transform.localRotation = Quaternion.identity;
-            l2.transform.localRotation = Quaternion.identity;
-            l3.transform.localRotation = Flipped;
-            l4.transform.localRotation = Flipped;
-
-            l1.transform.localScale = RedMeshScale;
-            l2.transform.localScale = RedMeshScale;
-            l3.transform.localScale = RedMeshScale;
-            l4.transform.localScale = RedMeshScale;
-
-            controller.FeedRedLights(t.gameObject, new[] { g1, g2 }, new[] { g3, g4 },
+            controller.FeedRedLights(holder.gameObject, new[] { g1, g2 }, new[] { g3, g4 },
                 new[] { l1, l2 }, new[] { l3, l4 }, RedGlare.emissionMaterialLit, RedGlare.emissionMaterialUnlit);
+        }
+
+        private static void CreateLightSet(Transform holder, Vector3 glarePos, Vector3 lampPos, bool direction, out GameObject glare, out MeshRenderer lamp)
+        {
+            glare = Object.Instantiate(RedGlare.glare, holder);
+            glare.transform.localPosition = glarePos;
+            glare.transform.localRotation = direction ? Quaternion.identity : Flipped;
+            glare.transform.localScale = RedGlareScale;
+            glare.AddComponent<SortingGroup>().sortingOrder = 10;
+
+            lamp = Object.Instantiate(RedLamp, holder);
+            lamp.transform.localPosition = lampPos;
+            lamp.transform.localRotation = direction ? Quaternion.identity : Flipped;
+            lamp.transform.localScale = RedMeshScale;
         }
     }
 }
