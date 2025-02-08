@@ -87,45 +87,7 @@ namespace PassengerJobs
             ModEntry.Logger.LogException(ex);
             ModEntry.Logger.Error(msg);
         }
+
         #endregion
     }
-
-    //[HarmonyPatch(typeof(FastTravelController))]
-    //internal static class FastTravelPatch
-    //{
-    //    private static readonly MethodInfo _isAllowedMethod = AccessTools.Method(typeof(GameFeatureFlags), nameof(GameFeatureFlags.IsAllowed));
-
-    //    [HarmonyPatch(nameof(FastTravelController.OnFastTravelRequested))]
-    //    [HarmonyTranspiler]
-    //    public static IEnumerable<CodeInstruction> IsAllowedPrefix(IEnumerable<CodeInstruction> instructions)
-    //    {
-    //        bool first = true;
-    //        bool prevWasCall = false;
-    //        foreach (var instruction in instructions)
-    //        {
-    //            if (prevWasCall)
-    //            {
-    //                yield return new CodeInstruction(OpCodes.Brfalse_S, instruction.operand);
-    //                prevWasCall = false;
-    //                continue;
-    //            }
-    //            else
-    //            {
-    //                yield return instruction;
-    //            }
-
-    //            if (instruction.Calls(_isAllowedMethod))
-    //            {
-    //                if (first)
-    //                {
-    //                    first = false;
-    //                }
-    //                else
-    //                {
-    //                    prevWasCall = true;
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
 }
