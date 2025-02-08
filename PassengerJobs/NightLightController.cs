@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -78,13 +77,22 @@ namespace PassengerJobs
     public class CoachLightController : NightLightController
     {
         private TrainCar _trainCar = null!;
-        private Transform[] _redLightsF = Array.Empty<Transform>();
-        private Transform[] _redLightsR = Array.Empty<Transform>();
+        private GameObject _redHolder = null!;
+        private GameObject[] _glaresF = null!;
+        private GameObject[] _glaresR = null!;
+        private MeshRenderer[] _lampsF = null!;
+        private MeshRenderer[] _lampsR = null!;
+        private Material _onMat = null!;
+        private Material _offMat = null!;
+        private bool _frontOn = false;
+        private bool _rearOn = false;
 
         public override void Awake()
         {
             base.Awake();
             _trainCar = TrainCar.Resolve(gameObject);
+
+            StartCoroutine(Optimizer());
         }
 
         protected override bool GetNewLightState()
@@ -94,19 +102,24 @@ namespace PassengerJobs
 
         private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
 
-        internal void FeedRedLights(Transform[] redLightsF, Transform[] redLightsR)
+        internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR, Material onMat, Material offMat)
         {
-            _redLightsF = redLightsF;
-            _redLightsR = redLightsR;
+            _redHolder = holder;
+            _glaresF = glaresF;
+            _glaresR = glaresR;
+            _lampsF = lampsF;
+            _lampsR = lampsR;
+            _onMat = onMat;
+            _offMat = offMat;
 
-            foreach (var item in redLightsF)
+            foreach (var item in glaresF)
             {
-                item.gameObject.SetActive(false);
+                item.SetActive(false);
             }
 
-            foreach (var item in redLightsR)
+            foreach (var item in glaresR)
             {
-                item.gameObject.SetActive(false);
+                item.SetActive(false);
             }
         }
 
@@ -120,17 +133,49 @@ namespace PassengerJobs
 
         private void ChangeFrontLights(bool on)
         {
-            foreach (var item in _redLightsF)
+            if (_frontOn == on) return;
+
+            foreach (var item in _glaresF)
             {
-                item.gameObject.SetActive(on);
+                item.SetActive(on);
             }
+
+            foreach (var item in _lampsF)
+            {
+                item.material = on ? _onMat : _offMat;
+            }
+
+            _frontOn = on;
         }
 
         private void ChangeRearLights(bool on)
         {
-            foreach (var item in _redLightsR)
+            if (_rearOn == on) return;
+
+            foreach (var item in _glaresR)
             {
-                item.gameObject.SetActive(on);
+                item.SetActive(on);
+            }
+
+            foreach (var item in _lampsR)
+            {
+                item.material = on ? _onMat : _offMat;
+            }
+
+            _rearOn = on;
+        }
+
+        private  System.Collections.IEnumerator Optimizer()
+        {
+            while (true)
+            {
+                yield return WaitFor.Seconds(0.3f);
+
+                var player = PlayerManager.PlayerTransform;
+
+                if (player == null) continue;
+
+                _redHolder.SetActive(Vector3.SqrMagnitude(player.position - _redHolder.transform.position) <= 2250000);
             }
         }
     }
