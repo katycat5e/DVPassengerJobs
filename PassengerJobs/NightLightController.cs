@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -77,6 +78,8 @@ namespace PassengerJobs
     public class CoachLightController : NightLightController
     {
         private TrainCar _trainCar = null!;
+        private Transform[] _redLightsF = Array.Empty<Transform>();
+        private Transform[] _redLightsR = Array.Empty<Transform>();
 
         public override void Awake()
         {
@@ -90,5 +93,45 @@ namespace PassengerJobs
         }
 
         private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
+
+        internal void FeedRedLights(Transform[] redLightsF, Transform[] redLightsR)
+        {
+            _redLightsF = redLightsF;
+            _redLightsR = redLightsR;
+
+            foreach (var item in redLightsF)
+            {
+                item.gameObject.SetActive(false);
+            }
+
+            foreach (var item in redLightsR)
+            {
+                item.gameObject.SetActive(false);
+            }
+        }
+
+        protected override void SetLightsOn(bool lightsOn)
+        {
+            base.SetLightsOn(lightsOn);
+
+            ChangeFrontLights(!_trainCar.frontCoupler.coupledTo && lightsOn);
+            ChangeRearLights(!_trainCar.rearCoupler.coupledTo && lightsOn);
+        }
+
+        private void ChangeFrontLights(bool on)
+        {
+            foreach (var item in _redLightsF)
+            {
+                item.gameObject.SetActive(on);
+            }
+        }
+
+        private void ChangeRearLights(bool on)
+        {
+            foreach (var item in _redLightsR)
+            {
+                item.gameObject.SetActive(on);
+            }
+        }
     }
 }
