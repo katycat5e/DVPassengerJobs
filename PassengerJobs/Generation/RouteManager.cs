@@ -120,9 +120,25 @@ namespace PassengerJobs.Generation
             {
                 var track = GetTrackById(station.trackId);
                 if (track == null)
-                     continue; 
+                {
+                    PJMain.Warning($"Skipping rural station {station?.id} because the track \"{station?.trackId}\" was not found");
+                    continue; 
+                }
 
                 var railTrack = track.GetRailTrack();
+
+                if (railTrack == null)
+                {
+                    PJMain.Warning($"Skipping rural station {station?.id} because the rail track for \"{station?.trackId}\" was not found");
+                    continue;
+                }
+
+                var points = railTrack.GetPointSet().points;
+                if(points == null || points.Count() < station.lowIdx || points.Count() < station.highIdx)
+                {
+                    PJMain.Warning($"Skipping rural station {station?.id} because the indexes are out of bounds. Points on track: {points?.Count() ?? -1}, indexes: [{station?.lowIdx}, {station?.highIdx}]");
+                    continue;
+                }
 
                 PlatformController controller;
                 IEnumerable<RuralLoadingTask> tasks;
