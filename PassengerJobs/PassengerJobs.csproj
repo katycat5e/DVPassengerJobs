@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<AssemblyName>PassengerJobs</AssemblyName>
 		<TargetFramework>netframework4.8</TargetFramework>
-		<LangVersion>9</LangVersion>
+		<LangVersion>10</LangVersion>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
