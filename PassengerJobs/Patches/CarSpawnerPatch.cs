@@ -131,6 +131,11 @@ namespace PassengerJobs.Patches
             g3.transform.localRotation = Flipped;
             g4.transform.localRotation = Flipped;
 
+            g1.transform.localScale = Vector3.one;
+            g2.transform.localScale = Vector3.one;
+            g3.transform.localScale = Vector3.one;
+            g4.transform.localScale = Vector3.one;
+
             g1.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
             g2.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
             g3.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
