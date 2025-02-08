@@ -10,11 +10,12 @@ namespace PassengerJobs.Patches
     [HarmonyPatch(typeof(CarSpawner))]
     internal class CarSpawnerPatch
     {
-        private static readonly Vector3 RedPos1 = new(0.925f, 2.125f, 11.83f);
-        private static readonly Vector3 RedPos2 = new(-0.925f, 2.125f, 11.83f);
-        private static readonly Vector3 RedPos3 = new(0.925f, 2.125f, -11.83f);
-        private static readonly Vector3 RedPos4 = new(-0.925f, 2.125f, -11.83f);
+        private static readonly Vector3 RedPos1 = new(0.925f, 2.125f, 11.77f);
+        private static readonly Vector3 RedPos2 = new(-0.925f, 2.125f, 11.77f);
+        private static readonly Vector3 RedPos3 = new(0.925f, 2.125f, -11.77f);
+        private static readonly Vector3 RedPos4 = new(-0.925f, 2.125f, -11.77f);
         private static readonly Quaternion Flipped = Quaternion.Euler(0, 180, 0);
+        private static readonly Vector3 RedGlareScale = new(1.2f, 1.2f, 1.2f);
 
         private static readonly Vector3 RedPosMesh1 = new(0.925f, 0.588f, 10.00f);
         private static readonly Vector3 RedPosMesh2 = new(-0.925f, 0.588f, 10.00f);
@@ -131,10 +132,10 @@ namespace PassengerJobs.Patches
             g3.transform.localRotation = Flipped;
             g4.transform.localRotation = Flipped;
 
-            g1.transform.localScale = Vector3.one;
-            g2.transform.localScale = Vector3.one;
-            g3.transform.localScale = Vector3.one;
-            g4.transform.localScale = Vector3.one;
+            g1.transform.localScale = RedGlareScale;
+            g2.transform.localScale = RedGlareScale;
+            g3.transform.localScale = RedGlareScale;
+            g4.transform.localScale = RedGlareScale;
 
             g1.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
             g2.gameObject.AddComponent<SortingGroup>().sortingOrder = 10;
