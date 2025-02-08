@@ -168,7 +168,7 @@ namespace PassengerJobs.Generation
         private IEnumerator GeneratePassengerJobs()
         {
             int watchdog = 15;
-            while ((watchdog > 0) && _stationData.PlatformTracks.GetUnusedTracks().Any())
+            while ((watchdog > 0) && _stationData.TerminusTracks.GetUnusedTracks().Any())
             {
                 yield return _generationDelay;
 
@@ -204,9 +204,9 @@ namespace PassengerJobs.Generation
             if (consistInfo == null)
             {
                 // generate a new consist
-                var potentialStart = _stationData.GetPlatforms().GetUnusedTracks().PickOneValue();
+                var potentialStart = _stationData.TerminusTracks.GetUnusedTracks().PickOne();
                 if (potentialStart == null) return null;
-                startPlatform = potentialStart.Value;
+                startPlatform = new RouteTrack(_stationData, potentialStart);
 
                 destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests);
                 if (destinations == null) return null;

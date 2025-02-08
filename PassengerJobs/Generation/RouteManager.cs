@@ -23,7 +23,7 @@ namespace PassengerJobs.Generation
 
         private static readonly Dictionary<string, IPassDestination> _stations = new();
 
-        public static bool IsPassengerStation(string yardId) => _stationConfig?.platforms.Any(p => p.yardId == yardId) == true;
+        public static bool IsPassengerStation(string yardId) => _stationConfig?.cityStations.Any(p => p.yardId == yardId) == true;
 
         static RouteManager()
         {
@@ -63,13 +63,29 @@ namespace PassengerJobs.Generation
 
             if (File.Exists(configPath))
             {
-                config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                try
+                {
+                    config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                }
+                catch (Exception ex)
+                {
+                    PJMain.Error($"Failed to read custom {typeof(T).Name} settings", ex);
+                    config = null;
+                }
             }
 
             if (config == null)
             {
-                configPath = Path.Combine(PJMain.ModEntry.Path, defaultFilename);
-                config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                try
+                {
+                    configPath = Path.Combine(PJMain.ModEntry.Path, defaultFilename);
+                    config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                }
+                catch (Exception ex)
+                {
+                    PJMain.Error($"Failed to read default {typeof(T).Name} settings", ex);
+                    throw new InvalidOperationException($"Failed to load any data from config file {defaultFilename}", ex);
+                }
             }
 
             if (config == null)
@@ -82,16 +98,29 @@ namespace PassengerJobs.Generation
 
         public static void OnStationControllerStart(StationController station)
         {
+            static IEnumerable<Track> ParseTracks(IEnumerable<string> ids)
+            {
+                return ids.Select(GetTrackById).Where(t => t is not null)!;
+            }
+
             string yardId = station.stationInfo.YardID;
-            if (_stationConfig!.platforms.FirstOrDefault(t => t.yardId == yardId) is StationConfig.TrackSet platforms)
+            if (_stationConfig!.cityStations.FirstOrDefault(t => t.yardId == yardId) is StationConfig.CityStation config)
             {
                 var stationData = new PassStationData(station);
-                stationData.AddPlatforms(platforms.tracks.Select(GetTrackById));
+                stationData.AddPlatforms(ParseTracks(config.platforms));
 
-                var storage = _stationConfig.storage.FirstOrDefault(t => t.yardId == yardId);
-                if (storage != null)
+                if (config.storage is not null)
                 {
-                    stationData.AddStorageTracks(storage.tracks.Select(GetTrackById));
+                    stationData.AddStorageTracks(ParseTracks(config.storage));
+                }
+
+                if (config.terminusTracks is not null)
+                {
+                    stationData.AddTerminusTracks(ParseTracks(config.terminusTracks));
+                }
+                else
+                {
+                    stationData.AddTerminusTracks(stationData.PlatformTracks);
                 }
 
                 _stations.Add(yardId, stationData);
@@ -102,8 +131,6 @@ namespace PassengerJobs.Generation
                     YardTracksOrganizer.Instance.InitializeYardTrack(track);
                     YardTracksOrganizer.Instance.yardTrackIdToTrack[track.ID.FullID] = track;
                 }
-
-
             }
         }
 
@@ -194,24 +221,19 @@ namespace PassengerJobs.Generation
 
             foreach (var stationData in _stations.Values.OfType<PassStationData>())
             {
-                PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID}");
                 var routeData = _routeConfig!.expressRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (routeData != null)
                 {
-                    PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} route data !null");
                     var routeStations = GetRoutes(RouteType.Express, routeData.routes);
                     stationData.ExpressRoutes.AddRange(routeStations);
                 }
-                else { PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} route data null"); }
 
                 var localRoutes = _routeConfig!.localRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (localRoutes != null)
                 {
-                    PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} localroutes !null");
                     var routeStations = GetRoutes(RouteType.Local, localRoutes.routes);
                     stationData.RegionalRoutes.AddRange(routeStations);
                 }
-                else { PJMain.Log($"RouteManager.EnsureInitialized() YardID: {stationData?.YardID} localroutes null"); }
             }
 
             _routesInitialized = true;
@@ -223,15 +245,17 @@ namespace PassengerJobs.Generation
             _routesInitialized = false;
         }
 
-        private static Track GetTrackById(string id)
+        private static Track? GetTrackById(string id)
         {
-            RailTrack railTrack = RailTrackRegistry.Instance.AllTracks
+            var railTrack = RailTrackRegistry.Instance.AllTracks
                 .FirstOrDefault(rt => rt.logicTrack.ID.ToString() == id);
-                
-            if (railTrack == null)
-                PJMain.Error($"GetTrackById({id}) not found");
 
-            return railTrack?.logicTrack;   
+            if (railTrack is null)
+            {
+                PJMain.Error($"GetTrackById({id}) not found");
+            }
+
+            return railTrack?.logicTrack;
         }
 
         public static RouteTrack? GetRouteTrackById(string trackId)
@@ -249,14 +273,12 @@ namespace PassengerJobs.Generation
 
         public static RouteResult? GetRoute(PassStationData startStation, RouteType routeType, IEnumerable<string> existingDests, double minLength = 0)
         {
-            PJMain.Log($"RouteManager.GetRoute({startStation?.YardID}, {routeType}, {existingDests != null}, {minLength})");
             EnsureInitialized();
-            PJMain.Log($"RouteManager.GetRoute() initialized");
+            
             var routeOptions = (routeType == RouteType.Express) ? startStation.ExpressRoutes : startStation.RegionalRoutes;
-            PJMain.Log($"RouteManager.GetRoute() routeOptions: {routeOptions?.Count}");
             var graph = CreateGraph(routeOptions, existingDests, minLength);
-            PJMain.Log($"RouteManager.GetRoute() Graph: {graph?.Count}");
-            if (graph?.Count == 0 || graph[0].Weight < 0.5f) return null;
+            
+            if ((graph.Count == 0) || (graph[0].Weight < 0.5f)) return null;
 
             return new RouteResult(graph[0].RouteType, graph[0].PickTracks());
         }
@@ -347,8 +369,14 @@ namespace PassengerJobs.Generation
         public RoutePath(RouteData stations, TrackType trackType, double minLength = 0)
         {
             RouteType = stations.RouteType;
-            Nodes = stations.Destinations.Select(s => new RouteNode(s, minLength)).ToArray();
             TrackType = trackType;
+
+            Nodes = new RouteNode[stations.Destinations.Length];
+            for (int i = 0; i < Nodes.Length; i++)
+            {
+                bool isFinal = (i == Nodes.Length - 1);
+                Nodes[i] = new RouteNode(stations.Destinations[i], minLength, isFinal);
+            }
 
             if (Nodes.Any(n => n.Weight == 0))
             {
@@ -389,12 +417,12 @@ namespace PassengerJobs.Generation
         public readonly double MinLength;
         public readonly float Weight;
 
-        public RouteNode(IPassDestination station, double minLength = 0)
+        public RouteNode(IPassDestination station, double minLength, bool isFinal)
         {
             Station = station;
             MinLength = minLength;
 
-            Tracks = station.GetPlatforms()
+            Tracks = station.GetPlatforms(isFinal)
                 .GetUnusedTracks()
                 .Where(t => t.Length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
 

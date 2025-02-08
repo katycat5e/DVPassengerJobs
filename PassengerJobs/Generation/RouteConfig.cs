@@ -6,15 +6,15 @@ namespace PassengerJobs.Generation
 {
     public class StationConfig
     {
-        public TrackSet[] platforms;
-        public TrackSet[] storage;
-
+        public CityStation[] cityStations;
         public RuralStation[] ruralStations;
 
-        public class TrackSet
+        public class CityStation
         {
             public string yardId;
-            public string[] tracks;
+            public string[] platforms;
+            public string[] terminusTracks;
+            public string[] storage;
         }
 
         public class RuralStation

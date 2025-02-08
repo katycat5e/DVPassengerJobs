@@ -11,7 +11,7 @@ namespace PassengerJobs.Generation
     public interface IPassDestination
     {
         string YardID { get; }
-        IEnumerable<RouteTrack> GetPlatforms();
+        IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks = false);
         IEnumerable<Track> AllTracks { get; }
     }
 
@@ -33,6 +33,8 @@ namespace PassengerJobs.Generation
         public string YardID => Controller.stationInfo.YardID;
         public readonly List<Track> PlatformTracks = new();
         public readonly List<Track> StorageTracks = new();
+        public readonly List<Track> TerminusTracks = new();
+
         public readonly List<RouteData> ExpressRoutes = new();
         public readonly List<RouteData> RegionalRoutes = new();
 
@@ -42,11 +44,13 @@ namespace PassengerJobs.Generation
         }
 
         public void AddPlatforms(IEnumerable<Track> platforms) => PlatformTracks.AddRange(platforms);
+        public void AddTerminusTracks(IEnumerable<Track> terminusTracks) => TerminusTracks.AddRange(terminusTracks);
         public void AddStorageTracks(IEnumerable<Track> storageTracks) => StorageTracks.AddRange(storageTracks);
 
-        public IEnumerable<RouteTrack> GetPlatforms()
+        public IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks = false)
         {
-            return PlatformTracks.Select(t => new RouteTrack(this, t));
+            var options = onlyTerminusTracks ? TerminusTracks : PlatformTracks;
+            return options.Select(t => new RouteTrack(this, t));
         }
 
         public IEnumerable<Track> AllTracks => PlatformTracks.Concat(StorageTracks);
@@ -63,8 +67,12 @@ namespace PassengerJobs.Generation
             Platform = platform;
         }
 
-        public IEnumerable<RouteTrack> GetPlatforms()
+        public IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks)
         {
+            if (onlyTerminusTracks)
+            {
+                return Enumerable.Empty<RouteTrack>();
+            }
             return new[] { new RouteTrack(this, Platform.Track, Platform.LowerBound, Platform.UpperBound) };
         }
 

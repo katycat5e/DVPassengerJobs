@@ -1,56 +1,39 @@
 ﻿{
-  "platforms": [
+  "cityStations": [
     {
       "yardId": "CW",
-      "tracks": [ "CW-B6LP", "CW-B5LP", "CW-B4LP", "CW-B3LP" ]
+      "platforms": [ "CW-B6LP", "CW-B5LP", "CW-B4LP", "CW-B3LP" ],
+      "storage": [ "CW-B2SP", "CW-B1SP" ]
     },
     {
       "yardId": "MF",
-      "tracks": [ "MF-D1LP", "MF-D2LP" ]
+      "platforms": [ "MF-D1LP", "MF-D2LP" ],
+      "storage": [ "MF-D4SP" ]
     },
     {
       "yardId": "FF",
-      "tracks": [ "FF-B1LP", "FF-B2LP" ]
+      "platforms": [ "FF-B1LP", "FF-B2LP" ],
+      "storage": [ "FF-B3SP", "FF-B5SP", "FF-B4SP" ]
     },
     {
       "yardId": "HB",
-      "tracks": [ "HB-F1LP", "HB-F2LP" ]
+      "platforms": [ "HB-F1LP", "HB-F2LP" ],
+      "storage": [ "HB-F4SP", "HB-F3SP" ]
     },
     {
       "yardId": "GF",
-      "tracks": [ "GF-C3LP" ]
+      "platforms": [ "GF-C3LP", "GF-C2LP" ],
+      "terminusTracks": [ "GF-C3LP" ],
+      "storage": [ "GF-C1SP" ]
     },
     {
       "yardId": "CS",
-      "tracks": [ "CS-A1LP", "CS-A2LP" ]
+      "platforms": [ "CS-A1LP", "CS-A2LP" ],
+      "terminusTracks": []
     }
   ],
 
-  "storage": [
-    {
-      "yardId": "CW",
-      "tracks": [ "CW-B2SP", "CW-B1SP" ]
-    },
-    {
-      "yardId": "MF",
-      "tracks": [ "MF-D4SP" ]
-    },
-    {
-      "yardId": "FF",
-      "tracks": [ "FF-B3SP", "FF-B5SP", "FF-B4SP" ]
-    },
-    {
-      "yardId": "HB",
-      "tracks": [ "HB-F4SP", "HB-F3SP" ]
-    },
-    {
-      "yardId": "GF",
-      "tracks": [ "GF-C1SP" ]
-    }
-  ],
-
-  "ruralStations": 
-  [
+  "ruralStations": [
     {
       "id": "HN",
       "name": "Highlands North",
@@ -69,7 +52,6 @@
       },
       "markerAngle": -45
     },
-
     {
       "id": "MR",
       "name": "Mountain Retreat",
@@ -88,7 +70,6 @@
       },
       "markerAngle": 45
     },
-
     {
       "id": "SO",
       "name": "Spiral Overlook",
@@ -107,7 +88,6 @@
       },
       "markerAngle": -100
     },
-
     {
       "id": "NP",
       "name": "Northern Pass",
@@ -126,7 +106,6 @@
       },
       "markerAngle": 90
     },
-
     {
       "id": "RJ",
       "name": "Riverside Junction",
@@ -145,7 +124,6 @@
       },
       "markerAngle": 45
     },
-
     {
       "id": "GFO",
       "name": "Goods Factory Overlook",
@@ -164,7 +142,6 @@
       },
       "markerAngle": 180
     },
-
     {
       "id": "FW",
       "name": "Western Forest",
@@ -183,7 +160,6 @@
       },
       "markerAngle": 180
     },
-
     {
       "id": "WF",
       "name": "Wheat Fields",
@@ -191,7 +167,6 @@
       "lowIdx": 4336,
       "highIdx": 4589
     },
-
     {
       "id": "WL",
       "name": "Western Lake",
@@ -210,8 +185,6 @@
       },
       "markerAngle": 90
     },
-
-
     {
       "id": "HV",
       "name": "Hidden Valley",
@@ -229,8 +202,6 @@
         "z": 0
       }
     },
-
-
     {
 
       "id": "RS",
@@ -250,7 +221,6 @@
       },
       "markerAngle": 0
     },
-
     {
       "id": "CI",
       "name": "Central Industries",
@@ -269,7 +239,6 @@
       },
       "markerAngle": 70
     },
-
     {
       "id": "SL",
       "name": "Southern Lakes",
@@ -288,7 +257,6 @@
       },
       "markerAngle": -80
     },
-
     {
       "id": "VSW",
       "name": "Valley Southwest",
@@ -306,7 +274,6 @@
         "z": 0
       }
     },
-
     {
       "id": "OV",
       "name": "Ocean View",
@@ -325,7 +292,6 @@
       },
       "markerAngle": -90
     },
-
     {
       "id": "CMP",
       "name": "Coal Mine",
@@ -344,7 +310,6 @@
       },
       "markerAngle": 200
     },
-
     {
       "id": "AM",
       "name": "Alpine Meadows",

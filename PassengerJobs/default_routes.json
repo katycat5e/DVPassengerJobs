@@ -3,99 +3,115 @@
     {
       "start": "CW",
       "routes": [
-        ["MF", "FF"],
-        ["MF", "FF", "GF"],
-        ["MF", "FF", "GF", "HB"],
-        ["FF"],
-        ["FF", "GF"],
-        ["HB"],
-        ["HB", "FF"],
-        ["HB", "FF", "MF"],
-        ["GF"],
-        ["GF", "HB"],
-        ["GF", "FF"],
-        ["MF", "FF", "GF", "HB"],  
-        ["GF", "FF", "MF", "HB"]   
+        [ "MF", "FF" ],
+        [ "MF", "FF", "GF" ],
+        [ "MF", "FF", "GF", "HB" ],
+
+        [ "FF", "GF" ],
+        [ "FF", "GF", "HB" ],
+
+        [ "HB", "GF" ],
+        [ "HB", "GF", "FF" ],
+        [ "HB", "GF", "FF", "MF" ],
+
+        [ "CS", "HB" ],
+        [ "CS", "HB", "GF" ],
+        [ "CS", "HB", "GF", "FF" ],
+
+        [ "GF", "HB" ],
+        [ "GF", "FF" ],
+        [ "GF", "FF", "MF" ]
       ]
     },
     {
       "start": "MF",
       "routes": [
-        ["FF"],
-        ["FF", "GF"],
-        ["FF", "GF", "CW"],
-        ["GF"],
-        ["CW", "HB"],
-        ["CW", "HB", "FF"],
-        ["CW", "FF"],
-        ["CW", "GF"],
-        ["HB"],
-        ["MF", "CW", "GF", "HB"],  
-        ["MF", "HB", "GF", "FF", "CW"]  
+        [ "FF", "GF" ],
+        [ "FF", "GF", "CW" ],
+        [ "FF", "GF", "HB" ],
+
+        [ "GF", "HB" ],
+
+        [ "CW", "HB" ],
+        [ "CW", "HB", "GF" ],
+        [ "CW", "HB", "GF", "FF" ],
+        [ "CW", "CS", "HB" ],
+        [ "CW", "CS", "HB", "GF" ],
+        [ "CW", "CS", "HB", "GF", "FF" ],
+
+        [ "CS", "HB" ],
+        [ "CS", "HB", "GF" ],
+
+        [ "HB", "GF" ],
+        [ "HB", "GF", "FF" ]
       ]
     },
     {
       "start": "FF",
       "routes": [
-        ["MF"],
-        ["MF", "CW"],
-        ["CW", "HB"],
-        ["CW", "GF"],
-        ["GF", "CW"],
-        ["GF", "HB"],
-        ["HB"],
-        ["FF", "MF", "CW", "GF", "HB"], 
-        ["FF", "HB", "GF", "CW", "MF"]  
+        [ "MF", "CW" ],
+        [ "MF", "CW", "HB" ],
+        [ "MF", "CW", "HB", "GF" ],
+        [ "MF", "CW", "CS", "HB" ],
+        [ "MF", "CW", "CS", "HB", "GF" ],
+
+        [ "CW", "HB" ],
+        [ "CW", "HB", "GF" ],
+        [ "CW", "CS", "HB" ],
+        [ "CW", "CS", "HB"],
+        [ "CW", "GF" ],
+
+        [ "GF", "CW" ],
+        [ "GF", "CW", "MF" ],
+        [ "GF", "HB" ],
+        [ "GF", "HB", "CS", "CW" ],
+
+        [ "CS", "HB"]
       ]
     },
     {
       "start": "GF",
       "routes": [
-        ["FF", "MF"],
-        ["FF", "MF", "CW"],
-        ["FF", "MF", "CW", "HB"],
-        ["FF", "CW"],
-        ["CW", "MF"],
-        ["CW", "FF"],
-        ["CW", "HB"],
-        ["HB"],
-        ["HB", "CW"],
-        ["GF", "FF", "MF", "CW", "HB"],  
-        ["GF", "HB", "FF", "MF", "CW"]  
+        [ "FF", "MF" ],
+        [ "FF", "MF", "CW" ],
+        [ "FF", "MF", "CW", "HB" ],
+        [ "FF", "MF", "CW", "CS", "HB" ],
+        [ "FF", "CW" ],
+        [ "FF", "CW", "HB" ],
+        [ "FF", "CW", "CS", "HB" ],
+
+        [ "CW", "MF" ],
+        [ "CW", "MF", "FF" ],
+        [ "CW", "FF" ],
+        [ "CW", "HB" ],
+        [ "CW", "CS", "HB" ],
+
+        [ "HB", "CW" ],
+        [ "HB", "CS", "CW" ],
+
+        [ "CS", "HB" ]
       ]
     },
     {
       "start": "HB",
       "routes": [
-        ["CW"],
-        ["CW", "MF"],
-        ["CW", "MF", "FF", "GF"],
-        ["CW", "FF"],
-        ["CW", "GF"],
-        ["FF", "MF"],
-        ["GF", "FF"],
-        ["GF", "FF", "MF"],
-        ["GF", "FF", "MF", "CW"],
-        ["HB", "GF", "FF", "MF", "CW"],  
-        ["HB", "FF", "GF", "MF", "CW"]  
-      ]
-    },
-    {
-      "start": "CS",
-      "routes": [
-        ["CW"],
-        ["CW", "MF"],
-        ["CW", "MF", "FF", "GF"],
-        ["CW", "FF"],
-        ["CW", "GF"],
-        ["FF", "MF"],
-        ["GF", "FF"],
-        ["GF", "FF", "MF"],
-        ["GF", "FF", "MF", "CW"],
-        ["CW", "MF", "FF", "GF", "HB"],  
-        ["HB", "GF", "FF", "MF", "CW"], 
-        ["CW", "MF", "FF", "GF", "HB", "CS"],  
-        ["HB", "GF", "FF", "MF", "CW", "CS"] 
+        [ "CW", "MF" ],
+        [ "CW", "MF", "FF", "GF" ],
+        [ "CW", "FF" ],
+        [ "CW", "GF" ],
+
+        [ "CS", "CW" ],
+        [ "CS", "CW", "MF" ],
+        [ "CS", "CW", "MF", "FF", "GF" ],
+        [ "CS", "CW", "FF" ],
+        [ "CS", "CW", "GF" ],
+
+        [ "FF", "MF" ],
+        [ "FF", "MF", "CW" ],
+
+        [ "GF", "FF" ],
+        [ "GF", "FF", "MF" ],
+        [ "GF", "FF", "MF", "CW" ]
       ]
     }
   ],
