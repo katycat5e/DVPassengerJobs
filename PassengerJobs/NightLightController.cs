@@ -1,5 +1,4 @@
 ﻿using DV.Simulation.Cars;
-using DV.ThingTypes.TransitionHelpers;
 using System.Linq;
 using UnityEngine;
 
@@ -87,28 +86,29 @@ namespace PassengerJobs
             {
                 if (_litMat == null)
                 {
-                    _litMat = new Material(DV.ThingTypes.TrainCarType.LocoShunter.ToV2().prefab.GetComponentInChildren<CabLightsController>().lightsLit);
+                    // Copy the lit version of the MetalTrim material.
+                    DV.Globals.G.Types.TryGetLivery("LocoDM1U", out var dm1u);
+                    _litMat = new Material(dm1u.prefab.GetComponentInChildren<CabLightsController>().lightsLit);
 
+                    // I want a texture with the same size and I want it painted black.
                     var og = _litMat.mainTexture;
                     var tex = new Texture2D(og.width, og.height);
+                    int size = og.width * og.height;
+                    Color[] pixels = new Color[size];
 
-                    // Big rectangle with 1 extra line of black pixels to prevent bleeding.
-                    for (int y = 255; y < 512; y++)
+                    for (int i = 0; i < size; i++)
                     {
-                        for (int x = 0; x < 512; x++)
-                        {
-                            tex.SetPixel(x, y, Color.black);
-                        }
+                        pixels[i] = Color.black;
                     }
 
-                    for (int x = 0; x < 512; x++)
-                    {
-                        tex.SetPixel(x, 0, Color.black);
-                    }
-
+                    tex.SetPixels(pixels);
                     tex.Apply();
-                    Graphics.CopyTexture(og, 0, 0, 0, 0, 512, 256, tex, 0, 0, 0, 0);
 
+                    // Copy the texture region corresponding to the lamp part only.
+                    // Leave out a 1px border above and below to avoid bleeding.
+                    Graphics.CopyTexture(og, 0, 0, 0, 1, 512, 254, tex, 0, 0, 0, 1);
+
+                    // Replace the emission texture with this.
                     _litMat.SetTexture("_EmissionMap", tex);
                 }
 

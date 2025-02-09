@@ -23,15 +23,29 @@ namespace PassengerJobs.Patches
         private static readonly Vector3 RedPosMesh4 = new(-0.925f, 0.588f, -10.00f);
         private static readonly Vector3 RedMeshScale = new(0.55f, 0.55f, 0.55f);
 
+        private static TrainCarLivery? _de2;
         private static Headlight? s_redGlare;
         private static MeshRenderer? s_redLamp;
+
+        private static TrainCarLivery DE2
+        {
+            get
+            {
+                if (_de2 == null)
+                {
+                    DV.Globals.G.Types.TryGetLivery("LocoDE2", out _de2);
+                }
+
+                return _de2;
+            }
+        }
         private static Headlight RedGlare
         {
             get
             {
                 if (s_redGlare == null)
                 {
-                    s_redGlare = TrainCarType.LocoShunter.ToV2().prefab.transform.Find(
+                    s_redGlare = DE2.prefab.transform.Find(
                         "[headlights_de2]/FrontSide/HeadlightTop").GetComponent<Headlight>();
                 }
 
@@ -44,7 +58,7 @@ namespace PassengerJobs.Patches
             {
                 if (s_redLamp == null)
                 {
-                    s_redLamp = TrainCarType.LocoShunter.ToV2().prefab.transform.Find(
+                    s_redLamp = DE2.prefab.transform.Find(
                         "[headlights_de2]/FrontSide/ext headlights_glass_red_F").GetComponent<MeshRenderer>();
                 }
 
@@ -117,6 +131,7 @@ namespace PassengerJobs.Patches
             holder.localPosition = Vector3.zero;
             holder.localRotation = Quaternion.identity;
 
+            // Create a light for all 4 positions.
             CreateLightSet(holder, RedPos1, RedPosMesh1, true, out var g1, out var l1);
             CreateLightSet(holder, RedPos2, RedPosMesh2, true, out var g2, out var l2);
             CreateLightSet(holder, RedPos3, RedPosMesh3, false, out var g3, out var l3);
@@ -128,6 +143,8 @@ namespace PassengerJobs.Patches
 
         private static void CreateLightSet(Transform holder, Vector3 glarePos, Vector3 lampPos, bool direction, out GameObject glare, out MeshRenderer lamp)
         {
+            // Creates a copy of the DE2's frontal red light.
+            // First the glare object, then the renderer with the lamp.
             glare = Object.Instantiate(RedGlare.glare, holder);
             glare.transform.localPosition = glarePos;
             glare.transform.localRotation = direction ? Quaternion.identity : Flipped;
