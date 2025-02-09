@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using DV.Simulation.Cars;
+using DV.ThingTypes.TransitionHelpers;
+using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -76,21 +78,76 @@ namespace PassengerJobs
 
     public class CoachLightController : NightLightController
     {
+        private const int MaterialIndex = 3;
+
+        private static Material? _litMat;
+        private static Material LitMaterial
+        {
+            get
+            {
+                if (_litMat == null)
+                {
+                    _litMat = new Material(DV.ThingTypes.TrainCarType.LocoShunter.ToV2().prefab.GetComponentInChildren<CabLightsController>().lightsLit);
+
+                    var og = _litMat.mainTexture;
+                    var tex = new Texture2D(og.width, og.height);
+
+                    // Big rectangle with 1 extra line of black pixels to prevent bleeding.
+                    for (int y = 255; y < 512; y++)
+                    {
+                        for (int x = 0; x < 512; x++)
+                        {
+                            tex.SetPixel(x, y, Color.black);
+                        }
+                    }
+
+                    for (int x = 0; x < 512; x++)
+                    {
+                        tex.SetPixel(x, 0, Color.black);
+                    }
+
+                    tex.Apply();
+                    Graphics.CopyTexture(og, 0, 0, 0, 0, 512, 256, tex, 0, 0, 0, 0);
+
+                    _litMat.SetTexture("_EmissionMap", tex);
+                }
+
+                return _litMat;
+            }
+        }
+
         private TrainCar _trainCar = null!;
+        private MeshRenderer _interior = null!;
+        private Material _lampMat = null!;
+        private bool _inOn = false;
+
         private GameObject _redHolder = null!;
         private GameObject[] _glaresF = null!;
         private GameObject[] _glaresR = null!;
         private MeshRenderer[] _lampsF = null!;
         private MeshRenderer[] _lampsR = null!;
-        private Material _onMat = null!;
-        private Material _offMat = null!;
+        private Material _redOnMat = null!;
+        private Material _redOffMat = null!;
         private bool _frontOn = false;
         private bool _rearOn = false;
+
+        private Material InteriorMat
+        {
+            get => _interior.materials[MaterialIndex];
+            set
+            {
+                var mats = _interior.materials;
+                mats[MaterialIndex] = value;
+                _interior.materials = mats;
+            }
+        }
 
         public override void Awake()
         {
             base.Awake();
             _trainCar = TrainCar.Resolve(gameObject);
+            _interior = _trainCar.transform.Find("CarPassenger/CarPassengerInterior_LOD0").GetComponent<MeshRenderer>();
+            _lampMat = InteriorMat;
 
             StartCoroutine(Optimizer());
         }
@@ -109,8 +166,8 @@ namespace PassengerJobs
             _glaresR = glaresR;
             _lampsF = lampsF;
             _lampsR = lampsR;
-            _onMat = onMat;
-            _offMat = offMat;
+            _redOnMat = onMat;
+            _redOffMat = offMat;
 
             foreach (var item in glaresF)
             {
@@ -127,8 +184,17 @@ namespace PassengerJobs
         {
             base.SetLightsOn(lightsOn);
 
+            ChangeInteriorLampMaterial(lightsOn);
             ChangeFrontLights(!_trainCar.frontCoupler.coupledTo && lightsOn);
             ChangeRearLights(!_trainCar.rearCoupler.coupledTo && lightsOn);
+        }
+
+        private void ChangeInteriorLampMaterial(bool on)
+        {
+            if (_inOn == on) return;
+
+            InteriorMat = on ? LitMaterial : _lampMat;
+            _inOn = on;
         }
 
         private void ChangeFrontLights(bool on)
@@ -142,7 +208,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsF)
             {
-                item.material = on ? _onMat : _offMat;
+                item.material = on ? _redOnMat : _redOffMat;
             }
 
             _frontOn = on;
@@ -159,7 +225,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsR)
             {
-                item.material = on ? _onMat : _offMat;
+                item.material = on ? _redOnMat : _redOffMat;
             }
 
             _rearOn = on;
