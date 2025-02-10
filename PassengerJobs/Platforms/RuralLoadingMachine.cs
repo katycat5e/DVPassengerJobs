@@ -20,22 +20,18 @@ namespace PassengerJobs.Platforms
         public readonly int LowerBound;
         public readonly int UpperBound;
 
-        public Vector3? PlatformOffset;
-        public Vector3? PlatformRotation;
         public float? MarkerAngle;
 
         public readonly List<RuralLoadingTask> Tasks = new();
 
-        public RuralLoadingMachine(StationConfig.RuralStation stationData, Track track)
+        public RuralLoadingMachine(string id, Track track, int lowerBound, int upperBound, float? markerAngle)
         {
-            Id = stationData.id;
+            Id = id;
             Track = track;
-            LowerBound = stationData.lowIdx;
-            UpperBound = stationData.highIdx;
+            LowerBound = lowerBound;
+            UpperBound = upperBound;
 
-            PlatformOffset = stationData.platformOffset;
-            PlatformRotation = stationData.platformRotation;
-            MarkerAngle = stationData.markerAngle;
+            MarkerAngle = markerAngle;
         }
 
         public void AddTask(RuralLoadingTask task)

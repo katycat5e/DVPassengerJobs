@@ -152,9 +152,9 @@ namespace PassengerJobs.Platforms
     {
         public readonly RuralLoadingMachine LoadingMachine;
 
-        public RuralPlatformWrapper(StationConfig.RuralStation stationData, Track track)
+        public RuralPlatformWrapper(RuralLoadingMachine machine)
         {
-            LoadingMachine = new RuralLoadingMachine(stationData, track);
+            LoadingMachine = machine;
         }
 
         public string Id => LoadingMachine.Id;

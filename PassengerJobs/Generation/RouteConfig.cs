@@ -21,12 +21,10 @@ namespace PassengerJobs.Generation
         {
             public string id;
             public string name;
-            public string trackId;
-            public int lowIdx;
-            public int highIdx;
+            
+            public Vector3 location;
+            public bool swapSides;
 
-            public Vector3? platformOffset;
-            public Vector3? platformRotation;
             public float? markerAngle;
         }
     }

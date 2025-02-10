@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using DV.Utils;
 using UnityEngine;
+using DV.PointSet;
 
 namespace PassengerJobs.Generation
 {
@@ -134,6 +135,8 @@ namespace PassengerJobs.Generation
             }
         }
 
+        public const int RURAL_PLATFORM_POINT_LENGTH = 240;
+
         public static void CreateRuralStations()
         {
             //only generate rural stations on the default map
@@ -143,13 +146,19 @@ namespace PassengerJobs.Generation
                 return;
             }
 
+            LayerMask trackMask = LayerMask.GetMask("Default");
+
             foreach (var station in _stationConfig!.ruralStations)
             {
-                var track = GetTrackById(station.trackId);
-                if (track == null)
-                     continue; 
+                // find closest track point to station location
+                Vector3 searchPosition = station.location + WorldMover.currentMove;
 
-                var railTrack = track.GetRailTrack();
+                (RailTrack? railTrack, EquiPointSet.Point? trackPoint) = RailTrack.GetClosest(searchPosition);
+                if (!railTrack || !trackPoint.HasValue)
+                {
+                    PJMain.Error($"Couldn't find closest track point for station {station.id}");
+                    continue;
+                }
 
                 PlatformController controller;
                 IEnumerable<RuralLoadingTask> tasks;
@@ -166,7 +175,13 @@ namespace PassengerJobs.Generation
                     tasks = Enumerable.Empty<RuralLoadingTask>();
                 }
 
-                var platform = new RuralPlatformWrapper(station, track);
+                var track = railTrack.logicTrack;
+
+                int lowIdx = trackPoint.Value.index - (RURAL_PLATFORM_POINT_LENGTH / 2);
+                int highIdx = trackPoint.Value.index + (RURAL_PLATFORM_POINT_LENGTH / 2);
+
+                var loadingMachine = new RuralLoadingMachine(station.id, track, lowIdx, highIdx, station.markerAngle);
+                var platform = new RuralPlatformWrapper(loadingMachine);
                 controller.Platform = platform;
 
                 foreach (var task in tasks)
@@ -177,10 +192,10 @@ namespace PassengerJobs.Generation
                 ruralData = new RuralStationData(platform.LoadingMachine);
                 _stations.Add(station.id, ruralData);
 
-                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine);
+                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine, station.swapSides);
 
-                var routeTrack = new RouteTrack(ruralData, track, station.lowIdx, station.highIdx);
-                PJMain.Log($"Created rural station {station.id} on {track.ID} {station.lowIdx}-{station.highIdx}, {routeTrack.Length}m");
+                var routeTrack = new RouteTrack(ruralData, railTrack.logicTrack, lowIdx, highIdx);
+                PJMain.Log($"Created rural station {station.id} on {track.ID} {lowIdx}-{highIdx}, {routeTrack.Length}m");
             }
         }
 
