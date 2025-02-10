@@ -1,5 +1,4 @@
-﻿using DV.Simulation.Cars;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -79,46 +78,9 @@ namespace PassengerJobs
     {
         private const int MaterialIndex = 3;
 
-        private static Material? _litMat;
-        private static Material LitMaterial
-        {
-            get
-            {
-                if (_litMat == null)
-                {
-                    // Copy the lit version of the MetalTrim material.
-                    DV.Globals.G.Types.TryGetLivery("LocoDM1U", out var dm1u);
-                    _litMat = new Material(dm1u.prefab.GetComponentInChildren<CabLightsController>().lightsLit);
-
-                    var og = _litMat.mainTexture;
-                    int width = og.width;
-                    int height = og.height;
-                    var tex = new Texture2D(width, height);
-
-                    // I want a texture copy and I want it painted black.
-                    Graphics.CopyTexture(og, tex);
-
-                    for (int y = height / 2; y < height; y++)
-                    {
-                        for (int x = 0; x < width; x++)
-                        {
-                            tex.SetPixel(x, y, Color.black);
-                        }
-                    }
-
-                    tex.Apply();
-
-                    // Replace the emission texture with this.
-                    _litMat.SetTexture("_EmissionMap", tex);
-                }
-
-                return _litMat;
-            }
-        }
-
         private TrainCar _trainCar = null!;
         private MeshRenderer _interior = null!;
-        private Material _lampMat = null!;
+        private Material _lampOff = null!;
         private bool _inOn = false;
 
         private GameObject _redHolder = null!;
@@ -126,8 +88,6 @@ namespace PassengerJobs
         private GameObject[] _glaresR = null!;
         private MeshRenderer[] _lampsF = null!;
         private MeshRenderer[] _lampsR = null!;
-        private Material _redOnMat = null!;
-        private Material _redOffMat = null!;
         private bool _frontOn = false;
         private bool _rearOn = false;
 
@@ -147,7 +107,7 @@ namespace PassengerJobs
             base.Awake();
             _trainCar = TrainCar.Resolve(gameObject);
             _interior = _trainCar.transform.Find("CarPassenger/CarPassengerInterior_LOD0").GetComponent<MeshRenderer>();
-            _lampMat = InteriorMat;
+            _lampOff = InteriorMat;
 
             StartCoroutine(Optimizer());
         }
@@ -159,15 +119,13 @@ namespace PassengerJobs
 
         private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
 
-        internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR, Material onMat, Material offMat)
+        internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR)
         {
             _redHolder = holder;
             _glaresF = glaresF;
             _glaresR = glaresR;
             _lampsF = lampsF;
             _lampsR = lampsR;
-            _redOnMat = onMat;
-            _redOffMat = offMat;
 
             foreach (var item in glaresF)
             {
@@ -193,7 +151,7 @@ namespace PassengerJobs
         {
             if (_inOn == on) return;
 
-            InteriorMat = on ? LitMaterial : _lampMat;
+            InteriorMat = on ? LampHelper.PassengerLit : _lampOff;
             _inOn = on;
         }
 
@@ -208,7 +166,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsF)
             {
-                item.material = on ? _redOnMat : _redOffMat;
+                item.material = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
             }
 
             _frontOn = on;
@@ -225,7 +183,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsR)
             {
-                item.material = on ? _redOnMat : _redOffMat;
+                item.material = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
             }
 
             _rearOn = on;

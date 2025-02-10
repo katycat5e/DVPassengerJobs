@@ -1,6 +1,4 @@
-﻿using DV.Simulation.Cars;
-using DV.ThingTypes;
-using DV.ThingTypes.TransitionHelpers;
+﻿using DV.ThingTypes;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -22,49 +20,6 @@ namespace PassengerJobs.Patches
         private static readonly Vector3 RedPosMesh3 = new(0.925f, 0.588f, -10.00f);
         private static readonly Vector3 RedPosMesh4 = new(-0.925f, 0.588f, -10.00f);
         private static readonly Vector3 RedMeshScale = new(0.55f, 0.55f, 0.55f);
-
-        private static TrainCarLivery? _de2;
-        private static Headlight? s_redGlare;
-        private static MeshRenderer? s_redLamp;
-
-        private static TrainCarLivery DE2
-        {
-            get
-            {
-                if (_de2 == null)
-                {
-                    DV.Globals.G.Types.TryGetLivery("LocoDE2", out _de2);
-                }
-
-                return _de2;
-            }
-        }
-        private static Headlight RedGlare
-        {
-            get
-            {
-                if (s_redGlare == null)
-                {
-                    s_redGlare = DE2.prefab.transform.Find(
-                        "[headlights_de2]/FrontSide/HeadlightTop").GetComponent<Headlight>();
-                }
-
-                return s_redGlare;
-            }
-        }
-        private static MeshRenderer RedLamp
-        {
-            get
-            {
-                if (s_redLamp == null)
-                {
-                    s_redLamp = DE2.prefab.transform.Find(
-                        "[headlights_de2]/FrontSide/ext headlights_glass_red_F").GetComponent<MeshRenderer>();
-                }
-
-                return s_redLamp;
-            }
-        }
 
         [HarmonyPatch(nameof(CarSpawner.Awake))]
         [HarmonyPostfix]
@@ -138,20 +93,20 @@ namespace PassengerJobs.Patches
             CreateLightSet(holder, RedPos4, RedPosMesh4, false, out var g4, out var l4);
 
             controller.FeedRedLights(holder.gameObject, new[] { g1, g2 }, new[] { g3, g4 },
-                new[] { l1, l2 }, new[] { l3, l4 }, RedGlare.emissionMaterialLit, RedGlare.emissionMaterialUnlit);
+                new[] { l1, l2 }, new[] { l3, l4 });
         }
 
         private static void CreateLightSet(Transform holder, Vector3 glarePos, Vector3 lampPos, bool direction, out GameObject glare, out MeshRenderer lamp)
         {
             // Creates a copy of the DE2's frontal red light.
             // First the glare object, then the renderer with the lamp.
-            glare = Object.Instantiate(RedGlare.glare, holder);
+            glare = Object.Instantiate(LampHelper.RedGlare.glare, holder);
             glare.transform.localPosition = glarePos;
             glare.transform.localRotation = direction ? Quaternion.identity : Flipped;
             glare.transform.localScale = RedGlareScale;
             glare.AddComponent<SortingGroup>().sortingOrder = 10;
 
-            lamp = Object.Instantiate(RedLamp, holder);
+            lamp = Object.Instantiate(LampHelper.RedLamp, holder);
             lamp.transform.localPosition = lampPos;
             lamp.transform.localRotation = direction ? Quaternion.identity : Flipped;
             lamp.transform.localScale = RedMeshScale;
