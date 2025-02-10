@@ -90,23 +90,23 @@ namespace PassengerJobs
                     DV.Globals.G.Types.TryGetLivery("LocoDM1U", out var dm1u);
                     _litMat = new Material(dm1u.prefab.GetComponentInChildren<CabLightsController>().lightsLit);
 
-                    // I want a texture with the same size and I want it painted black.
                     var og = _litMat.mainTexture;
-                    var tex = new Texture2D(og.width, og.height);
-                    int size = og.width * og.height;
-                    Color[] pixels = new Color[size];
+                    int width = og.width;
+                    int height = og.height;
+                    var tex = new Texture2D(width, height);
 
-                    for (int i = 0; i < size; i++)
+                    // I want a texture copy and I want it painted black.
+                    Graphics.CopyTexture(og, tex);
+
+                    for (int y = height / 2; y < height; y++)
                     {
-                        pixels[i] = Color.black;
+                        for (int x = 0; x < width; x++)
+                        {
+                            tex.SetPixel(x, y, Color.black);
+                        }
                     }
 
-                    tex.SetPixels(pixels);
                     tex.Apply();
-
-                    // Copy the texture region corresponding to the lamp part only.
-                    // Leave out a 1px border above and below to avoid bleeding.
-                    Graphics.CopyTexture(og, 0, 0, 0, 1, 512, 254, tex, 0, 0, 0, 1);
 
                     // Replace the emission texture with this.
                     _litMat.SetTexture("_EmissionMap", tex);
