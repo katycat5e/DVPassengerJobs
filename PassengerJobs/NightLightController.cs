@@ -81,7 +81,9 @@ namespace PassengerJobs
         private TrainCar _trainCar = null!;
         private MeshRenderer _interior = null!;
         private Material _lampOff = null!;
+        private Material _lampOn = null!;
         private bool _inOn = false;
+        private bool _tempState = false;
 
         private GameObject _redHolder = null!;
         private GameObject[] _glaresF = null!;
@@ -107,7 +109,8 @@ namespace PassengerJobs
             base.Awake();
             _trainCar = TrainCar.Resolve(gameObject);
             _interior = _trainCar.transform.Find("CarPassenger/CarPassengerInterior_LOD0").GetComponent<MeshRenderer>();
-            _lampOff = InteriorMat;
+
+            CreateMaterials();
 
             StartCoroutine(Optimizer());
         }
@@ -151,7 +154,7 @@ namespace PassengerJobs
         {
             if (_inOn == on) return;
 
-            InteriorMat = on ? LampHelper.PassengerLit : _lampOff;
+            InteriorMat = on ? _lampOn : _lampOff;
             _inOn = on;
         }
 
@@ -201,6 +204,24 @@ namespace PassengerJobs
 
                 _redHolder.SetActive(Vector3.SqrMagnitude(player.position - _redHolder.transform.position) <= 2250000);
             }
+        }
+
+        private void BeforeSkinChange()
+        {
+            _tempState = _inOn;
+            ChangeInteriorLampMaterial(false);
+        }
+
+        private void AfterSkinChange()
+        {
+            CreateMaterials();
+            ChangeInteriorLampMaterial(_tempState);
+        }
+
+        private void CreateMaterials()
+        {
+            _lampOff = InteriorMat;
+            _lampOn = LampHelper.GetLitMaterialFromModular(_lampOff);
         }
     }
 }

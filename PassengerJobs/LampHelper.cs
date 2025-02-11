@@ -12,6 +12,7 @@ namespace PassengerJobs
         private static MeshRenderer? s_redLamp;
         private static Material? s_litMat;
         private static Color? s_litColor;
+        private static Texture2D? s_smallLit;
 
         public static TrainCarLivery DE2
         {
@@ -85,10 +86,29 @@ namespace PassengerJobs
             {
                 if (!s_litColor.HasValue)
                 {
-                    s_litColor = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor");
+                    s_litColor = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor") * 0.8f;
                 }
 
                 return s_litColor.Value;
+            }
+        }
+        public static Texture2D SmallLitTexture
+        {
+            get
+            {
+                if (s_smallLit == null)
+                {
+                    s_smallLit = new Texture2D(1, 2)
+                    {
+                        wrapMode = TextureWrapMode.Clamp,
+                        filterMode = FilterMode.Point
+                    };
+
+                    s_smallLit.SetPixels(new[] { Color.white, Color.black });
+                    s_smallLit.Apply();
+                }
+
+                return s_smallLit;
             }
         }
 
@@ -106,7 +126,7 @@ namespace PassengerJobs
             lit.SetTexture("_MetallicGlossMap", mso);
             lit.SetTexture("_BumpMap", unlit.GetTexture("_t1_normal"));
             lit.SetTexture("_OcclusionMap", mso);
-            lit.SetTexture("_EmissionMap", CreateLitTexture(mainTex));
+            lit.SetTexture("_EmissionMap", SmallLitTexture);
 
             lit.SetFloat("_Glossiness", 0.5f);
             lit.SetFloat("_BumpScale", 0.5f);
@@ -114,6 +134,7 @@ namespace PassengerJobs
             lit.SetColor("_EmissionColor", LitColour);
 
             lit.color = Color.white;
+            lit.name = unlit.name;
 
             return lit;
         }
