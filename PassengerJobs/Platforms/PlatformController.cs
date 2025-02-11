@@ -74,7 +74,7 @@ namespace PassengerJobs.Platforms
 
         public void Start()
         {
-            _trackToControllerMap.Add(Platform.Id, this);
+            _trackToControllerMap.Add(Platform.TrackId, this);
             Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
         }
 

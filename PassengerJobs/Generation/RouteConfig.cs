@@ -24,6 +24,7 @@ namespace PassengerJobs.Generation
             
             public Vector3 location;
             public bool swapSides;
+            public bool noDecoration;
 
             public float? markerAngle;
         }

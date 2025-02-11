@@ -53,7 +53,7 @@ namespace PassengerJobs.Generation
 
             return DestinationTracks
                 .Where(t => !t.IsSegment)
-                .Select(t => new TrackReservation(t.Track, reservedLength)).ToList();
+                .Select(t => new TrackReservation(t.Track, (float)YardTracksOrganizer.Instance.GetFreeSpaceOnTrack(t.Track) - 1)).ToList();
         }
 
         public override void GenerateJob(Station jobOriginStation, float timeLimit = 0, float initialWage = 0, string? forcedJobId = null, JobLicenses requiredLicenses = JobLicenses.Basic)

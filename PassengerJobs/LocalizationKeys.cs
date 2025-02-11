@@ -61,5 +61,7 @@ namespace PassengerJobs
 
         /// <summary>Get localized name for rural station</summary>
         public static string StationName(string yardId) => LocalizationAPI.L($"passjobs/station_{yardId.ToLower()}");
+
+        public static string BuiltinStationName(string yardId) => LocalizationAPI.L($"w3/{yardId.ToLower()}");
     }
 }

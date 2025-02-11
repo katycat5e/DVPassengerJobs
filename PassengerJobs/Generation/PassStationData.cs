@@ -73,6 +73,12 @@ namespace PassengerJobs.Generation
             {
                 return Enumerable.Empty<RouteTrack>();
             }
+            
+            if (Platform.IsYardTrack)
+            {
+                return new[] { new RouteTrack(this, Platform.Track) };
+            }
+
             return new[] { new RouteTrack(this, Platform.Track, Platform.LowerBound, Platform.UpperBound) };
         }
 

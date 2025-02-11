@@ -20,17 +20,19 @@ namespace PassengerJobs.Platforms
         public readonly int LowerBound;
         public readonly int UpperBound;
 
+        public bool IsYardTrack { get; }
+
         public float? MarkerAngle;
 
         public readonly List<RuralLoadingTask> Tasks = new();
 
-        public RuralLoadingMachine(string id, Track track, int lowerBound, int upperBound, float? markerAngle)
+        public RuralLoadingMachine(string id, Track track, int lowerBound, int upperBound, float? markerAngle, bool isYardTrack)
         {
             Id = id;
             Track = track;
             LowerBound = lowerBound;
             UpperBound = upperBound;
-
+            IsYardTrack = isYardTrack;
             MarkerAngle = markerAngle;
         }
 
@@ -86,9 +88,10 @@ namespace PassengerJobs.Platforms
 
             if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar))
             {
-                return (Mathf.Abs(trainCar.GetForwardSpeed()) <= 0.3f) &&
-                    IsBetween(trainCar.Bogies[1].point1.index) &&
-                    IsBetween(trainCar.Bogies[0].point1.index);
+                if (Mathf.Abs(trainCar.GetForwardSpeed()) > 0.3f) return false;
+                
+                return IsYardTrack ||
+                    (IsBetween(trainCar.Bogies[1].point1.index) && IsBetween(trainCar.Bogies[0].point1.index));
             }
 
             // couldn't find physical car or car was moving

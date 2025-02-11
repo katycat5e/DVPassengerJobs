@@ -135,8 +135,6 @@ namespace PassengerJobs.Generation
             }
         }
 
-        public const int RURAL_PLATFORM_POINT_LENGTH = 240;
-
         public static void CreateRuralStations()
         {
             //only generate rural stations on the default map
@@ -146,56 +144,36 @@ namespace PassengerJobs.Generation
                 return;
             }
 
-            LayerMask trackMask = LayerMask.GetMask("Default");
-
             foreach (var station in _stationConfig!.ruralStations)
             {
-                // find closest track point to station location
-                Vector3 searchPosition = station.location + WorldMover.currentMove;
+                RuralStationData? newStation;
 
-                (RailTrack? railTrack, EquiPointSet.Point? trackPoint) = RailTrack.GetClosest(searchPosition);
-                if (!railTrack || !trackPoint.HasValue)
+                if (_stations.TryGetValue(station.id, out var stationData) && (stationData is RuralStationData existing))
                 {
-                    PJMain.Error($"Couldn't find closest track point for station {station.id}");
-                    continue;
-                }
-
-                PlatformController controller;
-                IEnumerable<RuralLoadingTask> tasks;
-                if (_stations.TryGetValue(station.id, out var stationData) && (stationData is RuralStationData ruralData))
-                {
-                    RuralStationBuilder.DestroyDecorations(ruralData.Platform);
-                    controller = railTrack.GetComponents<PlatformController>().First(p => p.Platform.Id == ruralData.Platform.Id);
-                    tasks = ruralData.Platform.Tasks;
-                    _stations.Remove(station.id);
+                    RuralStationBuilder.DestroyDecorations(existing.Platform);
+                    newStation = RuralStationBuilder.CreateStation(station, existing);
                 }
                 else
                 {
-                    controller = railTrack.gameObject.AddComponent<PlatformController>();
-                    tasks = Enumerable.Empty<RuralLoadingTask>();
+                    newStation = RuralStationBuilder.CreateStation(station);
                 }
 
-                var track = railTrack.logicTrack;
-
-                int lowIdx = trackPoint.Value.index - (RURAL_PLATFORM_POINT_LENGTH / 2);
-                int highIdx = trackPoint.Value.index + (RURAL_PLATFORM_POINT_LENGTH / 2);
-
-                var loadingMachine = new RuralLoadingMachine(station.id, track, lowIdx, highIdx, station.markerAngle);
-                var platform = new RuralPlatformWrapper(loadingMachine);
-                controller.Platform = platform;
-
-                foreach (var task in tasks)
+                if (newStation is null)
                 {
-                    platform.LoadingMachine.AddTask(task);
+                    _stations.Remove(station.id);
+                    continue;
                 }
 
-                ruralData = new RuralStationData(platform.LoadingMachine);
-                _stations.Add(station.id, ruralData);
+                _stations[station.id] = newStation;
 
-                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine, station.swapSides);
-
-                var routeTrack = new RouteTrack(ruralData, railTrack.logicTrack, lowIdx, highIdx);
-                PJMain.Log($"Created rural station {station.id} on {track.ID} {lowIdx}-{highIdx}, {routeTrack.Length}m");
+                if (newStation.Platform.IsYardTrack)
+                {
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID}");
+                }
+                else
+                {
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
+                }
             }
         }
 

@@ -17,6 +17,8 @@ namespace PassengerJobs.Generation
         private const float BASE_WAGE_SCALE = 0.5f;
         private const float BASE_TO_BONUS_MULTIPLIER = 2;
 
+        private const int MAX_REGIONAL_CARS = 4;
+
         public static bool TryGetInstance(string yardId, out PassengerJobGenerator generator) =>
             _instances.TryGetValue(yardId, out generator);
 
@@ -216,7 +218,15 @@ namespace PassengerJobs.Generation
                 TrainCarLivery livery = ConsistManager.GetPassengerCars().PickOne()!;
                 double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
                 nTotalCars = (int)Math.Floor((minLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS) / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
-                nTotalCars -= (jobType == PassJobType.Express) ? 2 : 1;
+
+                if (jobType == PassJobType.Local)
+                {
+                    nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
+                }
+                else
+                {
+                    nTotalCars -= 2;
+                }
 
                 jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
             }

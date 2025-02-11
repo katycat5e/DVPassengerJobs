@@ -1,5 +1,9 @@
-﻿using System.Collections;
+﻿using DV.Logic.Job;
+using DV.PointSet;
+using PassengerJobs.Generation;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -16,18 +20,73 @@ namespace PassengerJobs.Platforms
         private const float PLATFORM_LENGTH = 65;
         private const float PLATFORM_HALF_LENGTH = PLATFORM_LENGTH / 2;
 
+        private const float COACH_LENGTH = 24.54f;
+        private const float LOADING_ZONE_LENGTH = 120;
+        private const float LOADING_ZONE_HALF_LENGTH = LOADING_ZONE_LENGTH / 2;
+
         private const string TELEPORT_ANCHOR = "[teleport]";
+
+        public static RuralStationData? CreateStation(StationConfig.RuralStation station, RuralStationData? existing = null)
+        {
+            // find closest track point to station location
+            Vector3 searchPosition = station.location + WorldMover.currentMove;
+
+            (RailTrack? railTrack, EQPoint? trackPoint) = RailTrack.GetClosest(searchPosition);
+            if (!railTrack || !trackPoint.HasValue)
+            {
+                PJMain.Error($"Couldn't find closest track point for station {station.id}");
+                return null;
+            }
+
+            PlatformController controller;
+            IEnumerable<RuralLoadingTask> tasks;
+            
+            if (existing is not null)
+            {
+                controller = railTrack.GetComponents<PlatformController>().First(p => p.Platform.Id == existing.Platform.Id);
+                tasks = existing.Platform.Tasks;
+            }
+            else
+            {
+                controller = railTrack.gameObject.AddComponent<PlatformController>();
+                tasks = Enumerable.Empty<RuralLoadingTask>();
+            }
+
+            var track = railTrack.logicTrack;
+            bool isYardTrack = YardTracksOrganizer.Instance.IsTrackManagedByOrganizer(track);
+
+            int lowIdx = railTrack.pointSet.GetPointIndexForSpan(trackPoint.Value.span - LOADING_ZONE_HALF_LENGTH);
+            int highIdx = railTrack.pointSet.GetPointIndexForSpan(trackPoint.Value.span + LOADING_ZONE_HALF_LENGTH);
+            //int lowIdx = trackPoint.Value.index - (RURAL_PLATFORM_POINT_LENGTH / 2);
+            //int highIdx = trackPoint.Value.index + (RURAL_PLATFORM_POINT_LENGTH / 2);
+
+            var loadingMachine = new RuralLoadingMachine(station.id, track, lowIdx, highIdx, station.markerAngle, isYardTrack);
+
+            var platform = new RuralPlatformWrapper(loadingMachine);
+            controller.Platform = platform;
+
+            foreach (var task in tasks)
+            {
+                loadingMachine.AddTask(task);
+            }
+
+            if (!station.noDecoration)
+            {
+                GenerateDecorations(loadingMachine, station.swapSides);
+            }
+
+            return new RuralStationData(loadingMachine);
+        }
 
         public static void GenerateDecorations(RuralLoadingMachine platform, bool swapPlatformSide)
         {
             var railTrack = platform.Track.GetRailTrack();
 
-            EQPoint[] pointSet;
+            EQPoint[] pointSet = railTrack.GetPointSet(0).points;
             EQPoint lowPoint, highPoint;
 
             try
             {
-                pointSet = railTrack.GetPointSet(0).points;
                 lowPoint = pointSet[platform.LowerBound];
                 highPoint = pointSet[platform.UpperBound];
             }
@@ -37,8 +96,18 @@ namespace PassengerJobs.Platforms
                 return;
             }
 
-            GenerateTrackSigns(lowPoint, highPoint, platform.Id, railTrack);
-            GeneratePlatformMeshes(lowPoint, highPoint, platform.Id, railTrack, platform.MarkerAngle ?? 0, swapPlatformSide);
+            if (!platform.IsYardTrack)
+            {
+                GenerateTrackSigns(lowPoint, highPoint, platform.Id, railTrack);
+            }
+
+            var platformObj = GeneratePlatformMeshes(lowPoint, highPoint, platform.Id, railTrack, swapPlatformSide, platform.IsYardTrack);
+
+            if (!platform.IsYardTrack)
+            {
+                var tpAnchor = platformObj.transform.Find(TELEPORT_ANCHOR);
+                CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(tpAnchor, platform.Id, platform.MarkerAngle ?? 0));
+            }
         }
 
         private static void GenerateTrackSigns(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack)
@@ -59,7 +128,7 @@ namespace PassengerJobs.Platforms
             SetTrackSignText(highSign, id);
         }
 
-        private static void GeneratePlatformMeshes(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack, float markerAngle, bool swapPlatformSide)
+        private static GameObject GeneratePlatformMeshes(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack, bool swapPlatformSide, bool isYardTrack)
         {
             // Setup platform
             var platformHolder = new GameObject($"[platform] {id}");
@@ -115,12 +184,13 @@ namespace PassengerJobs.Platforms
             var platformObj = Object.Instantiate(BundleLoader.RuralPlatform, platformHolder.transform);
             platformObj.AddComponent<PlatformLightController>();
 
-            string localName = LocalizationKeyExtensions.StationName(id);
+            string localName = isYardTrack ?
+                LocalizationKeyExtensions.BuiltinStationName(id) :
+                LocalizationKeyExtensions.StationName(id);
+
             SetPlatformSignText(platformObj, localName);
 
-            var tpAnchor = platformObj.transform.Find(TELEPORT_ANCHOR);
-
-            CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(tpAnchor, id, localName, markerAngle));
+            return platformObj;
         }
 
 #if DEBUG
@@ -152,9 +222,11 @@ namespace PassengerJobs.Platforms
             if (concrete) Object.Destroy(concrete.gameObject);
         }
 
-        private static IEnumerator InitStationLabelCoro(Transform anchor, string id, string localName, float? labelAngle)
+        private static IEnumerator InitStationLabelCoro(Transform anchor, string id, float? labelAngle)
         {
             yield return null;
+
+            string localName = LocalizationKeyExtensions.StationName(id);
 
             var travelDestination = anchor.gameObject.AddComponent<RuralStationFastTravelDestination>();
             travelDestination.Init(anchor, localName, id);

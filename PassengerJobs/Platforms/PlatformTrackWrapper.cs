@@ -13,6 +13,7 @@ namespace PassengerJobs.Platforms
     {
         string Id { get; }
         string DisplayId { get; }
+        string TrackId { get; }
 
         Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal);
         List<PlatformTask> GetLoadableTasks(bool loading);
@@ -50,6 +51,7 @@ namespace PassengerJobs.Platforms
 
         public string Id => Track.ID.ToString();
         public string DisplayId => Track.ID.TrackPartOnly;
+        public string TrackId => Track.ID.ToString();
 
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
@@ -159,6 +161,7 @@ namespace PassengerJobs.Platforms
 
         public string Id => LoadingMachine.Id;
         public string DisplayId => LoadingMachine.Id;
+        public string TrackId => LoadingMachine.IsYardTrack ? LoadingMachine.Track.ID.ToString() : LoadingMachine.Id;
 
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
