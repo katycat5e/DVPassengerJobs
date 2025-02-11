@@ -35,8 +35,6 @@ namespace PassengerJobs.Patches
                 return;
             }
 
-            AddEmissionToFixtures(car.gameObject);
-
             var lightHolder = new GameObject("[PJ Lights]");
             lightHolder.transform.SetParent(car.transform, false);
             lightHolder.transform.localPosition = new Vector3(0, 3.8f, 0);
@@ -50,22 +48,6 @@ namespace PassengerJobs.Patches
             AddRedLights(car.transform, controller);
         }
 
-        private static void AddEmissionToFixtures(GameObject carRoot)
-        {
-            foreach (var renderer in carRoot.GetComponentsInChildren<MeshRenderer>())
-            {
-                foreach (var material in renderer.materials)
-                {
-                    if (!material.HasProperty("_t1")) continue;
-
-                    if (material.GetTexture("_t1").name == "TT_MetalTrim_01d")
-                    {
-                        material.SetTexture("_EmissionMap", Texture2D.whiteTexture);
-                    }
-                }
-            }
-        }
-
         private static void AddLightAtOffset(Transform parent, Vector3 offset)
         {
             var holder = new GameObject("[PJ light source]");
@@ -74,7 +56,7 @@ namespace PassengerJobs.Patches
 
             var light = holder.AddComponent<Light>();
             light.type = LightType.Point;
-            light.color = new Color32(240, 230, 209, 255);
+            light.color = LampHelper.LitColour;
             light.intensity = 3;
             light.range = 6f;
         }

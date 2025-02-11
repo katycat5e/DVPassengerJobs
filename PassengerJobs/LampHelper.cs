@@ -1,11 +1,13 @@
 ﻿using DV.Simulation.Cars;
 using DV.ThingTypes;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PassengerJobs
 {
     internal static class LampHelper
     {
+        private static Dictionary<Material, Material> s_cache = new();
         private static TrainCarLivery? _de2;
         private static TrainCarLivery? _pax;
         private static Headlight? s_redGlare;
@@ -84,9 +86,14 @@ namespace PassengerJobs
         {
             get
             {
+                if (PJMain.Settings.UseCustomCoachLightColour)
+                {
+                    return PJMain.Settings.CustomCoachLightColour;
+                }
+
                 if (!s_litColor.HasValue)
                 {
-                    s_litColor = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor") * 0.8f;
+                    s_litColor = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor") * 0.4f;
                 }
 
                 return s_litColor.Value;
@@ -114,13 +121,18 @@ namespace PassengerJobs
 
         public static Material GetLitMaterialFromModular(Material unlit)
         {
+            if (s_cache.TryGetValue(unlit, out var lit) && lit != null)
+            {
+                return lit;
+            }
+
             var mainTex = unlit.GetTexture("_t1");
             var mso = unlit.GetTexture("_t1_mso");
 
             // Because Unity may compile multiple different versions of the same shader based
             // on the active features, use a material that is know to have all required parts
             // (metallic, smoothness, normals and emission) active.
-            var lit = new Material(RedLitMaterial);
+            lit = new Material(RedLitMaterial);
 
             lit.SetTexture("_MainTex", mainTex);
             lit.SetTexture("_MetallicGlossMap", mso);
@@ -159,6 +171,11 @@ namespace PassengerJobs
             tex.Apply();
 
             return tex;
+        }
+
+        public static bool RemoveFromCache(Material unlit)
+        {
+            return s_cache.Remove(unlit);
         }
     }
 }

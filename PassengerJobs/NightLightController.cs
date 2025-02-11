@@ -44,6 +44,14 @@ namespace PassengerJobs
                 light.enabled = lightsOn;
             }
         }
+
+        protected void SetAllLightColours(Color lightColor)
+        {
+            foreach (var light in _lights)
+            {
+                light.color = lightColor;
+            }
+        }
     }
 
     public class PlatformLightController : NightLightController
@@ -81,7 +89,7 @@ namespace PassengerJobs
         private TrainCar _trainCar = null!;
         private MeshRenderer _interior = null!;
         private Material _lampOff = null!;
-        private Material _lampOn = null!;
+        private Material? _lampOn;
         private bool _inOn = false;
         private bool _tempState = false;
 
@@ -93,14 +101,28 @@ namespace PassengerJobs
         private bool _frontOn = false;
         private bool _rearOn = false;
 
+        private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
         private Material InteriorMat
         {
-            get => _interior.materials[MaterialIndex];
+            get => _interior.sharedMaterials[MaterialIndex];
             set
             {
-                var mats = _interior.materials;
+                var mats = _interior.sharedMaterials;
                 mats[MaterialIndex] = value;
-                _interior.materials = mats;
+                _interior.sharedMaterials = mats;
+            }
+        }
+        private Material LampOff => _lampOff;
+        private Material LampOn
+        {
+            get
+            {
+                if (_lampOn == null)
+                {
+                    _lampOn = LampHelper.GetLitMaterialFromModular(LampOff);
+                }
+
+                return _lampOn;
             }
         }
 
@@ -110,17 +132,21 @@ namespace PassengerJobs
             _trainCar = TrainCar.Resolve(gameObject);
             _interior = _trainCar.transform.Find("CarPassenger/CarPassengerInterior_LOD0").GetComponent<MeshRenderer>();
 
-            CreateMaterials();
-
+            RefreshMaterials();
             StartCoroutine(Optimizer());
+
+            PJMain.Settings.OnSettingsSaved += UpdateColours;
+        }
+
+        private void OnDestroy()
+        {
+            PJMain.Settings.OnSettingsSaved -= UpdateColours;
         }
 
         protected override bool GetNewLightState()
         {
             return !PJMain.Settings.DisableCoachLights && base.GetNewLightState() && IsLocoConnected;
         }
-
-        private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
 
         internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR)
         {
@@ -154,7 +180,7 @@ namespace PassengerJobs
         {
             if (_inOn == on) return;
 
-            InteriorMat = on ? _lampOn : _lampOff;
+            InteriorMat = on ? LampOn : LampOff;
             _inOn = on;
         }
 
@@ -169,7 +195,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsF)
             {
-                item.material = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
+                item.sharedMaterial = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
             }
 
             _frontOn = on;
@@ -186,7 +212,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsR)
             {
-                item.material = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
+                item.sharedMaterial = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
             }
 
             _rearOn = on;
@@ -214,14 +240,22 @@ namespace PassengerJobs
 
         private void AfterSkinChange()
         {
-            CreateMaterials();
+            RefreshMaterials();
             ChangeInteriorLampMaterial(_tempState);
         }
 
-        private void CreateMaterials()
+        private void RefreshMaterials()
         {
             _lampOff = InteriorMat;
-            _lampOn = LampHelper.GetLitMaterialFromModular(_lampOff);
+            _lampOn = null;
+        }
+
+        protected void UpdateColours(PJModSettings settings)
+        {
+            LampHelper.RemoveFromCache(LampOff);
+            BeforeSkinChange();
+            AfterSkinChange();
+            SetAllLightColours(LampHelper.LitColour);
         }
     }
 }
