@@ -44,25 +44,50 @@ namespace PassengerJobs.Patches
                 return;
             }
 
-            var lightHolder = new GameObject("[PJ Lights]");
-            lightHolder.transform.SetParent(car.transform, false);
-            lightHolder.transform.localPosition = new Vector3(0, 3.75f, 0);
+            var lightHolder = new GameObject("[PJ Lights]").transform;
+            lightHolder.SetParent(car.transform, false);
 
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 8));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 6));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 4));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 2));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 0));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -2));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -4));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -6));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -8));
-            //AddDirectionalLight(lightHolder.transform, new Vector3(-1.5f, -1.5f, 0), DirLightRotationL);
-            //AddDirectionalLight(lightHolder.transform, new Vector3(1.5f, -1.5f, 0), DirLightRotationR);
+            switch (PJMain.Settings.CoachLights)
+            {
+                case PJModSettings.CoachLightMode.Improved:
+                    ImprovedLightPositions(lightHolder);
+                    break;
+                case PJModSettings.CoachLightMode.Old:
+                    OldLightPositions(lightHolder);
+                    break;
+                default:
+                    break;
+            }
 
             var controller = car.gameObject.AddComponent<CoachLightController>();
 
             AddRedLights(car.transform, controller);
+        }
+
+        private static void ImprovedLightPositions(Transform parent)
+        {
+            parent.localPosition = new Vector3(0, 3.75f, 0);
+
+            AddLightAtOffset(parent, new Vector3(0, 0, 8));
+            AddLightAtOffset(parent, new Vector3(0, 0, 6));
+            AddLightAtOffset(parent, new Vector3(0, 0, 4));
+            AddLightAtOffset(parent, new Vector3(0, 0, 2));
+            AddLightAtOffset(parent, new Vector3(0, 0, 0));
+            AddLightAtOffset(parent, new Vector3(0, 0, -2));
+            AddLightAtOffset(parent, new Vector3(0, 0, -4));
+            AddLightAtOffset(parent, new Vector3(0, 0, -6));
+            AddLightAtOffset(parent, new Vector3(0, 0, -8));
+            //AddDirectionalLight(lightHolder.transform, new Vector3(-1.5f, -1.5f, 0), DirLightRotationL);
+            //AddDirectionalLight(lightHolder.transform, new Vector3(1.5f, -1.5f, 0), DirLightRotationR);
+        }
+
+        private static void OldLightPositions(Transform parent)
+        {
+            parent.localPosition = new Vector3(0, 3.8f, 0);
+
+            AddLightAtOffsetOld(parent, new Vector3(0, 0, 6));
+            AddLightAtOffsetOld(parent, new Vector3(0, 0, 0));
+            AddLightAtOffsetOld(parent, new Vector3(0, 0, -6));
         }
 
         private static void AddLightAtOffset(Transform parent, Vector3 offset)
@@ -78,6 +103,22 @@ namespace PassengerJobs.Patches
             light.color = LampHelper.LitColour;
             light.intensity = 2.5f;
             light.range = 3.0f;
+
+            //light.shadows = LightShadows.Soft;
+            //light.shadowResolution = LightShadowResolution.Low;
+        }
+
+        private static void AddLightAtOffsetOld(Transform parent, Vector3 offset)
+        {
+            var holder = new GameObject("[PJ light source]");
+            holder.transform.SetParent(parent, false);
+            holder.transform.localPosition = offset;
+
+            var light = holder.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = LampHelper.LitColour;
+            light.intensity = 3.0f;
+            light.range = 6.0f;
 
             //light.shadows = LightShadows.Soft;
             //light.shadowResolution = LightShadowResolution.Low;

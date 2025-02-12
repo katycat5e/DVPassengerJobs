@@ -8,11 +8,18 @@ namespace PassengerJobs
 {
     public class PJModSettings : UnityModManager.ModSettings, IDrawable
     {
+        public enum CoachLightMode
+        {
+            NoLights,
+            Improved,
+            Old
+        }
+
         [Draw("Use custom wage scaling for (new) passenger haul jobs")]
         public bool UseCustomWages = true;
-        [Draw("Disable passenger coach interior lights")]
-        public bool DisableCoachLights = false;
-        [Draw("Use custom coach light colour", VisibleOn = "DisableCoachLights|False")]
+        [Draw("Change the look of passenger coach interior lights", Tooltip = "Requires reloading the session to change the layout")]
+        public CoachLightMode CoachLights = CoachLightMode.Improved;
+        [Draw("Use custom coach light colour", InvisibleOn = "CoachLights|0")]
         public bool UseCustomCoachLightColour = false;
         [Draw("Light colour", VisibleOn = "UseCustomCoachLightColour|True")]
         public Color CustomCoachLightColour = Color.white;
@@ -24,6 +31,8 @@ namespace PassengerJobs
 
         [XmlIgnore]
         public Action<PJModSettings>? OnSettingsSaved;
+
+        public bool DisableCoachLights => CoachLights == CoachLightMode.NoLights;
 
         public override void Save(UnityModManager.ModEntry modEntry)
         {
