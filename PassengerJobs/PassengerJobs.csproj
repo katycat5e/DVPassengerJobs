@@ -20,6 +20,7 @@
 		<Reference Include="DV.BrakeSystem" />
 		<Reference Include="DV.Common" />
 		<Reference Include="DV.PointSet" />
+		<Reference Include="DV.Simulation" />
 		<Reference Include="DV.Utils" />
 		<Reference Include="DV.WeatherSystem" />
 		<Reference Include="DVLangHelper.Data" />
@@ -62,4 +63,7 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
+  </Target>
 </Project>

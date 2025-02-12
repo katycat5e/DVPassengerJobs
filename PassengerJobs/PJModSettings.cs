@@ -11,6 +11,9 @@ namespace PassengerJobs
         [Draw("Disable passenger coach interior lights")]
         public bool DisableCoachLights = false;
 
+        [Draw("Passenger coach interior lights require loco power", VisibleOn = "DisableCoachLights|false", Tooltip = "Main fuse on or dynamo running")]
+        public bool CoachLightsRequirePower = true;
+
 #if DEBUG
         [Draw("Reload rural stations config")]
         public bool ReloadStations = false;

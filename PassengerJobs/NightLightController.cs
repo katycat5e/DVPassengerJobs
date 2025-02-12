@@ -86,21 +86,24 @@ namespace PassengerJobs
         private Material _offMat = null!;
         private bool _frontOn = false;
         private bool _rearOn = false;
+        private bool _hasLoco = false;
 
         public override void Awake()
         {
             base.Awake();
             _trainCar = TrainCar.Resolve(gameObject);
 
+            _trainCar.TrainsetChanged += OnTrainsetChanged;
+
             StartCoroutine(Optimizer());
         }
 
         protected override bool GetNewLightState()
         {
-            return !PJMain.Settings.DisableCoachLights && base.GetNewLightState() && IsLocoConnected;
-        }
+            bool lightsPowered = !PJMain.Settings.CoachLightsRequirePower || AnyLocoPowered();
 
-        private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
+            return !PJMain.Settings.DisableCoachLights && base.GetNewLightState() && _hasLoco && lightsPowered;
+        }
 
         internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR, Material onMat, Material offMat)
         {
@@ -177,6 +180,27 @@ namespace PassengerJobs
 
                 _redHolder.SetActive(Vector3.SqrMagnitude(player.position - _redHolder.transform.position) <= 2250000);
             }
+        }
+
+        private void OnTrainsetChanged(Trainset trainset)
+        {
+            _hasLoco = trainset.locoIndices.Count > 0;
+        }
+
+        private bool AnyLocoPowered()
+        {
+            foreach (var index in _trainCar.trainset.locoIndices)
+            {
+                var loco = _trainCar.trainset?.cars[index];
+                if (loco == null) continue;
+
+                //steam locos also have a cabLightsController, the power fuse is the dynamo
+                var cabLights = loco.SimController.cabLightsController;
+                if (cabLights != null && cabLights.powerFuse.State)
+                    return true;
+            }
+
+            return false;
         }
     }
 }
