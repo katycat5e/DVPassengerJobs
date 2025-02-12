@@ -93,7 +93,7 @@ namespace PassengerJobs
 
                 if (!s_litColor.HasValue)
                 {
-                    s_litColor = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor") * 0.4f;
+                    s_litColor = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor") * 0.6f;
                 }
 
                 return s_litColor.Value;

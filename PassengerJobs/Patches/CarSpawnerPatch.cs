@@ -8,6 +8,13 @@ namespace PassengerJobs.Patches
     [HarmonyPatch(typeof(CarSpawner))]
     internal class CarSpawnerPatch
     {
+        private static readonly Quaternion LightRotation = Quaternion.Euler(90, 0, 0);
+        private static readonly Quaternion LightRotationFlip = Quaternion.Euler(90, 0, 0);
+        private static readonly Quaternion DirLightRotationL = Quaternion.Euler(45, -90, 0);
+        private static readonly Quaternion DirLightRotationR = Quaternion.Euler(45, 90, 0);
+
+        #region Red Lights
+
         private static readonly Vector3 RedPos1 = new(0.925f, 2.125f, 11.77f);
         private static readonly Vector3 RedPos2 = new(-0.925f, 2.125f, 11.77f);
         private static readonly Vector3 RedPos3 = new(0.925f, 2.125f, -11.77f);
@@ -20,6 +27,8 @@ namespace PassengerJobs.Patches
         private static readonly Vector3 RedPosMesh3 = new(0.925f, 0.588f, -10.00f);
         private static readonly Vector3 RedPosMesh4 = new(-0.925f, 0.588f, -10.00f);
         private static readonly Vector3 RedMeshScale = new(0.55f, 0.55f, 0.55f);
+
+        #endregion
 
         [HarmonyPatch(nameof(CarSpawner.Awake))]
         [HarmonyPostfix]
@@ -37,11 +46,19 @@ namespace PassengerJobs.Patches
 
             var lightHolder = new GameObject("[PJ Lights]");
             lightHolder.transform.SetParent(car.transform, false);
-            lightHolder.transform.localPosition = new Vector3(0, 3.8f, 0);
+            lightHolder.transform.localPosition = new Vector3(0, 3.75f, 0);
 
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 6f));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 8));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 6));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 4));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 2));
             AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, 0));
-            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -6f));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -2));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -4));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -6));
+            AddLightAtOffset(lightHolder.transform, new Vector3(0, 0, -8));
+            //AddDirectionalLight(lightHolder.transform, new Vector3(-1.5f, -1.5f, 0), DirLightRotationL);
+            //AddDirectionalLight(lightHolder.transform, new Vector3(1.5f, -1.5f, 0), DirLightRotationR);
 
             var controller = car.gameObject.AddComponent<CoachLightController>();
 
@@ -53,13 +70,33 @@ namespace PassengerJobs.Patches
             var holder = new GameObject("[PJ light source]");
             holder.transform.SetParent(parent, false);
             holder.transform.localPosition = offset;
+            holder.transform.localRotation = LightRotation;
 
             var light = holder.AddComponent<Light>();
             light.type = LightType.Point;
+            light.spotAngle = 135.0f;
             light.color = LampHelper.LitColour;
-            light.intensity = 3;
-            light.range = 6f;
+            light.intensity = 2.5f;
+            light.range = 3.0f;
+
+            //light.shadows = LightShadows.Soft;
+            //light.shadowResolution = LightShadowResolution.Low;
         }
+
+        //private static void AddDirectionalLight(Transform parent, Vector3 offset, Quaternion rotation)
+        //{
+        //    var holder = new GameObject("[PJ directional light source]");
+        //    holder.transform.SetParent(parent, false);
+        //    holder.transform.localPosition = offset;
+        //    holder.transform.localRotation = rotation;
+
+        //    var light = holder.AddComponent<Light>();
+        //    light.type = LightType.Directional;
+        //    light.color = LampHelper.LitColour;
+        //    light.intensity = 0.1f;
+        //    light.cookie = BundleLoader.CoachCookie;
+        //    light.cookieSize = 24.0f;
+        //}
 
         private static void AddRedLights(Transform carRoot, CoachLightController controller)
         {
