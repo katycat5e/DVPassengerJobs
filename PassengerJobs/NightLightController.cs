@@ -102,7 +102,6 @@ namespace PassengerJobs
         private bool _rearOn = false;
         private bool _hasLoco = false;
 
-        private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
         private Material InteriorMat
         {
             get => _interior.sharedMaterials[MaterialIndex];
@@ -251,8 +250,10 @@ namespace PassengerJobs
 
                 //steam locos also have a cabLightsController, the power fuse is the dynamo
                 var cabLights = loco.SimController.cabLightsController;
-                if (cabLights != null && cabLights.powerFuse.State)
+                if (cabLights && (cabLights.powerFuse?.State == true))
+                {
                     return true;
+                }
             }
 
             return false;
