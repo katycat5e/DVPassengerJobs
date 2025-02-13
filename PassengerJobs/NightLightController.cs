@@ -100,6 +100,7 @@ namespace PassengerJobs
         private MeshRenderer[] _lampsR = null!;
         private bool _frontOn = false;
         private bool _rearOn = false;
+        private bool _hasLoco = false;
 
         private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
         private Material InteriorMat
@@ -132,6 +133,8 @@ namespace PassengerJobs
             _trainCar = TrainCar.Resolve(gameObject);
             _interior = _trainCar.transform.Find("CarPassenger/CarPassengerInterior_LOD0").GetComponent<MeshRenderer>();
 
+            _trainCar.TrainsetChanged += OnTrainsetChanged;
+
             RefreshMaterials();
             StartCoroutine(Optimizer());
 
@@ -145,7 +148,9 @@ namespace PassengerJobs
 
         protected override bool GetNewLightState()
         {
-            return !PJMain.Settings.DisableCoachLights && base.GetNewLightState() && IsLocoConnected;
+            bool lightsPowered = !PJMain.Settings.CoachLightsRequirePower || AnyLocoPowered();
+
+            return !PJMain.Settings.DisableCoachLights && base.GetNewLightState() && _hasLoco && lightsPowered;
         }
 
         internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR)
@@ -230,6 +235,27 @@ namespace PassengerJobs
 
                 _redHolder.SetActive(Vector3.SqrMagnitude(player.position - _redHolder.transform.position) <= 2250000);
             }
+        }
+
+        private void OnTrainsetChanged(Trainset trainset)
+        {
+            _hasLoco = trainset.locoIndices.Count > 0;
+        }
+
+        private bool AnyLocoPowered()
+        {
+            foreach (var index in _trainCar.trainset.locoIndices)
+            {
+                var loco = _trainCar.trainset?.cars[index];
+                if (loco == null) continue;
+
+                //steam locos also have a cabLightsController, the power fuse is the dynamo
+                var cabLights = loco.SimController.cabLightsController;
+                if (cabLights != null && cabLights.powerFuse.State)
+                    return true;
+            }
+
+            return false;
         }
 
         private void BeforeSkinChange()

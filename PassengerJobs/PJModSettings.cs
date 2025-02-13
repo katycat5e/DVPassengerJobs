@@ -24,6 +24,9 @@ namespace PassengerJobs
         [Draw("Light colour", VisibleOn = "UseCustomCoachLightColour|True")]
         public Color CustomCoachLightColour = Color.white;
 
+        [Draw("Coach lights require loco power", Tooltip = "Main fuse on or dynamo running")]
+        public bool CoachLightsRequirePower = true;
+
 #if DEBUG
         [Draw("Reload rural stations config")]
         public bool ReloadStations = false;
