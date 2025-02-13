@@ -44,6 +44,14 @@ namespace PassengerJobs
                 light.enabled = lightsOn;
             }
         }
+
+        protected void SetAllLightColours(Color lightColor)
+        {
+            foreach (var light in _lights)
+            {
+                light.color = lightColor;
+            }
+        }
     }
 
     public class PlatformLightController : NightLightController
@@ -76,26 +84,66 @@ namespace PassengerJobs
 
     public class CoachLightController : NightLightController
     {
+        private const int MaterialIndex = 3;
+
         private TrainCar _trainCar = null!;
+        private MeshRenderer _interior = null!;
+        private Material _lampOff = null!;
+        private Material? _lampOn;
+        private bool _inOn = false;
+        private bool _tempState = false;
+
         private GameObject _redHolder = null!;
         private GameObject[] _glaresF = null!;
         private GameObject[] _glaresR = null!;
         private MeshRenderer[] _lampsF = null!;
         private MeshRenderer[] _lampsR = null!;
-        private Material _onMat = null!;
-        private Material _offMat = null!;
         private bool _frontOn = false;
         private bool _rearOn = false;
         private bool _hasLoco = false;
+
+        private bool IsLocoConnected => _trainCar.brakeSystem.brakeset.cars.Any(b => b.hasCompressor);
+        private Material InteriorMat
+        {
+            get => _interior.sharedMaterials[MaterialIndex];
+            set
+            {
+                var mats = _interior.sharedMaterials;
+                mats[MaterialIndex] = value;
+                _interior.sharedMaterials = mats;
+            }
+        }
+        private Material LampOff => _lampOff;
+        private Material LampOn
+        {
+            get
+            {
+                if (_lampOn == null)
+                {
+                    _lampOn = LampHelper.GetLitMaterialFromModular(LampOff);
+                }
+
+                return _lampOn;
+            }
+        }
 
         public override void Awake()
         {
             base.Awake();
             _trainCar = TrainCar.Resolve(gameObject);
+            _interior = _trainCar.transform.Find("CarPassenger/CarPassengerInterior_LOD0").GetComponent<MeshRenderer>();
 
             _trainCar.TrainsetChanged += OnTrainsetChanged;
 
+            RefreshMaterials();
             StartCoroutine(Optimizer());
+
+            PJMain.Settings.OnSettingsSaved += UpdateColours;
+        }
+
+        private void OnDestroy()
+        {
+            PJMain.Settings.OnSettingsSaved -= UpdateColours;
         }
 
         protected override bool GetNewLightState()
@@ -105,15 +153,13 @@ namespace PassengerJobs
             return !PJMain.Settings.DisableCoachLights && base.GetNewLightState() && _hasLoco && lightsPowered;
         }
 
-        internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR, Material onMat, Material offMat)
+        internal void FeedRedLights(GameObject holder, GameObject[] glaresF, GameObject[] glaresR, MeshRenderer[] lampsF, MeshRenderer[] lampsR)
         {
             _redHolder = holder;
             _glaresF = glaresF;
             _glaresR = glaresR;
             _lampsF = lampsF;
             _lampsR = lampsR;
-            _onMat = onMat;
-            _offMat = offMat;
 
             foreach (var item in glaresF)
             {
@@ -130,8 +176,17 @@ namespace PassengerJobs
         {
             base.SetLightsOn(lightsOn);
 
+            ChangeInteriorLampMaterial(lightsOn);
             ChangeFrontLights(!_trainCar.frontCoupler.coupledTo && lightsOn);
             ChangeRearLights(!_trainCar.rearCoupler.coupledTo && lightsOn);
+        }
+
+        private void ChangeInteriorLampMaterial(bool on)
+        {
+            if (_inOn == on) return;
+
+            InteriorMat = on ? LampOn : LampOff;
+            _inOn = on;
         }
 
         private void ChangeFrontLights(bool on)
@@ -145,7 +200,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsF)
             {
-                item.material = on ? _onMat : _offMat;
+                item.sharedMaterial = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
             }
 
             _frontOn = on;
@@ -162,7 +217,7 @@ namespace PassengerJobs
 
             foreach (var item in _lampsR)
             {
-                item.material = on ? _onMat : _offMat;
+                item.sharedMaterial = on ? LampHelper.RedLitMaterial : LampHelper.RedUnlitMaterial;
             }
 
             _rearOn = on;
@@ -201,6 +256,32 @@ namespace PassengerJobs
             }
 
             return false;
+        }
+
+        private void BeforeSkinChange()
+        {
+            _tempState = _inOn;
+            ChangeInteriorLampMaterial(false);
+        }
+
+        private void AfterSkinChange()
+        {
+            RefreshMaterials();
+            ChangeInteriorLampMaterial(_tempState);
+        }
+
+        private void RefreshMaterials()
+        {
+            _lampOff = InteriorMat;
+            _lampOn = null;
+        }
+
+        protected void UpdateColours(PJModSettings settings)
+        {
+            LampHelper.RemoveFromCache(LampOff);
+            BeforeSkinChange();
+            AfterSkinChange();
+            SetAllLightColours(LampHelper.LitColour);
         }
     }
 }
