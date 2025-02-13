@@ -60,6 +60,18 @@ namespace PassengerJobs.Platforms
             }
         }
 
+        public bool AnyLoadableTrainPresent()
+        {
+            foreach (var task in Tasks)
+            {
+                if (task.readyForMachine && AreCarsStoppedAtPlatform(task.Cars))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public bool AnyLoadableTrainPresent(bool loading)
         {
             foreach (var task in Tasks)

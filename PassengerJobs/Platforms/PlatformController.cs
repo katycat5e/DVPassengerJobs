@@ -1,12 +1,10 @@
 ﻿using DV.Logic.Job;
-using DV.TimeKeeping;
 using DV.WeatherSystem;
 using PassengerJobs.Injectors;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace PassengerJobs.Platforms
@@ -45,7 +43,6 @@ namespace PassengerJobs.Platforms
         private string _lastTimeString = string.Empty;
 
         private readonly List<SignData.JobInfo> _currentJobs = new();
-        private bool _displayDataDirty = false;
 
         private string? _overrideText = null;
         public string? OverrideText
@@ -54,7 +51,6 @@ namespace PassengerJobs.Platforms
             set
             {
                 _overrideText = value;
-                _displayDataDirty = true;
             }
         }
 
@@ -65,6 +61,7 @@ namespace PassengerJobs.Platforms
             if (_loadCompletedSound != null)
             {
                 PJMain.Log("Grabbed pocket watch bell sound");
+                DontDestroyOnLoad(_loadCompletedSound);
             }
             else
             {
@@ -76,11 +73,21 @@ namespace PassengerJobs.Platforms
         {
             _trackToControllerMap.Add(Platform.TrackId, this);
             Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
+
+            _stateMachine = new StateMachine(this);
+        }
+
+        private void Update()
+        {
+            if (_loadUnloadRoutine is null)
+            {
+                _stateMachine.Reset();
+                _loadUnloadRoutine = StartCoroutine(_stateMachine);
+            }
         }
 
         private void OnDisable()
         {
-            ResetLoadingState();
             StopAllCoroutines();
         }
 
@@ -108,233 +115,220 @@ namespace PassengerJobs.Platforms
             {
                 sign.UpdateDisplay(data);
             }
-
-            _displayDataDirty = false;
         }
 
-        public void AddOutgoingJobToSigns(Job job, bool takenViaLoad = false)
+        public void AddOutgoingJobToSigns(Job job, bool _ = false)
         {
             _currentJobs.Add(new SignData.JobInfo(job, false));
             job.JobCompleted += RemoveJobFromSigns;
             job.JobAbandoned += RemoveJobFromSigns;
-            _displayDataDirty = true;
+            job.JobExpired += RemoveJobFromSigns;
+
+            OverrideText = null;
         }
 
-        public void AddIncomingJobToSigns(Job job, bool takenViaLoad = false)
+        public void AddIncomingJobToSigns(Job job, bool _ = false)
         {
             // add incoming jobs to top of list
             _currentJobs.AddToFront(new SignData.JobInfo(job, true));
             job.JobCompleted += RemoveJobFromSigns;
             job.JobAbandoned += RemoveJobFromSigns;
-            _displayDataDirty = true;
+            job.JobExpired += RemoveJobFromSigns;
+
+            OverrideText = null;
         }
 
         public void RemoveJobFromSigns(Job job)
         {
             _currentJobs.RemoveAll(j => j.OriginalID == job.ID);
-            _displayDataDirty = true;
+            OverrideText = null;
         }
 
         #endregion
 
         #region Coroutines
 
-        private static readonly DV.Utils.ReusableWaitForSecondsRealtime _loadUnloadDelay = WaitFor.SecondsRealtime(LOAD_DELAY);
-
+        private StateMachine _stateMachine = null!;
         private Coroutine? _loadUnloadRoutine = null;
 
-        private bool inIdleState = false;
-        private bool _currentlyLoading = false;
-        private bool _currentlyUnloading = false;
-        private int _loadCountdown = START_XFER_DELAY;
-        private int _unloadCountdown = START_XFER_DELAY;
-
-        private float _lastUpdate = float.MinValue;
-
-        private void Update()
+        private enum PlatformState
         {
-            if (Time.time - _lastUpdate < TRAIN_CHECK_INTERVAL) return;
-
-            _lastUpdate = Time.time;
-
-            if (CurrentTimeString != _lastTimeString)
-            {
-                _displayDataDirty = true;
-            }
-
-            // if no trains in progress, then display the default message
-            if (!(_currentlyLoading || _currentlyUnloading) && !inIdleState)
-            {
-                OverrideText = null;
-                inIdleState = true;
-            }
-
-            // check for unloading train, we need to unload before trying to re-load train
-            if (Platform.IsAnyTrainPresent(false))
-            {
-                if (_unloadCountdown == 0)
-                {
-                    if (_loadUnloadRoutine == null)
-                    {
-                        inIdleState = false;
-                        _loadUnloadRoutine = StartCoroutine(DelayedLoadUnload(false));
-                    }
-                    return;
-                }
-                else
-                {
-                    _unloadCountdown -= 1;
-                }
-            }
-            else
-            {
-                _unloadCountdown = START_XFER_DELAY;
-            }
-
-            // Check for loading train
-            if (Platform.IsAnyTrainPresent(true))
-            {
-                if (_loadCountdown == 0)
-                {
-                    if (_loadUnloadRoutine == null)
-                    {
-                        inIdleState = false;
-                        _loadUnloadRoutine = StartCoroutine(DelayedLoadUnload(true));
-                    }
-                    return;
-                }
-                else
-                {
-                    _loadCountdown -= 1;
-                }
-            }
-            else
-            {
-                _loadCountdown = START_XFER_DELAY;
-            }
-
-            if (_displayDataDirty)
-            {
-                RefreshDisplays();
-            }
+            WaitingForTrain,
+            Unloading,
+            Loading,
+            Paused,
         }
 
-        private IEnumerator DelayedLoadUnload(bool isLoading)
+        private class StateMachine : IEnumerator
         {
-            WarehouseTaskType taskType = isLoading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-            var currentTasks = Platform.GetLoadableTasks(isLoading);
+            private PlatformState _platformState = PlatformState.WaitingForTrain;
+            private int _beginTransferCountdown;
 
-            if (currentTasks.Count == 0)
+            public object? Current => new WaitForSecondsRealtime(LOAD_DELAY);
+
+            private PlatformController _controller;
+            private IPlatformWrapper _platform;
+
+            public StateMachine(PlatformController controller)
             {
-                ResetLoadingState();
-                yield break;
+                _controller = controller;
+                _platform = controller.Platform;
             }
 
-            _currentlyLoading = isLoading;
-            _currentlyUnloading = !isLoading;
-
-            bool completedTransfer = false;
-
-            foreach (var task in currentTasks)
+            public bool MoveNext()
             {
-                yield return _loadUnloadDelay;
-
-                // make double sure that the cars are able to be loaded
-                bool allCarsStopped = Platform.AreCarsStoppedAtPlatform(task.Cars);
-                if (!allCarsStopped)
+                var newState = _platformState switch
                 {
-                    // this kills the passengers
-                    continue;
+                    PlatformState.WaitingForTrain => TickWaitForTrain(),
+                    PlatformState.Unloading => TickUnloading(),
+                    PlatformState.Loading => TickLoading(),
+                    _ => PlatformState.WaitingForTrain,
+                };
+
+                if (newState != _platformState)
+                {
+                    DebugLog($"Switching state: {newState}");
+
+                    bool boardingFinished = false;
+                    if (_platformState == PlatformState.Unloading)
+                    {
+                        boardingFinished = true;
+                        _controller.OverrideText = LocalizationKey.SIGN_EMPTY.L();
+                    }
+                    else if (_platformState == PlatformState.Loading)
+                    {
+                        boardingFinished = true;
+                        _controller.OverrideText = LocalizationKey.SIGN_DEPARTING.L();
+                    }
+
+                    if (boardingFinished)
+                    {
+                        _loadCompletedSound.Play2D();
+                    }
+
+                    _platformState = newState;
+                    ResetCounters();
                 }
 
-                // display the current transferring train
+                _controller.RefreshDisplays();
+
+                return true;
+            }
+
+            public void Reset()
+            {
+                _platformState = PlatformState.WaitingForTrain;
+            }
+
+            private void ResetCounters()
+            {
+                _beginTransferCountdown = START_XFER_DELAY;
+            }
+
+            private PlatformState TickWaitForTrain()
+            {
+                if (!_platform.IsAnyTrainPresent())
+                {
+                    ResetCounters();
+                    return PlatformState.WaitingForTrain;
+                }
+
+                if (_beginTransferCountdown > 0)
+                {
+                    _beginTransferCountdown--;
+                    DebugLog($"Countdown = {_beginTransferCountdown}");
+                    return PlatformState.WaitingForTrain;
+                }
+
+                // train present, countdown == 0
+                return _platform.IsAnyTrainPresent(false) ? PlatformState.Unloading : PlatformState.Loading;
+            }
+
+            private PlatformState TickUnloading()
+            {
+                var tasks = _platform.GetLoadableTasks(false);
+
+                if (tasks.Count == 0)
+                {
+                    return _platform.IsAnyTrainPresent(true) ? PlatformState.Loading : PlatformState.WaitingForTrain;
+                }
+
+                var task = tasks[0];
+
+                // update displays
                 string message = LocalizationKey.SIGN_BOARDING.L() + '\n';
-                if (task.IsLoadTask)
-                {
-                    message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
-                }
-                else
-                {
-                    message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
-                }
-                OverrideText = message;
-                RefreshDisplays();
+                message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
 
-                // now that we verified that the cars are okay, actually transfer the passengers to/from the cars
-                for (int nToProcess = task.Cars.Count; nToProcess > 0; nToProcess--)
-                {
-                    Car? result = Platform.TransferOneCarOfTask(task, isLoading);
+                _controller.OverrideText = message;
 
-                    if (result == null)
+                // perform transfer
+                var transferredCar = _platform.TransferOneCarOfTask(task, false);
+                DebugLog($"Unloaded car {transferredCar?.ID}");
+
+                if (transferredCar == null)
+                {
+                    PJMain.Error("Tried to (un)load a car that wasn't there :(");
+                    FailSafeTask(task);
+                }
+
+                return PlatformState.Unloading;
+            }
+
+            private PlatformState TickLoading()
+            {
+                var tasks = _platform.GetLoadableTasks(true);
+
+                if (tasks.Count == 0)
+                {
+                    return _platform.IsAnyTrainPresent(false) ? PlatformState.Unloading : PlatformState.WaitingForTrain;
+                }
+                
+                var task = tasks[0];
+
+                // update displays
+                string message = LocalizationKey.SIGN_BOARDING.L() + '\n';
+                message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
+
+                _controller.OverrideText = message;
+
+                // perform transfer
+                var transferredCar = _platform.TransferOneCarOfTask(task, true);
+                DebugLog($"Loaded car {transferredCar?.ID}");
+
+                if (transferredCar == null)
+                {
+                    PJMain.Error("Tried to (un)load a car that wasn't there :(");
+                    FailSafeTask(task);
+                }
+
+                return PlatformState.Loading;
+            }
+
+            // fail into safe state by completing task
+            private void FailSafeTask(PlatformTask task)
+            {
+                task.State = TaskState.Done;
+                foreach (Car car in task.Cars)
+                {
+                    if (task.IsLoadTask)
                     {
-                        PJMain.Error("Tried to (un)load a car that wasn't there :(");
-
-                        // fail into safe state by completing task
-                        task.State = TaskState.Done;
-                        foreach (Car car in task.Cars)
-                        {
-                            if (isLoading)
-                            {
-                                car.DumpCargo();
-                                car.LoadCargo(car.capacity, CargoInjector.PassengerCargo.v1);
-                            }
-                            else
-                            {
-                                car.DumpCargo();
-                            }
-                        }
-                        Platform.RemoveTask(task);
-
-                        break;
+                        car.DumpCargo();
+                        car.LoadCargo(car.capacity, CargoInjector.PassengerCargo.v1);
                     }
-
-                    yield return _loadUnloadDelay;
+                    else
+                    {
+                        car.DumpCargo();
+                    }
                 }
+                _platform.RemoveTask(task);
             }
 
-            OverrideText = null;
-            completedTransfer = true;
-
-            // all jobs processed
-
-            if (completedTransfer && !isLoading && Platform.IsAnyTrainPresent(true))
+            private void DebugLog(string message)
             {
-                var loadRoutine = DelayedLoadUnload(true);
-                while (loadRoutine.MoveNext())
-                {
-                    yield return loadRoutine.Current;
-                }
-                yield break;
+#if DEBUG
+                PJMain.Log($"Platform {_platform?.Id}: {message}");
+#endif
             }
-
-            if (completedTransfer && _loadCompletedSound)
-            {
-                if (_loadCompletedSound)
-                {
-                    Transform playerTform = PlayerManager.PlayerCamera.transform;
-                    _loadCompletedSound.Play(playerTform.position, parent: playerTform);
-                }
-
-                OverrideText = isLoading ?
-                    LocalizationKey.SIGN_DEPARTING.L() :
-                    LocalizationKey.SIGN_EMPTY.L();
-                RefreshDisplays();
-                yield return WaitFor.Seconds(LOAD_DELAY * 10);
-            }
-
-            ResetLoadingState();
-        }
-
-        private void ResetLoadingState()
-        {
-            if (_loadUnloadRoutine != null)
-            {
-                StopCoroutine(_loadUnloadRoutine);
-                _loadUnloadRoutine = null;
-            }
-
-            _currentlyLoading = _currentlyUnloading = false;
-            _loadCountdown = _unloadCountdown = START_XFER_DELAY;
         }
 
         #endregion

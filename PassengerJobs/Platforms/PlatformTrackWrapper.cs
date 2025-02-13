@@ -20,6 +20,7 @@ namespace PassengerJobs.Platforms
         void RemoveTask(PlatformTask task);
 
         Car? TransferOneCarOfTask(PlatformTask task, bool loading);
+        bool IsAnyTrainPresent();
         bool IsAnyTrainPresent(bool loading);
         bool AreCarsStoppedAtPlatform(List<Car> cars);
 
@@ -107,6 +108,18 @@ namespace PassengerJobs.Platforms
                 PJMain.Warning("Tried to transfer wrong type of task via warehouse");
                 return null;
             }
+        }
+
+        public bool IsAnyTrainPresent()
+        {
+            foreach (WarehouseTask warehouseTask in Warehouse.currentTasks)
+            {
+                if (warehouseTask.readyForMachine && AreCarsStoppedAtPlatform(warehouseTask.cars))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public bool IsAnyTrainPresent(bool loading)
@@ -201,6 +214,11 @@ namespace PassengerJobs.Platforms
         public bool AreCarsStoppedAtPlatform(List<Car> cars)
         {
             return LoadingMachine.AreCarsStoppedAtPlatform(cars);
+        }
+
+        public bool IsAnyTrainPresent()
+        {
+            return LoadingMachine.AnyLoadableTrainPresent();
         }
 
         public bool IsAnyTrainPresent(bool loading)
