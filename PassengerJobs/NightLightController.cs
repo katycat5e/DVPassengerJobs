@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using DV.Customization;
+using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -243,14 +244,13 @@ namespace PassengerJobs
 
         private bool AnyLocoPowered()
         {
-            foreach (var index in _trainCar.trainset.locoIndices)
+            foreach (var loco in _trainCar.trainset.GetLocomotives())
             {
-                var loco = _trainCar.trainset?.cars[index];
-                if (loco == null) continue;
-
-                //steam locos also have a cabLightsController, the power fuse is the dynamo
-                var cabLights = loco.SimController.cabLightsController;
-                if (cabLights && (cabLights.powerFuse?.State == true))
+                // To keep CCL compatibility, use TrainCarCustomization to
+                // get the main fuse state.
+                if (loco.TryGetComponent(out TrainCarCustomization tcc) &&
+                    tcc.electronicsFuse != null &&
+                    tcc.electronicsFuse.State)
                 {
                     return true;
                 }
