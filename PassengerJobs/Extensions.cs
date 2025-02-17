@@ -89,5 +89,19 @@ namespace PassengerJobs
         {
             return LogicController.Instance.LogicToRailTrack[track];
         }
+
+        public static IEnumerable<TrainCar> GetLocomotives(this Trainset trainset)
+        {
+            var indices = trainset.locoIndices;
+
+            foreach (var index in indices)
+            {
+                var car = trainset.cars[index];
+
+                if (car == null) continue;
+
+                yield return car;
+            }
+        }
     }
 }

@@ -68,6 +68,7 @@ namespace PassengerJobs.Patches
         {
             parent.localPosition = new Vector3(0, 3.75f, 0);
 
+            AddLightAtOffset(parent, new Vector3(0, 0, 10.6f));
             AddLightAtOffset(parent, new Vector3(0, 0, 8));
             AddLightAtOffset(parent, new Vector3(0, 0, 6));
             AddLightAtOffset(parent, new Vector3(0, 0, 4));
@@ -77,6 +78,7 @@ namespace PassengerJobs.Patches
             AddLightAtOffset(parent, new Vector3(0, 0, -4));
             AddLightAtOffset(parent, new Vector3(0, 0, -6));
             AddLightAtOffset(parent, new Vector3(0, 0, -8));
+            AddLightAtOffset(parent, new Vector3(0, 0, -10.6f));
             //AddDirectionalLight(lightHolder.transform, new Vector3(-1.5f, -1.5f, 0), DirLightRotationL);
             //AddDirectionalLight(lightHolder.transform, new Vector3(1.5f, -1.5f, 0), DirLightRotationR);
         }
@@ -99,10 +101,10 @@ namespace PassengerJobs.Patches
 
             var light = holder.AddComponent<Light>();
             light.type = LightType.Point;
-            light.spotAngle = 135.0f;
+            light.spotAngle = 125.0f;
             light.color = LampHelper.LitColour;
-            light.intensity = 2.5f;
-            light.range = 3.0f;
+            light.intensity = 2.1f;
+            light.range = 2.8f;
 
             //light.shadows = LightShadows.Soft;
             //light.shadowResolution = LightShadowResolution.Low;
