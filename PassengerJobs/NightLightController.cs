@@ -1,5 +1,4 @@
 ﻿using DV.Customization;
-using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -9,6 +8,8 @@ namespace PassengerJobs
         private bool _currentlyLit;
         private SpriteLightsEvent _events = null!;
         private Light[] _lights = null!;
+
+        public bool CurrentlyLit => _currentlyLit;
 
         public virtual void Awake()
         {
@@ -29,6 +30,8 @@ namespace PassengerJobs
             {
                 SetLightsOn(lightsOn);
             }
+
+            AlwaysUpdateLightsOn(lightsOn);
         }
 
         protected virtual bool GetNewLightState()
@@ -44,6 +47,11 @@ namespace PassengerJobs
             {
                 light.enabled = lightsOn;
             }
+        }
+
+        protected virtual void AlwaysUpdateLightsOn(bool lightsOn)
+        {
+            // Used for lights that need to be updated more often.
         }
 
         protected void SetAllLightColours(Color lightColor)
@@ -91,8 +99,6 @@ namespace PassengerJobs
         private MeshRenderer _interior = null!;
         private Material _lampOff = null!;
         private Material? _lampOn;
-        private bool _inOn = false;
-        private bool _tempState = false;
 
         private GameObject _redHolder = null!;
         private GameObject[] _glaresF = null!;
@@ -177,16 +183,21 @@ namespace PassengerJobs
             base.SetLightsOn(lightsOn);
 
             ChangeInteriorLampMaterial(lightsOn);
+        }
+
+        protected override void AlwaysUpdateLightsOn(bool lightsOn)
+        {
+            base.AlwaysUpdateLightsOn(lightsOn);
+
             ChangeFrontLights(!_trainCar.frontCoupler.coupledTo && lightsOn);
             ChangeRearLights(!_trainCar.rearCoupler.coupledTo && lightsOn);
         }
 
         private void ChangeInteriorLampMaterial(bool on)
         {
-            if (_inOn == on) return;
+            if (CurrentlyLit == on) return;
 
             InteriorMat = on ? LampOn : LampOff;
-            _inOn = on;
         }
 
         private void ChangeFrontLights(bool on)
@@ -261,14 +272,13 @@ namespace PassengerJobs
 
         private void BeforeSkinChange()
         {
-            _tempState = _inOn;
             ChangeInteriorLampMaterial(false);
         }
 
         private void AfterSkinChange()
         {
             RefreshMaterials();
-            ChangeInteriorLampMaterial(_tempState);
+            ChangeInteriorLampMaterial(CurrentlyLit);
         }
 
         private void RefreshMaterials()
