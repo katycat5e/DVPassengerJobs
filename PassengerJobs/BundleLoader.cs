@@ -16,6 +16,7 @@ namespace PassengerJobs
         public static GameObject LillySignPrefab = null!;
 
         public static GameObject RuralPlatform = null!;
+        public static GameObject RuralPlatformNoBase = null!;
 
         public static void EnsureInitialized()
         {
@@ -39,6 +40,7 @@ namespace PassengerJobs
             SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/LillySign.prefab", ref LillySignPrefab);
 
             TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
+            TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatformNoBase.prefab", ref RuralPlatformNoBase);
 
             bundle.Unload(false);
         }

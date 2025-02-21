@@ -34,8 +34,245 @@
   ],
 
   "ruralStations": [
-
-
-
+    {
+      "id": "AM",
+      "location": {
+        "x": 11795.2646,
+        "y": 160.739517,
+        "z": 7437.345
+      }
+    },
+    {
+      "id": "CI",
+      "location": {
+        "x": 5312.737,
+        "y": 146.535461,
+        "z": 5354.309
+      },
+      "swapSides": true,
+	  "markerAngle": 90
+    },
+    {
+      "id": "CME",
+      "location": {
+        "x": 15532.8818,
+        "y": 204.4381,
+        "z": 11374.4219
+      }
+    },
+    {
+      "id": "CMS",
+      "location": {
+        "x": 8487.341,
+        "y": 156.609726,
+        "z": 3403.3125
+      },
+      "swapSides": true
+    },
+    {
+      "id": "CP",
+      "location": {
+        "x": 2073.348,
+        "y": 145.267212,
+        "z": 8931.03
+      },
+      "swapSides": true,
+      "extraHeight": -0.1
+    },
+    {
+      "id": "FM",
+      "location": {
+        "x": 6018.0,
+        "y": 124.0,
+        "z": 6626.0
+      },
+      "swapSides": true
+    },
+    {
+      "id": "FRC",
+      "location": {
+        "x": 5764.708,
+        "y": 145.195129,
+        "z": 8758.323
+      },
+      "swapSides": true,
+      "extraHeight": -1.2
+    },
+    {
+      "id": "FRS",
+      "location": {
+        "x": 5326.653,
+        "y": 175.088455,
+        "z": 3693.73853
+      },
+      "swapSides": true,
+      "extraHeight": -1.1
+    },
+    {
+      "id": "GFO",
+      "location": {
+        "x": 12939.7422,
+        "y": 190.8844,
+        "z": 11526.7051
+      }
+    },
+    {
+      "id": "HN",
+      "location": {
+        "x": 12176.8506,
+        "y": 189.277588,
+        "z": 15517.5215
+      },
+      "swapSides": true,
+      "extraHeight": -0.5,
+      "markerAngle": 160.0
+    },
+    {
+      "id": "HV",
+      "location": {
+        "x": 13631.4189,
+        "y": 161.466568,
+        "z": 6947.2627
+      },
+      "swapSides": true
+    },
+    {
+      "id": "IME",
+      "location": {
+        "x": 14938.7744,
+        "y": 248.259033,
+        "z": 15141.7217
+      }
+    },
+    {
+      "id": "IMW",
+      "location": {
+        "x": 2089.65039,
+        "y": 133.771973,
+        "z": 13401.6113
+      }
+    },
+    {
+      "id": "MR",
+      "location": {
+        "x": 3897.00366,
+        "y": 151.275009,
+        "z": 14342.68
+      },
+      "swapSides": true,
+      "markerAngle": 180.0
+    },
+    {
+      "id": "NP",
+      "location": {
+        "x": 5541.986,
+        "y": 162.702789,
+        "z": 13954.9209
+      },
+      "swapSides": true,
+      "markerAngle": 20.0
+    },
+    {
+      "id": "OR",
+      "location": {
+        "x": 6415.56348,
+        "y": 144.12381,
+        "z": 11011.3164
+      },
+      "swapSides": true,
+      "hideLamps": true
+    },
+    {
+      "id": "OWC",
+      "location": {
+        "x": 4747.0,
+        "y": 123.0,
+        "z": 6296.0
+      },
+      "swapSides": true
+    },
+    {
+      "id": "OWN",
+      "location": {
+        "x": 11535.1387,
+        "y": 122.406914,
+        "z": 11638.7725
+      }
+    },
+    {
+      "id": "RJ",
+      "location": {
+        "x": 15714.89,
+        "y": 157.255356,
+        "z": 8127.413
+      },
+      "markerAngle": 180.0
+    },
+    {
+      "id": "RS",
+      "location": {
+        "x": 9851.902,
+        "y": 158.187866,
+        "z": 5740.5127
+      },
+      "swapSides": true,
+      "markerAngle": 90.0
+    },
+    {
+      "id": "SL",
+      "location": {
+        "x": 6390.53369,
+        "y": 167.738281,
+        "z": 3172.55957
+      },
+      "swapSides": true,
+	  "markerAngle": -90
+    },
+    {
+      "id": "SM",
+      "location": {
+        "x": 7800.0,
+        "y": 132.0,
+        "z": 7225.0
+      },
+      "swapSides": true
+    },
+    {
+      "id": "SO",
+      "location": {
+        "x": 11229.6367,
+        "y": 183.6388,
+        "z": 13101.377
+      },
+      "swapSides": true,
+      "extraHeight": -0.5,
+      "markerAngle": 90.0
+    },
+    {
+      "id": "SW",
+      "location": {
+        "x": 1364.18542,
+        "y": 147.419846,
+        "z": 2219.94019
+      },
+      "hideConcrete": true,
+      "hideLamps": true
+    },
+    {
+      "id": "VSW",
+      "location": {
+        "x": 3199.84546,
+        "y": 138.706543,
+        "z": 3161.954
+      }
+    },
+    {
+      "id": "WF",
+      "location": {
+        "x": 9336.0,
+        "y": 122.0,
+        "z": 9405.0
+      }
+    }
   ]
 }

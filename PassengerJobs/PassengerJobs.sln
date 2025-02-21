@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30406.217
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35527.113
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PassengerJobs", "PassengerJobs.csproj", "{5945B0E2-1388-454A-ADAA-887B27074D41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DebugTools", "..\DebugTools\DebugTools.csproj", "{6AA09A48-B054-4F39-AFA3-8ABB2E98145E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,9 @@ Global
 		{5945B0E2-1388-454A-ADAA-887B27074D41}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5945B0E2-1388-454A-ADAA-887B27074D41}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5945B0E2-1388-454A-ADAA-887B27074D41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AA09A48-B054-4F39-AFA3-8ABB2E98145E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AA09A48-B054-4F39-AFA3-8ABB2E98145E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AA09A48-B054-4F39-AFA3-8ABB2E98145E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

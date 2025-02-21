@@ -20,11 +20,14 @@ namespace PassengerJobs.Generation
         public class RuralStation
         {
             public string id;
-            public string name;
             
             public Vector3 location;
             public bool swapSides;
-            public bool noDecoration;
+
+            // Platform configuration
+            public bool hideConcrete;
+            public bool hideLamps;
+            public float extraHeight;
 
             public float? markerAngle;
         }

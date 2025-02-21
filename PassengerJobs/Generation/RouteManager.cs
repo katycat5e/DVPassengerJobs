@@ -31,6 +31,9 @@ namespace PassengerJobs.Generation
             UnloadWatcher.UnloadRequested += HandleGameUnloading;
         }
 
+        //=====================================================================================
+        #region Configuration Handling
+
         public static bool LoadConfig()
         {
             try
@@ -96,6 +99,84 @@ namespace PassengerJobs.Generation
 
             return config;
         }
+
+        private static JsonSerializerSettings _jsonSettings = new()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore,
+            Culture = System.Globalization.CultureInfo.InvariantCulture,
+        };
+
+        private static void SaveStationConfig()
+        {
+            try
+            {
+                string configPath = Path.Combine(PJMain.ModEntry.Path, DEFAULT_STATION_CONFIG_FILE);
+
+                string serialized = JsonConvert.SerializeObject(_stationConfig, Formatting.Indented, _jsonSettings);
+                File.WriteAllText(configPath, serialized);
+            }
+            catch (Exception ex)
+            {
+                PJMain.Error("Failed to save station config", ex);
+            }
+        }
+
+        public static bool TryGetRuralStation(string id, out StationConfig.RuralStation? result)
+        {
+            foreach (var station in _stationConfig!.ruralStations)
+            {
+                if (station.id == id)
+                {
+                    result = station;
+                    return true;
+                }
+            }
+            result = null;
+            return false;
+        }
+
+        public static void SaveRuralStation(string id, Vector3 location, bool hideConcrete, bool hideLamps, bool swapSides)
+        {
+            StationConfig.RuralStation? station = null;
+
+            foreach (var existing in _stationConfig!.ruralStations)
+            {
+                if (existing.id == id)
+                {
+                    station = existing;
+                    break;
+                }
+            }
+
+            if (station is null)
+            {
+                station = new StationConfig.RuralStation()
+                {
+                    id = id,
+                };
+                _stationConfig.ruralStations = _stationConfig.ruralStations.Append(station).OrderBy(s => s.id).ToArray();
+            }
+
+            station.location = location;
+            station.hideConcrete = hideConcrete;
+            station.hideLamps = hideLamps;
+            station.swapSides = swapSides;
+
+            SaveStationConfig();
+            ReloadStations();
+        }
+
+        public static void ReloadStations()
+        {
+            LoadConfig();
+            CreateRuralStations();
+        }
+
+        #endregion
+
+        //=====================================================================================
+        #region Startup
 
         public static void OnStationControllerStart(StationController station)
         {
@@ -177,12 +258,6 @@ namespace PassengerJobs.Generation
             }
         }
 
-        public static void ReloadStations()
-        {
-            LoadConfig();
-            CreateRuralStations();
-        }
-
         private static bool _routesInitialized = false;
         public static void EnsureInitialized()
         {
@@ -221,6 +296,11 @@ namespace PassengerJobs.Generation
             _stations.Clear();
             _routesInitialized = false;
         }
+
+        #endregion
+
+        //=====================================================================================
+        #region Route Calculation
 
         private static Track? GetTrackById(string id)
         {
@@ -276,140 +356,7 @@ namespace PassengerJobs.Generation
             graph.Sort();
             return graph;
         }
-    }
 
-    public sealed class RouteResult
-    {
-        public readonly RouteType RouteType;
-        public readonly RouteTrack[] Tracks;
-
-        public RouteResult(RouteType routeType, RouteTrack[] tracks)
-        {
-            RouteType = routeType;
-            Tracks = tracks;
-        }
-
-        public double MinTrackLength => Tracks.Min(t => t.Length);
-    }
-
-    public readonly struct RouteTrack
-    {
-        public readonly IPassDestination Station;
-        public readonly Track Track;
-        public readonly int LowBound;
-        public readonly int HighBound;
-
-        public bool IsSegment => (LowBound >= 0) && (HighBound >= 0);
-
-        public double Length
-        {
-            get
-            {
-                if (IsSegment)
-                {
-                    var rail = Track.GetRailTrack().GetPointSet();
-                    return rail.points[HighBound].span - rail.points[LowBound].span;
-                }
-                else
-                {
-                    return Track.length;
-                }
-            }
-        }
-
-        public string PlatformID => IsSegment ? Station.YardID : Track.ID.ToString();
-        public string SaveID => IsSegment ? Station.YardID : Track.ID.FullID;
-        public string DisplayID => IsSegment ? $"{Station.YardID}-LP" : Track.ID.ToString();
-
-        public RouteTrack(IPassDestination station, Track track)
-        {
-            Station = station;
-            Track = track;
-            LowBound = HighBound = -1;
-        }
-
-        public RouteTrack(IPassDestination station, Track track, int lowBound, int highBound) :
-            this(station, track)
-        {
-            LowBound = lowBound;
-            HighBound = highBound;
-        }
-    }
-
-    public class RoutePath : IComparable<RoutePath>
-    {
-        public readonly RouteType RouteType;
-        public readonly RouteNode[] Nodes;
-        public readonly TrackType TrackType;
-        public float Weight;
-
-        public RoutePath(RouteData stations, TrackType trackType, double minLength = 0)
-        {
-            RouteType = stations.RouteType;
-            TrackType = trackType;
-
-            Nodes = new RouteNode[stations.Destinations.Length];
-            for (int i = 0; i < Nodes.Length; i++)
-            {
-                bool isFinal = (i == Nodes.Length - 1);
-                Nodes[i] = new RouteNode(stations.Destinations[i], minLength, isFinal);
-            }
-
-            if (Nodes.Any(n => n.Weight == 0))
-            {
-                Weight = 0;
-            }
-            else
-            {
-                Weight = 1 + GetWeightNoise();
-            }
-        }
-
-        private static float GetWeightNoise()
-        {
-            // +/- 0.25
-            return (UnityEngine.Random.value + 1) / 4;
-        }
-
-        public RouteTrack[] PickTracks()
-        {
-            var result = new RouteTrack[Nodes.Length];
-            for (int i = 0; i < Nodes.Length; i++)
-            {
-                result[i] = Nodes[i].PickTrack();
-            }
-            return result;
-        }
-
-        public int CompareTo(RoutePath other)
-        {
-            return other.Weight.CompareTo(Weight);
-        }
-    }
-
-    public readonly struct RouteNode
-    {
-        public readonly IPassDestination Station;
-        public readonly IEnumerable<RouteTrack> Tracks;
-        public readonly double MinLength;
-        public readonly float Weight;
-
-        public RouteNode(IPassDestination station, double minLength, bool isFinal)
-        {
-            Station = station;
-            MinLength = minLength;
-
-            Tracks = station.GetPlatforms(isFinal)
-                .GetUnusedTracks()
-                .Where(t => t.Length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
-
-            //return ((float)unused.Count() / tracks.Count) + ();
-            Weight = Tracks.Any() ? 1 : 0;
-        }
-
-        public readonly RouteTrack PickTrack()
-        {
-            return Tracks.PickOneValue()!.Value;
-        }
+        #endregion
     }
 }

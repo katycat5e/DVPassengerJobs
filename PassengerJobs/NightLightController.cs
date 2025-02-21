@@ -250,11 +250,13 @@ namespace PassengerJobs
 
         private void OnTrainsetChanged(Trainset trainset)
         {
-            _hasLoco = trainset.locoIndices.Count > 0;
+            _hasLoco = (trainset is not null) && (trainset.locoIndices.Count > 0);
         }
 
         private bool AnyLocoPowered()
         {
+            if (_trainCar.trainset is null) return false;
+
             foreach (var loco in _trainCar.trainset.GetLocomotives())
             {
                 // To keep CCL compatibility, use TrainCarCustomization to

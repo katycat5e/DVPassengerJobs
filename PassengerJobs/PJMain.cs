@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityModManagerNet;
@@ -57,6 +58,24 @@ namespace PassengerJobs
 
             var harmony = new Harmony(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
+
+#if DEBUG
+            string debugToolsDll = Path.Combine(ModEntry.Path, "PassengerJobs.DebugTools.dll");
+            var dtAssembly = Assembly.LoadFile(debugToolsDll);
+
+            if (dtAssembly is not null)
+            {
+                Log("Loaded Debug Tools");
+                //foreach (var initMethod in dtAssembly.GetTypes().SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static)))
+                //{
+                //    if ((initMethod.Name == "Initialize") && (initMethod.GetParameters().Length == 0))
+                //    {
+                //        initMethod.Invoke(null, Array.Empty<object>());
+                //    }
+                //}
+                harmony.PatchAll(dtAssembly);
+            }
+#endif
 
             return true;
         }

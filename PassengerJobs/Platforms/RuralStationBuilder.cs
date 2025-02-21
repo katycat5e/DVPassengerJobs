@@ -1,12 +1,11 @@
-﻿using DV.Logic.Job;
-using DV.PointSet;
-using PassengerJobs.Generation;
+﻿using PassengerJobs.Generation;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
 
+using SMath = System.Math;
 using EQPoint = DV.PointSet.EquiPointSet.Point;
 
 namespace PassengerJobs.Platforms
@@ -16,14 +15,16 @@ namespace PassengerJobs.Platforms
         public static readonly List<MapMarker> MapMarkers = new();
         private static readonly Color MarkerColor = new Color32(220, 204, 255, 255);
 
-        private const float LABEL_RADIUS = 0.012f;
+        private const float LABEL_RADIUS = 0.008f;
         private const float PLATFORM_LENGTH = 65;
         private const float PLATFORM_HALF_LENGTH = PLATFORM_LENGTH / 2;
+        private const float PLATFORM_HEIGHT = 1f;
 
         private const float COACH_LENGTH = 24.54f;
         private const float LOADING_ZONE_LENGTH = 120;
         private const float LOADING_ZONE_HALF_LENGTH = LOADING_ZONE_LENGTH / 2;
 
+        private const string LAMPS_ANCHOR = "[lamps]";
         private const string TELEPORT_ANCHOR = "[teleport]";
 
         public static RuralStationData? CreateStation(StationConfig.RuralStation station, RuralStationData? existing = null)
@@ -38,29 +39,53 @@ namespace PassengerJobs.Platforms
                 return null;
             }
 
-            PlatformController controller;
             IEnumerable<RuralLoadingTask> tasks;
             
             if (existing is not null)
             {
-                controller = railTrack.GetComponents<PlatformController>().First(p => p.Platform.Id == existing.Platform.Id);
                 tasks = existing.Platform.Tasks;
             }
             else
             {
-                controller = railTrack.gameObject.AddComponent<PlatformController>();
                 tasks = Enumerable.Empty<RuralLoadingTask>();
             }
 
             var track = railTrack.logicTrack;
             bool isYardTrack = YardTracksOrganizer.Instance.IsTrackManagedByOrganizer(track);
 
-            int lowIdx = railTrack.pointSet.GetPointIndexForSpan(trackPoint.Value.span - LOADING_ZONE_HALF_LENGTH);
-            int highIdx = railTrack.pointSet.GetPointIndexForSpan(trackPoint.Value.span + LOADING_ZONE_HALF_LENGTH);
-            //int lowIdx = trackPoint.Value.index - (RURAL_PLATFORM_POINT_LENGTH / 2);
-            //int highIdx = trackPoint.Value.index + (RURAL_PLATFORM_POINT_LENGTH / 2);
+            // get loading zone indices
+            int centerIdx = trackPoint.Value.index;
 
+            var pointSet = railTrack.pointSet;
+            double lowSpan = Mathd.Max(0, trackPoint.Value.span - LOADING_ZONE_HALF_LENGTH);
+            if (lowSpan == 0)
+            {
+                PJMain.Warning($"Station {station.id} hit low end of track segment");
+            }
+            int lowIdx = railTrack.pointSet.GetPointIndexForSpan(lowSpan);
+
+            double highSpan = Mathd.Min(pointSet.span, trackPoint.Value.span + LOADING_ZONE_HALF_LENGTH);
+            if (highSpan == pointSet.span)
+            {
+                PJMain.Warning($"Station {station.id} hit high end of track segment");
+            }
+            int highIdx = railTrack.pointSet.GetPointIndexForSpan(highSpan);
+
+            int maxDelta = SMath.Min(SMath.Abs(centerIdx - lowIdx), SMath.Abs(highIdx - centerIdx));
+
+            lowIdx = centerIdx - maxDelta;
+            highIdx = centerIdx + maxDelta + 1;
+
+            // create controllers & meshes
             var loadingMachine = new RuralLoadingMachine(station.id, track, lowIdx, highIdx, station.markerAngle, isYardTrack);
+
+            var platformObj = GenerateDecorations(loadingMachine, station);
+            if (!platformObj)
+            {
+                return null;
+            }
+
+            PlatformController controller = platformObj!.AddComponent<PlatformController>();
 
             var platform = new RuralPlatformWrapper(loadingMachine);
             controller.Platform = platform;
@@ -70,15 +95,11 @@ namespace PassengerJobs.Platforms
                 loadingMachine.AddTask(task);
             }
 
-            if (!station.noDecoration)
-            {
-                GenerateDecorations(loadingMachine, station.swapSides);
-            }
 
             return new RuralStationData(loadingMachine);
         }
 
-        public static void GenerateDecorations(RuralLoadingMachine platform, bool swapPlatformSide)
+        public static GameObject? GenerateDecorations(RuralLoadingMachine platform, StationConfig.RuralStation config)
         {
             var railTrack = platform.Track.GetRailTrack();
 
@@ -93,7 +114,7 @@ namespace PassengerJobs.Platforms
             catch (System.IndexOutOfRangeException)
             {
                 PJMain.Error($"Rural station {platform.Id} track points don't exist!");
-                return;
+                return null;
             }
 
             if (!platform.IsYardTrack)
@@ -101,13 +122,17 @@ namespace PassengerJobs.Platforms
                 GenerateTrackSigns(lowPoint, highPoint, platform.Id, railTrack);
             }
 
-            var platformObj = GeneratePlatformMeshes(lowPoint, highPoint, platform.Id, railTrack, swapPlatformSide, platform.IsYardTrack);
+            bool isInsideStation = StationController.GetStationByYardID(platform.Id);
 
-            if (!platform.IsYardTrack)
+            (var holder, var decorations) = GeneratePlatformMeshes(lowPoint, highPoint, platform.Id, railTrack, config, isInsideStation);
+
+            if (!isInsideStation)
             {
-                var tpAnchor = platformObj.transform.Find(TELEPORT_ANCHOR);
+                var tpAnchor = decorations.transform.Find(TELEPORT_ANCHOR);
                 CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(tpAnchor, platform.Id, platform.MarkerAngle ?? 0));
             }
+
+            return holder;
         }
 
         private static void GenerateTrackSigns(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack)
@@ -128,7 +153,7 @@ namespace PassengerJobs.Platforms
             SetTrackSignText(highSign, id);
         }
 
-        private static GameObject GeneratePlatformMeshes(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack, bool swapPlatformSide, bool isYardTrack)
+        private static (GameObject holder, GameObject decorations) GeneratePlatformMeshes(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack, StationConfig.RuralStation config, bool isInsideStation)
         {
             // Setup platform
             var platformHolder = new GameObject($"[platform] {id}");
@@ -137,13 +162,19 @@ namespace PassengerJobs.Platforms
             // adjust offset to keep track clearance
             var pointSet = railTrack.pointSet;
             EQPoint centerPoint = pointSet.points[(lowPoint.index + highPoint.index) / 2];
-            
-            double platformLengthOffset = swapPlatformSide ? -PLATFORM_HALF_LENGTH : PLATFORM_HALF_LENGTH;
 
-            int platformHighIdx = pointSet.GetPointIndexForSpan(centerPoint.span + platformLengthOffset);
+#if DEBUG
+            PJMain.Log($"spawn {id} center @ {railTrack.name} {centerPoint.index}");
+#endif
+            
+            double platformLengthOffset = config.swapSides ? -PLATFORM_HALF_LENGTH : PLATFORM_HALF_LENGTH;
+
+            double highSpan = Mathd.Clamp(centerPoint.span + platformLengthOffset, 0, pointSet.span);
+            int platformHighIdx = pointSet.GetPointIndexForSpan(highSpan);
             EQPoint platformHighPoint = pointSet.points[platformHighIdx];
 
-            int platformLowIdx = pointSet.GetPointIndexForSpan(centerPoint.span - platformLengthOffset);
+            double lowSpan = Mathd.Clamp(centerPoint.span - platformLengthOffset, 0, pointSet.span);
+            int platformLowIdx = pointSet.GetPointIndexForSpan(lowSpan);
             EQPoint platformLowPoint = pointSet.points[platformLowIdx];
 
             var chord = (Vector3)(platformHighPoint.position - platformLowPoint.position);
@@ -177,20 +208,31 @@ namespace PassengerJobs.Platforms
 #if DEBUG
             CreateDebugPoint(platformHolder.transform, (Vector3)platformLowPoint.position + WorldMover.currentMove, Color.red);
             CreateDebugPoint(platformHolder.transform, (Vector3)platformHighPoint.position + WorldMover.currentMove, Color.blue);
-            CreateDebugPoint(platformHolder.transform, midPoint, Color.green);
+            CreateDebugPoint(platformHolder.transform, (Vector3)centerPoint.position + WorldMover.currentMove, Color.green);
             CreateDebugPoint(platformHolder.transform, maxOffsetPosition + WorldMover.currentMove, Color.yellow);
 #endif
 
-            var platformObj = Object.Instantiate(BundleLoader.RuralPlatform, platformHolder.transform);
-            platformObj.AddComponent<PlatformLightController>();
+            var prefab = config.hideConcrete ? BundleLoader.RuralPlatformNoBase : BundleLoader.RuralPlatform;
 
-            string localName = isYardTrack ?
+            var platformObj = Object.Instantiate(prefab, platformHolder.transform);
+            platformObj.transform.localPosition = new Vector3(0, config.extraHeight, 0);
+
+            if (config.hideLamps)
+            {
+                Object.Destroy(platformObj.transform.Find(LAMPS_ANCHOR).gameObject);
+            }
+            else
+            {
+                platformObj.AddComponent<PlatformLightController>();
+            }
+
+            string localName = isInsideStation ?
                 LocalizationKeyExtensions.BuiltinStationName(id) :
                 LocalizationKeyExtensions.StationName(id);
 
             SetPlatformSignText(platformObj, localName);
 
-            return platformObj;
+            return (platformHolder, platformObj);
         }
 
 #if DEBUG
@@ -283,6 +325,7 @@ namespace PassengerJobs.Platforms
             );
 
             labelRect.anchoredPosition = finalPosition;
+            labelRect.localScale *= 0.8f;
         }
 
         private static MapMarkersController? _markerController;
