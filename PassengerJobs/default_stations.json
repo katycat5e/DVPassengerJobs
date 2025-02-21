@@ -37,10 +37,11 @@
     {
       "id": "AM",
       "location": {
-        "x": 11795.2646,
-        "y": 160.739517,
-        "z": 7437.345
-      }
+        "x": 11792.7,
+        "y": 160.754517,
+        "z": 7433.053
+      },
+      "extraHeight": -1.0
     },
     {
       "id": "CI",
@@ -50,7 +51,8 @@
         "z": 5354.309
       },
       "swapSides": true,
-	  "markerAngle": 90
+      "markerAngle": 90.0,
+      "extraHeight": -1
     },
     {
       "id": "CME",
@@ -114,7 +116,8 @@
         "x": 12939.7422,
         "y": 190.8844,
         "z": 11526.7051
-      }
+      },
+      "extraHeight": -1
     },
     {
       "id": "HN",
@@ -124,7 +127,7 @@
         "z": 15517.5215
       },
       "swapSides": true,
-      "extraHeight": -0.5,
+      "extraHeight": -1,
       "markerAngle": 160.0
     },
     {
@@ -134,7 +137,8 @@
         "y": 161.466568,
         "z": 6947.2627
       },
-      "swapSides": true
+      "swapSides": true,
+      "extraHeight": -1
     },
     {
       "id": "IME",
@@ -153,6 +157,15 @@
       }
     },
     {
+      "id": "MB",
+      "location": {
+        "x": 12555.1514,
+        "y": 215.509781,
+        "z": 14738.9111
+      },
+      "swapSides": true
+    },
+    {
       "id": "MR",
       "location": {
         "x": 3897.00366,
@@ -160,6 +173,7 @@
         "z": 14342.68
       },
       "swapSides": true,
+      "extraHeight": -1.0,
       "markerAngle": 180.0
     },
     {
@@ -170,6 +184,7 @@
         "z": 13954.9209
       },
       "swapSides": true,
+      "extraHeight": -1.0,
       "markerAngle": 20.0
     },
     {
@@ -206,7 +221,8 @@
         "y": 157.255356,
         "z": 8127.413
       },
-      "markerAngle": 180.0
+      "markerAngle": 180.0,
+      "extraHeight": -1
     },
     {
       "id": "RS",
@@ -216,7 +232,8 @@
         "z": 5740.5127
       },
       "swapSides": true,
-      "markerAngle": 90.0
+      "markerAngle": 90.0,
+      "extraHeight": -1.0
     },
     {
       "id": "SL",
@@ -226,7 +243,8 @@
         "z": 3172.55957
       },
       "swapSides": true,
-	  "markerAngle": -90
+      "markerAngle": -90.0,
+      "extraHeight": -1
     },
     {
       "id": "SM",
@@ -264,7 +282,8 @@
         "x": 3199.84546,
         "y": 138.706543,
         "z": 3161.954
-      }
+      },
+      "extraHeight": -1
     },
     {
       "id": "WF",
@@ -273,6 +292,16 @@
         "y": 122.0,
         "z": 9405.0
       }
+    },
+    {
+      "id": "WL",
+      "location": {
+        "x": 3819.96,
+        "y": 125.730927,
+        "z": 8482.87
+      },
+      "extraHeight": -1.0,
+      "markerAngle": -90.0
     }
   ]
 }
