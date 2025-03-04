@@ -107,6 +107,8 @@ namespace PassengerJobs
         private MeshRenderer[] _lampsR = null!;
         private bool _frontOn = false;
         private bool _rearOn = false;
+        private bool _inOn = false;
+        private bool _tempState = false;
         private bool _hasLoco = false;
 
         private Material InteriorMat
@@ -195,9 +197,11 @@ namespace PassengerJobs
 
         private void ChangeInteriorLampMaterial(bool on)
         {
-            if (CurrentlyLit == on) return;
+            if (_inOn == on) return;
 
             InteriorMat = on ? LampOn : LampOff;
+
+            _inOn = on;
         }
 
         private void ChangeFrontLights(bool on)
@@ -274,13 +278,14 @@ namespace PassengerJobs
 
         private void BeforeSkinChange()
         {
+            _tempState = _inOn;
             ChangeInteriorLampMaterial(false);
         }
 
         private void AfterSkinChange()
         {
             RefreshMaterials();
-            ChangeInteriorLampMaterial(CurrentlyLit);
+            ChangeInteriorLampMaterial(_tempState);
         }
 
         private void RefreshMaterials()
