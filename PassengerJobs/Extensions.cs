@@ -85,11 +85,6 @@ namespace PassengerJobs
             }
         }
 
-        public static RailTrack GetRailTrack(this Track track)
-        {
-            return LogicController.Instance.LogicToRailTrack[track];
-        }
-
         public static IEnumerable<TrainCar> GetLocomotives(this Trainset trainset)
         {
             var indices = trainset.locoIndices;

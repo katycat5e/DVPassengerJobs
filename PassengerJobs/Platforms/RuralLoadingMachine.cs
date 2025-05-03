@@ -98,7 +98,7 @@ namespace PassengerJobs.Platforms
         {
             if (car.CurrentTrack != Track) return false;
 
-            if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar))
+            if (TrainCarRegistry.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar))
             {
                 if (Mathf.Abs(trainCar.GetForwardSpeed()) > 0.3f) return false;
                 

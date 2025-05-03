@@ -66,7 +66,7 @@ namespace PassengerJobs.Patches
 
         public static PassengerChainController? LoadPassengerChain(PassengerChainSaveData passChainData)
         {
-            var jobCars = JobSaveManager.Instance.GetTrainCarsFromCarGuids(passChainData.trainCarGuids);
+            var jobCars = passChainData.trainCarGuids.Select(TrainCarRegistry.Instance.GetTrainCarByCarGuid);
             if (jobCars == null)
             {
                 PJMain.Warning($"Couldn't find trainCarsForJobChain from chainSaveData {passChainData.firstJobId}! Skipping load of this job chain!");
@@ -77,7 +77,7 @@ namespace PassengerJobs.Patches
             var jobChainHolder = new GameObject();
             var chainController = new PassengerChainController(jobChainHolder)
             {
-                trainCarsForJobChain = jobCars,
+                carsForJobChain = jobCars.Select(c => c.logicCar).ToList(),
             };
 
             ExpressStationsChainData? chainData = null;

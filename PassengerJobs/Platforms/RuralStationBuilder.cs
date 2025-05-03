@@ -50,26 +50,26 @@ namespace PassengerJobs.Platforms
                 tasks = Enumerable.Empty<RuralLoadingTask>();
             }
 
-            var track = railTrack.logicTrack;
+            var track = railTrack.LogicTrack();
             bool isYardTrack = YardTracksOrganizer.Instance.IsTrackManagedByOrganizer(track);
 
             // get loading zone indices
             int centerIdx = trackPoint.Value.index;
 
-            var pointSet = railTrack.pointSet;
+            var pointSet = railTrack.GetKinkedPointSet();
             double lowSpan = Mathd.Max(0, trackPoint.Value.span - LOADING_ZONE_HALF_LENGTH);
             if (lowSpan == 0)
             {
                 PJMain.Warning($"Station {station.id} hit low end of track segment");
             }
-            int lowIdx = railTrack.pointSet.GetPointIndexForSpan(lowSpan);
+            int lowIdx = pointSet.GetPointIndexForSpan(lowSpan);
 
             double highSpan = Mathd.Min(pointSet.span, trackPoint.Value.span + LOADING_ZONE_HALF_LENGTH);
             if (highSpan == pointSet.span)
             {
                 PJMain.Warning($"Station {station.id} hit high end of track segment");
             }
-            int highIdx = railTrack.pointSet.GetPointIndexForSpan(highSpan);
+            int highIdx = pointSet.GetPointIndexForSpan(highSpan);
 
             int maxDelta = SMath.Min(SMath.Abs(centerIdx - lowIdx), SMath.Abs(highIdx - centerIdx));
 
@@ -101,9 +101,9 @@ namespace PassengerJobs.Platforms
 
         public static GameObject? GenerateDecorations(RuralLoadingMachine platform, StationConfig.RuralStation config)
         {
-            var railTrack = platform.Track.GetRailTrack();
+            var railTrack = platform.Track.RailTrack();
 
-            EQPoint[] pointSet = railTrack.GetPointSet(0).points;
+            EQPoint[] pointSet = railTrack.GetKinkedPointSet().points;
             EQPoint lowPoint, highPoint;
 
             try
@@ -160,7 +160,7 @@ namespace PassengerJobs.Platforms
             platformHolder.transform.SetParent(railTrack.transform);
 
             // adjust offset to keep track clearance
-            var pointSet = railTrack.pointSet;
+            var pointSet = railTrack.GetKinkedPointSet();
             EQPoint centerPoint = pointSet.points[(lowPoint.index + highPoint.index) / 2];
 
 #if DEBUG
@@ -249,7 +249,7 @@ namespace PassengerJobs.Platforms
 
         public static void DestroyDecorations(RuralLoadingMachine platform)
         {
-            var trackTransform = platform.Track.GetRailTrack().transform;
+            var trackTransform = platform.Track.RailTrack().transform;
 
             var sign0 = trackTransform.Find($"[track id] {platform.Id} 0");
             if (sign0) Object.Destroy(sign0.gameObject);

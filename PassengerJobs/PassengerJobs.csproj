@@ -20,6 +20,7 @@
 		<Reference Include="DV.BrakeSystem" />
 		<Reference Include="DV.Common" />
 		<Reference Include="DV.PointSet" />
+		<Reference Include="DV.RailTrack" />
 		<Reference Include="DV.Simulation" />
 		<Reference Include="DV.Utils" />
 		<Reference Include="DV.WeatherSystem" />
@@ -27,7 +28,9 @@
 		<Reference Include="DVLangHelper.Runtime" />
 		<Reference Include="DV.Inventory" />
 		<Reference Include="DV.NAudio" />
+		<Reference Include="DV.SpriteLights" />
 		<Reference Include="DV.ThingTypes" />
+		<Reference Include="DV.TimeBasedEvents" />
 		<Reference Include="DV.Localization" />
 		<Reference Include="DV.UIFramework" />
 		<Reference Include="I2.Localization" />
@@ -51,6 +54,7 @@
 		<Reference Include="UnityEngine.PhysicsModule" />
 		<Reference Include="UnityEngine.UI" />
 		<Reference Include="UnityModManager" />
+		<Reference Include="WorldStreamer" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="default_routes.json">

@@ -30,7 +30,7 @@ namespace PassengerJobs.Platforms
     {
         public static bool IsConsistAttachedToLoco(IEnumerable<Car> cars)
         {
-            if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(cars.First(), out var trainCar))
+            if (TrainCarRegistry.Instance.logicCarToTrainCar.TryGetValue(cars.First(), out var trainCar))
             {
                 return trainCar.trainset.locoIndices.Any();
             }
@@ -151,7 +151,7 @@ namespace PassengerJobs.Platforms
 
             foreach (var car in cars)
             {
-                if (!IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) ||
+                if (!TrainCarRegistry.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) ||
                     Mathf.Abs(trainCar.GetForwardSpeed()) > 0.05f)
                 {
                     // couldn't find physical car or car was moving

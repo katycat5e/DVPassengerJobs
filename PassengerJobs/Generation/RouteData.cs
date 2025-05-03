@@ -34,7 +34,7 @@ namespace PassengerJobs.Generation
             {
                 if (IsSegment)
                 {
-                    var rail = Track.GetRailTrack().GetPointSet();
+                    var rail = Track.RailTrack().GetUnkinkedPointSet();
                     return rail.points[HighBound].span - rail.points[LowBound].span;
                 }
                 else

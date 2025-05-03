@@ -305,14 +305,14 @@ namespace PassengerJobs.Generation
         private static Track? GetTrackById(string id)
         {
             var railTrack = RailTrackRegistry.Instance.AllTracks
-                .FirstOrDefault(rt => rt.logicTrack.ID.ToString() == id);
+                .FirstOrDefault(rt => rt.LogicTrack().ID.ToString() == id);
 
             if (railTrack is null)
             {
                 PJMain.Error($"GetTrackById({id}) not found");
             }
 
-            return railTrack?.logicTrack;
+            return railTrack?.LogicTrack();
         }
 
         public static RouteTrack? GetRouteTrackById(string trackId)

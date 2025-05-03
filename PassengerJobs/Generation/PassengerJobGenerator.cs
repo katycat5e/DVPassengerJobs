@@ -121,7 +121,7 @@ namespace PassengerJobs.Generation
         {
             // Use our associated station controller to create the track ID signs
             var allStationTracks = _stationData.AllTracks.ToHashSet();
-            var stationRailTracks = RailTrackRegistry.Instance.AllTracks.Where(rt => allStationTracks.Contains(rt.logicTrack)).ToList();
+            var stationRailTracks = RailTrackRegistry.Instance.AllTracks.Where(rt => allStationTracks.Contains(rt.LogicTrack())).ToList();
 
             Controller.GenerateTrackIdObject(stationRailTracks);
         }
@@ -274,7 +274,7 @@ namespace PassengerJobs.Generation
             }
             else
             {
-                chainController.trainCarsForJobChain = consistInfo.cars.Select(c => IdGenerator.Instance.logicCarToTrainCar[c]).ToList();
+                chainController.carsForJobChain = consistInfo.cars.ToList();
 
                 jobDefinition = PopulateExpressJobExistingCars(
                     chainController, Controller.logicStation, startPlatform, destinations,
@@ -346,14 +346,14 @@ namespace PassengerJobs.Generation
             ExpressStationsChainData chainData, float timeLimit, float initialPay)
         {
             // Spawn the cars
-            RailTrack startRT = LogicController.Instance.LogicToRailTrack[startTrack.Track];
+            RailTrack startRT = startTrack.Track.RailTrack();
             
             var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true, 
                 true,0, false, false);
 
             if (spawnedCars == null) return null;
 
-            chainController.trainCarsForJobChain = spawnedCars;
+            chainController.carsForJobChain = spawnedCars.Select(c => c.logicCar).ToList();
             var logicCars = TrainCar.ExtractLogicCars(spawnedCars);
             if (logicCars == null)
             {
