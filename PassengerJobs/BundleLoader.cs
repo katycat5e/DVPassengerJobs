@@ -2,6 +2,8 @@
 using DV.ThingTypes.TransitionHelpers;
 using PassengerJobs.Injectors;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -10,11 +12,21 @@ namespace PassengerJobs
     {
         public static Sprite LicenseSprite { get; private set; } = null!;
 
+        private static bool MasterLoadFailed
+        {
+            set
+            {
+                SignLoadFailed = value;
+                PlatformLoadFailed = value;
+            }
+        }
+
         public static bool SignLoadFailed { get; private set; }
         public static GameObject SignPrefab = null!;
         public static GameObject SmallSignPrefab = null!;
         public static GameObject LillySignPrefab = null!;
 
+        public static bool PlatformLoadFailed { get; private set; }
         public static GameObject RuralPlatform = null!;
         public static GameObject RuralPlatformNoBase = null!;
 
@@ -22,8 +34,10 @@ namespace PassengerJobs
         {
             if (SignPrefab && RuralPlatform) return;
 
+            MasterLoadFailed = false;
+
             string bundlePath = Path.Combine(PJMain.ModEntry.Path, "passengerjobs");
-            PJMain.Log("Attempting to load platform sign prefab");
+            PJMain.Log("Attempting to load asset bundle contents");
 
             var bytes = File.ReadAllBytes(bundlePath);
             var bundle = AssetBundle.LoadFromMemory(bytes);
@@ -31,7 +45,7 @@ namespace PassengerJobs
             if (bundle == null)
             {
                 PJMain.Error("Failed to load asset bundle");
-                SignLoadFailed = true;
+                MasterLoadFailed = true;
                 return;
             }
 
@@ -39,8 +53,8 @@ namespace PassengerJobs
             SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/SmolStationSign.prefab", ref SmallSignPrefab);
             SignLoadFailed |= !TryLoadPrefab(bundle, "Assets/LillySign.prefab", ref LillySignPrefab);
 
-            TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
-            TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatformNoBase.prefab", ref RuralPlatformNoBase);
+            PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
+            PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatformNoBase.prefab", ref RuralPlatformNoBase);
 
             bundle.Unload(false);
         }
@@ -54,7 +68,7 @@ namespace PassengerJobs
                 return true;
             }
 
-            PJMain.Error($"Failed to load {prefab} from asset bundle");
+            PJMain.Error($"Failed to load {assetPath} from asset bundle");
             return false;
         }
 

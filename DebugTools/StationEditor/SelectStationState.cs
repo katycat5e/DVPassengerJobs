@@ -1,10 +1,5 @@
 ﻿using CommsRadioAPI;
-using DV.Logic.Job;
-using DV.PointSet;
-using PassengerJobs.Platforms;
-using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace PassengerJobs.DebugTools.StationEditor
 {
@@ -25,7 +20,7 @@ namespace PassengerJobs.DebugTools.StationEditor
             if (raycast.IsPlatform) prompt = $"Edit {raycast.PlatformId}";
             if (raycast.IsTrack) prompt = "New Station";
 
-            return new CommsRadioState(TITLE, prompt);
+            return new CommsRadioState(RadioSetup.STATION_PLACER_TITLE, prompt);
         }
 
         public override AStateBehaviour OnUpdate(CommsRadioUtility utility)

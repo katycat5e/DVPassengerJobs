@@ -171,6 +171,53 @@ namespace PassengerJobs.Generation
         {
             LoadConfig();
             CreateRuralStations();
+            ApplyPlatformData();
+        }
+
+        public static void SavePlatformConfig(string platformId, Vector3 cornerA, Vector3 cornerB, float depth)
+        {
+            string stationId = platformId.Split('-')[0];
+            var station = _stationConfig!.cityStations.FirstOrDefault(s => s.yardId == stationId);
+
+            if (station is null)
+            {
+                PJMain.Error($"Station {stationId} does not exist in the config");
+                return;
+            }
+
+            StationConfig.CityPlatform? platform = station.platforms.FirstOrDefault(p => p.id == platformId);
+            
+            if (platform is null)
+            {
+                platform = new StationConfig.CityPlatform()
+                {
+                    id = platformId
+                };
+
+                station.platforms = station.platforms.Append(platform).ToArray();
+            }
+
+            platform.spawnZoneA = cornerA;
+            platform.spawnZoneB = cornerB;
+            platform.spawnZoneDepth = depth;
+
+            SaveStationConfig();
+            ReloadStations();
+        }
+
+        public static void ApplyPlatformData()
+        {
+            foreach (var station in _stationConfig!.cityStations)
+            {
+                foreach (var platform in station.platforms)
+                {
+                    if (PlatformController.TryGetControllerForTrack(platform.id, out var controller))
+                    {
+                        var platformData = new PassStationData.PlatformData(GetTrackById(platform.id)!, platform);
+                        controller!.PlatformData = platformData;
+                    }
+                }
+            }
         }
 
         #endregion
@@ -180,16 +227,38 @@ namespace PassengerJobs.Generation
 
         public static void OnStationControllerStart(StationController station)
         {
-            static IEnumerable<Track> ParseTracks(IEnumerable<string> ids)
+            string yardId = station.stationInfo.YardID;
+
+            IEnumerable<Track> ParseTracks(IEnumerable<string> ids)
             {
-                return ids.Select(GetTrackById).Where(t => t is not null)!;
+                foreach (string id in ids)
+                {
+                    if (GetTrackById(id) is Track track)
+                    {
+                        yield return track;
+                    }
+                    else
+                    {
+                        PJMain.Error($"Invalid track id in config for station {yardId}: {id}");
+                    }
+                }
             }
 
-            string yardId = station.stationInfo.YardID;
             if (_stationConfig!.cityStations.FirstOrDefault(t => t.yardId == yardId) is StationConfig.CityStation config)
             {
                 var stationData = new PassStationData(station);
-                stationData.AddPlatforms(ParseTracks(config.platforms));
+
+                foreach (var platformConfig in config.platforms)
+                {
+                    if (GetTrackById(platformConfig.id) is Track track)
+                    {
+                        stationData.AddPlatform(track, platformConfig);
+                    }
+                    else
+                    {
+                        PJMain.Error($"Invalid track id in config for station {yardId}: {platformConfig.id}");
+                    }
+                }
 
                 if (config.storage is not null)
                 {
@@ -202,7 +271,7 @@ namespace PassengerJobs.Generation
                 }
                 else
                 {
-                    stationData.AddTerminusTracks(stationData.PlatformTracks);
+                    stationData.AddTerminusTracks(stationData.Platforms.Select(p => p.Track));
                 }
 
                 _stations.Add(yardId, stationData);

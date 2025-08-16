@@ -3,7 +3,6 @@ using HarmonyLib;
 using PassengerJobs.Injectors;
 using System;
 using System.Collections.Generic;
-using static Oculus.Avatar.CAPI;
 
 namespace PassengerJobs.Patches
 {

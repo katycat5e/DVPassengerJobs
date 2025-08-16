@@ -1,8 +1,4 @@
 ﻿using CommsRadioAPI;
-using System;
-using UnityEngine;
-
-using EQPoint = DV.PointSet.EquiPointSet.Point;
 
 namespace PassengerJobs.DebugTools.StationEditor
 {
@@ -34,7 +30,7 @@ namespace PassengerJobs.DebugTools.StationEditor
 
             string prompt = string.Concat(newId, '\n', new string(pointer));
 
-            return new CommsRadioState(TITLE, prompt, buttonBehaviour: DV.ButtonBehaviourType.Override);
+            return new CommsRadioState(RadioSetup.STATION_PLACER_TITLE, prompt, buttonBehaviour: DV.ButtonBehaviourType.Override);
         }
 
         public override AStateBehaviour OnUpdate(CommsRadioUtility utility)

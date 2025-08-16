@@ -89,24 +89,25 @@ namespace PassengerJobs.Generation
             _nextJobType = (new[] { PassJobType.Express, PassJobType.Local }).PickOneValue()!.Value;
 
             // create warehouse/sign controllers
-            foreach (var platform in _stationData.PlatformTracks)
+            foreach (var platform in _stationData.Platforms)
             {
-                var holder = new GameObject($"Platform_{platform.ID}");
+                var holder = new GameObject($"Platform_{platform.Track.ID}");
                 holder.transform.SetParent(Controller.transform, false);
 
                 var platformController = holder.AddComponent<PlatformController>();
-                platformController.Platform = new StationPlatformWrapper(platform);
-                platformController.SetSignsEnabled(_playerWasInRange);
+                platformController.Platform = new StationPlatformWrapper(platform.Track);
+                platformController.PlatformData = platform;
+                platformController.SetDecorationsEnabled(_playerWasInRange);
                 PlatformControllers.Add(platformController);
 
-                PJMain.Log($"Successfully created platform controller for track {platform.ID}");
+                PJMain.Log($"Successfully created platform controller for track {platform.Track.ID}");
             }
 
             var sb = new StringBuilder($"Created generator for {Controller.stationInfo.Name}:\n");
             sb.Append("Coach Storage: ");
             sb.AppendLine(string.Join(", ", _stationData.StorageTracks.Select(t => t.ID)));
             sb.Append("Platforms: ");
-            sb.Append(string.Join(", ", _stationData.PlatformTracks.Select(t => t.ID)));
+            sb.Append(string.Join(", ", _stationData.Platforms.Select(t => t.Track.ID)));
             PJMain.Log(sb.ToString());
 
             _instances.Add(_stationData.YardID, this);
@@ -143,7 +144,7 @@ namespace PassengerJobs.Generation
             {
                 foreach (var platform in PlatformControllers)
                 {
-                    platform.SetSignsEnabled(nowInRange);
+                    platform.SetDecorationsEnabled(nowInRange);
                 }
             }
 

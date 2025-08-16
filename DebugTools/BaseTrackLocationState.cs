@@ -5,11 +5,10 @@ using UnityEngine;
 
 using EQPoint = DV.PointSet.EquiPointSet.Point;
 
-namespace PassengerJobs.DebugTools.StationEditor
+namespace PassengerJobs.DebugTools
 {
     public abstract class BaseTrackLocationState : AStateBehaviour
     {
-        protected const string TITLE = "PJ Station";
         protected static LayerMask trackMask = LayerMask.GetMask("Default");
 
         protected readonly RaycastResult _raycastResult;
@@ -51,7 +50,7 @@ namespace PassengerJobs.DebugTools.StationEditor
         {
             if (next is not BaseTrackLocationState)
             {
-                Object.Destroy(_trackMarker);
+                if (_trackMarker) Object.Destroy(_trackMarker);
             }
         }
 
@@ -135,7 +134,12 @@ namespace PassengerJobs.DebugTools.StationEditor
                     Vector3 cross = Vector3.Cross(relativeSearchPos, trackForward);
                     bool opposite = (cross.y > 0);
 
-                    return new RaycastResult(match.Value, opposite);
+                    string trackId = null;
+                    if (RailTrackRegistry.RailTrackToLogicTrack.TryGetValue(track, out var logicTrack))
+                    {
+                        trackId = logicTrack.ID.FullDisplayID;
+                    }
+                    return new RaycastResult(match.Value, trackId, opposite);
                 }
             }
 
@@ -216,9 +220,9 @@ namespace PassengerJobs.DebugTools.StationEditor
                 OppositeSide = false;
             }
 
-            public RaycastResult(EQPoint trackLocation, bool oppositeSide)
+            public RaycastResult(EQPoint trackLocation, string trackId, bool oppositeSide)
             {
-                PlatformId = null;
+                PlatformId = trackId;
                 TrackLocation = trackLocation;
                 OppositeSide = oppositeSide;
             }

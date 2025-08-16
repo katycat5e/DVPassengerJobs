@@ -108,12 +108,12 @@ namespace PassengerJobs.Generation
             job = new Job(superTask, jobType, timeLimit, initialWage, chainData, forcedJobId, requiredLicenses);
 
             // add to signs along route
-            PlatformController.GetControllerForTrack(StartingTrack.Value.PlatformID).AddOutgoingJobToSigns(job);
+            PlatformController.GetControllerForTrack(StartingTrack.Value.PlatformID).RegisterOutgoingJob(job);
             for (int i = 0; i < DestinationTracks.Length - 1; i++)
             {
-                job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks[i].PlatformID).AddOutgoingJobToSigns;
+                job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks[i].PlatformID).RegisterOutgoingJob;
             }
-            job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks.Last().PlatformID).AddIncomingJobToSigns;
+            job.JobTaken += PlatformController.GetControllerForTrack(DestinationTracks.Last().PlatformID).RegisterIncomingJob;
 
             jobOriginStation.AddJobToStation(job);
         }

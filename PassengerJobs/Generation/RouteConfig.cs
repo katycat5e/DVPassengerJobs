@@ -12,9 +12,18 @@ namespace PassengerJobs.Generation
         public class CityStation
         {
             public string yardId;
-            public string[] platforms;
+            public CityPlatform[] platforms;
             public string[] terminusTracks;
             public string[] storage;
+        }
+
+        public class CityPlatform
+        {
+            public string id;
+            public Vector3? spawnZoneA;
+            public Vector3? spawnZoneB;
+            public float? spawnZoneDepth;
+            public float? spacing;
         }
 
         public class RuralStation
