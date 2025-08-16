@@ -1,28 +1,37 @@
 ﻿using DV.Logic.Job;
-using DV.TimeKeeping;
 using DV.WeatherSystem;
-using PassengerJobs.Injectors;
+using PassengerJobs.Generation;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace PassengerJobs.Platforms
 {
     public class PlatformController : MonoBehaviour
     {
-        public const int START_XFER_DELAY = 5;
-        private const float TRAIN_CHECK_INTERVAL = 1f;
-        private const float LOAD_DELAY = 1f;
-
         private static readonly AudioClip? _loadCompletedSound = null;
         private static readonly Dictionary<string, PlatformController> _trackToControllerMap = new();
+
+        public static void PlayBellSound()
+        {
+            _loadCompletedSound.Play2D();
+        }
 
         public static PlatformController GetControllerForTrack(string id)
         {
             return _trackToControllerMap[id];
+        }
+
+        public static bool TryGetControllerForTrack(string? id, out PlatformController? controller)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                controller = null;
+                return false;
+            }
+
+            return _trackToControllerMap.TryGetValue(id!, out controller);
         }
 
         public static void HandleGameUnloading()
@@ -35,6 +44,7 @@ namespace PassengerJobs.Platforms
             _trackToControllerMap.Clear();
         }
 
+        public PassStationData.PlatformData PlatformData = null!;
         public IPlatformWrapper Platform = null!;
         public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
 
@@ -45,7 +55,6 @@ namespace PassengerJobs.Platforms
         private string _lastTimeString = string.Empty;
 
         private readonly List<SignData.JobInfo> _currentJobs = new();
-        private bool _displayDataDirty = false;
 
         private string? _overrideText = null;
         public string? OverrideText
@@ -54,9 +63,12 @@ namespace PassengerJobs.Platforms
             set
             {
                 _overrideText = value;
-                _displayDataDirty = true;
             }
         }
+
+        public event EventHandler<JobAddedArgs>? JobAdded;
+        public event EventHandler<JobRemovedArgs>? JobRemoved;
+        public event EventHandler<CarTransferredArgs>? CarTransferred;
 
         static PlatformController()
         {
@@ -65,6 +77,7 @@ namespace PassengerJobs.Platforms
             if (_loadCompletedSound != null)
             {
                 PJMain.Log("Grabbed pocket watch bell sound");
+                DontDestroyOnLoad(_loadCompletedSound);
             }
             else
             {
@@ -74,19 +87,29 @@ namespace PassengerJobs.Platforms
 
         public void Start()
         {
-            _trackToControllerMap.Add(Platform.Id, this);
+            _trackToControllerMap[Platform.TrackId] = this;
             Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
+
+            _stateMachine = new PlatformControllerStateMachine(this);
+        }
+
+        private void Update()
+        {
+            if (_loadUnloadRoutine is null)
+            {
+                _stateMachine.Reset();
+                _loadUnloadRoutine = StartCoroutine(_stateMachine);
+            }
         }
 
         private void OnDisable()
         {
-            ResetLoadingState();
             StopAllCoroutines();
         }
 
         #region Sign Handling
 
-        public void SetSignsEnabled(bool enabled)
+        public void SetDecorationsEnabled(bool enabled)
         {
             foreach (var sign in Signs)
             {
@@ -99,7 +122,7 @@ namespace PassengerJobs.Platforms
             }
         }
 
-        private void RefreshDisplays()
+        public void RefreshDisplays()
         {
             _lastTimeString = CurrentTimeString;
             var data = new SignData(Platform.DisplayId, _lastTimeString, _currentJobs, _overrideText);
@@ -108,234 +131,66 @@ namespace PassengerJobs.Platforms
             {
                 sign.UpdateDisplay(data);
             }
-
-            _displayDataDirty = false;
         }
 
-        public void AddOutgoingJobToSigns(Job job, bool takenViaLoad = false)
+        #endregion
+
+        #region Job Handling
+
+        public bool HasOutgoingJob => _currentJobs.Any(j => !j.Incoming);
+
+        public void RegisterOutgoingJob(Job job, bool _ = false)
         {
             _currentJobs.Add(new SignData.JobInfo(job, false));
-            job.JobCompleted += RemoveJobFromSigns;
-            job.JobAbandoned += RemoveJobFromSigns;
-            _displayDataDirty = true;
+            job.JobCompleted += UnregisterOutgoingJob;
+            job.JobAbandoned += UnregisterOutgoingJob;
+            job.JobExpired += UnregisterOutgoingJob;
+
+            OverrideText = null;
+
+            JobAdded?.Invoke(this, new(job, false));
         }
 
-        public void AddIncomingJobToSigns(Job job, bool takenViaLoad = false)
+        public void RegisterIncomingJob(Job job, bool _ = false)
         {
             // add incoming jobs to top of list
             _currentJobs.AddToFront(new SignData.JobInfo(job, true));
-            job.JobCompleted += RemoveJobFromSigns;
-            job.JobAbandoned += RemoveJobFromSigns;
-            _displayDataDirty = true;
+            job.JobCompleted += UnregisterIncomingJob;
+            job.JobAbandoned += UnregisterIncomingJob;
+            job.JobExpired += UnregisterIncomingJob;
+
+            OverrideText = null;
+
+            JobAdded?.Invoke(this, new(job, true));
         }
 
-        public void RemoveJobFromSigns(Job job)
+        public void UnregisterOutgoingJob(Job job)
         {
             _currentJobs.RemoveAll(j => j.OriginalID == job.ID);
-            _displayDataDirty = true;
+            OverrideText = null;
+
+            JobRemoved?.Invoke(this, new(job, _currentJobs.Count, false));
+        }
+
+        public void UnregisterIncomingJob(Job job)
+        {
+            _currentJobs.RemoveAll(j => j.OriginalID == job.ID);
+            OverrideText = null;
+
+            JobRemoved?.Invoke(this, new(job, _currentJobs.Count, true));
+        }
+
+        public void OnCarTransferred(Car car, int totalCarsInTrain, bool isLoading)
+        {
+            CarTransferred?.Invoke(this, new(car, totalCarsInTrain, isLoading));
         }
 
         #endregion
 
         #region Coroutines
 
-        private static readonly WaitForSecondsRealtime _loadUnloadDelay = WaitFor.SecondsRealtime(LOAD_DELAY);
-
+        private PlatformControllerStateMachine _stateMachine = null!;
         private Coroutine? _loadUnloadRoutine = null;
-
-        private bool inIdleState = false;
-        private bool _currentlyLoading = false;
-        private bool _currentlyUnloading = false;
-        private int _loadCountdown = START_XFER_DELAY;
-        private int _unloadCountdown = START_XFER_DELAY;
-
-        private float _lastUpdate = float.MinValue;
-
-        private void Update()
-        {
-            if (Time.time - _lastUpdate < TRAIN_CHECK_INTERVAL) return;
-
-            _lastUpdate = Time.time;
-
-            if (CurrentTimeString != _lastTimeString)
-            {
-                _displayDataDirty = true;
-            }
-
-            // if no trains in progress, then display the default message
-            if (!(_currentlyLoading || _currentlyUnloading) && !inIdleState)
-            {
-                OverrideText = null;
-                inIdleState = true;
-            }
-
-            // check for unloading train, we need to unload before trying to re-load train
-            if (Platform.IsAnyTrainPresent(false))
-            {
-                if (_unloadCountdown == 0)
-                {
-                    if (_loadUnloadRoutine == null)
-                    {
-                        inIdleState = false;
-                        _loadUnloadRoutine = StartCoroutine(DelayedLoadUnload(false));
-                    }
-                    return;
-                }
-                else
-                {
-                    _unloadCountdown -= 1;
-                }
-            }
-            else
-            {
-                _unloadCountdown = START_XFER_DELAY;
-            }
-
-            // Check for loading train
-            if (Platform.IsAnyTrainPresent(true))
-            {
-                if (_loadCountdown == 0)
-                {
-                    if (_loadUnloadRoutine == null)
-                    {
-                        inIdleState = false;
-                        _loadUnloadRoutine = StartCoroutine(DelayedLoadUnload(true));
-                    }
-                    return;
-                }
-                else
-                {
-                    _loadCountdown -= 1;
-                }
-            }
-            else
-            {
-                _loadCountdown = START_XFER_DELAY;
-            }
-
-            if (_displayDataDirty)
-            {
-                RefreshDisplays();
-            }
-        }
-
-        private IEnumerator DelayedLoadUnload(bool isLoading)
-        {
-            WarehouseTaskType taskType = isLoading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-            var currentTasks = Platform.GetLoadableTasks(isLoading);
-
-            if (currentTasks.Count == 0)
-            {
-                ResetLoadingState();
-                yield break;
-            }
-
-            _currentlyLoading = isLoading;
-            _currentlyUnloading = !isLoading;
-
-            bool completedTransfer = false;
-
-            foreach (var task in currentTasks)
-            {
-                yield return _loadUnloadDelay;
-
-                // make double sure that the cars are able to be loaded
-                bool allCarsStopped = Platform.AreCarsStoppedAtPlatform(task.Cars);
-                if (!allCarsStopped)
-                {
-                    // this kills the passengers
-                    continue;
-                }
-
-                // display the current transferring train
-                string message = LocalizationKey.SIGN_BOARDING.L() + '\n';
-                if (task.IsLoadTask)
-                {
-                    message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
-                }
-                else
-                {
-                    message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
-                }
-                OverrideText = message;
-                RefreshDisplays();
-
-                // now that we verified that the cars are okay, actually transfer the passengers to/from the cars
-                for (int nToProcess = task.Cars.Count; nToProcess > 0; nToProcess--)
-                {
-                    Car? result = Platform.TransferOneCarOfTask(task, isLoading);
-
-                    if (result == null)
-                    {
-                        PJMain.Error("Tried to (un)load a car that wasn't there :(");
-
-                        // fail into safe state by completing task
-                        task.State = TaskState.Done;
-                        foreach (Car car in task.Cars)
-                        {
-                            if (isLoading)
-                            {
-                                car.DumpCargo();
-                                car.LoadCargo(car.capacity, CargoInjector.PassengerCargo.v1);
-                            }
-                            else
-                            {
-                                car.DumpCargo();
-                            }
-                        }
-                        Platform.RemoveTask(task);
-
-                        break;
-                    }
-
-                    yield return _loadUnloadDelay;
-                }
-            }
-
-            OverrideText = null;
-            completedTransfer = true;
-
-            // all jobs processed
-
-            if (completedTransfer && !isLoading && Platform.IsAnyTrainPresent(true))
-            {
-                var loadRoutine = DelayedLoadUnload(true);
-                while (loadRoutine.MoveNext())
-                {
-                    yield return loadRoutine.Current;
-                }
-                yield break;
-            }
-
-            if (completedTransfer && _loadCompletedSound)
-            {
-                if (_loadCompletedSound)
-                {
-                    Transform playerTform = PlayerManager.PlayerCamera.transform;
-                    _loadCompletedSound.Play(playerTform.position, parent: playerTform);
-                }
-
-                OverrideText = isLoading ?
-                    LocalizationKey.SIGN_DEPARTING.L() :
-                    LocalizationKey.SIGN_EMPTY.L();
-                RefreshDisplays();
-                yield return WaitFor.Seconds(LOAD_DELAY * 10);
-            }
-
-            ResetLoadingState();
-        }
-
-        private void ResetLoadingState()
-        {
-            if (_loadUnloadRoutine != null)
-            {
-                StopCoroutine(_loadUnloadRoutine);
-                _loadUnloadRoutine = null;
-            }
-
-            _currentlyLoading = _currentlyUnloading = false;
-            _loadCountdown = _unloadCountdown = START_XFER_DELAY;
-        }
 
         #endregion
     }

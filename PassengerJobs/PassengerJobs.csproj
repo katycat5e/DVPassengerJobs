@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<AssemblyName>PassengerJobs</AssemblyName>
 		<TargetFramework>netframework4.8</TargetFramework>
-		<LangVersion>9</LangVersion>
+		<LangVersion>10</LangVersion>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
@@ -20,14 +20,19 @@
 		<Reference Include="DV.BrakeSystem" />
 		<Reference Include="DV.Common" />
 		<Reference Include="DV.PointSet" />
+		<Reference Include="DV.RailTrack" />
+		<Reference Include="DV.Simulation" />
 		<Reference Include="DV.Utils" />
 		<Reference Include="DV.WeatherSystem" />
 		<Reference Include="DVLangHelper.Data" />
 		<Reference Include="DVLangHelper.Runtime" />
 		<Reference Include="DV.Inventory" />
 		<Reference Include="DV.NAudio" />
+		<Reference Include="DV.SpriteLights" />
 		<Reference Include="DV.ThingTypes" />
+		<Reference Include="DV.TimeBasedEvents" />
 		<Reference Include="DV.Localization" />
+		<Reference Include="DV.UIFramework" />
 		<Reference Include="I2.Localization" />
 		<Reference Include="net.smkd.vector3d" />
 		<Reference Include="Newtonsoft.Json" />
@@ -49,6 +54,7 @@
 		<Reference Include="UnityEngine.PhysicsModule" />
 		<Reference Include="UnityEngine.UI" />
 		<Reference Include="UnityModManager" />
+		<Reference Include="WorldStreamer" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="default_routes.json">
@@ -61,4 +67,7 @@
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
+  </Target>
 </Project>

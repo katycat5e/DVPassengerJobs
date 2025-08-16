@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DV.Utils;
+using UnityEngine;
+using DV.PointSet;
 
 namespace PassengerJobs.Generation
 {
@@ -22,12 +24,15 @@ namespace PassengerJobs.Generation
 
         private static readonly Dictionary<string, IPassDestination> _stations = new();
 
-        public static bool IsPassengerStation(string yardId) => _stationConfig?.platforms.Any(p => p.yardId == yardId) == true;
+        public static bool IsPassengerStation(string yardId) => _stationConfig?.cityStations.Any(p => p.yardId == yardId) == true;
 
         static RouteManager()
         {
             UnloadWatcher.UnloadRequested += HandleGameUnloading;
         }
+
+        //=====================================================================================
+        #region Configuration Handling
 
         public static bool LoadConfig()
         {
@@ -62,13 +67,29 @@ namespace PassengerJobs.Generation
 
             if (File.Exists(configPath))
             {
-                config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                try
+                {
+                    config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                }
+                catch (Exception ex)
+                {
+                    PJMain.Error($"Failed to read custom {typeof(T).Name} settings", ex);
+                    config = null;
+                }
             }
 
             if (config == null)
             {
-                configPath = Path.Combine(PJMain.ModEntry.Path, defaultFilename);
-                config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                try
+                {
+                    configPath = Path.Combine(PJMain.ModEntry.Path, defaultFilename);
+                    config = JsonConvert.DeserializeObject<T>(File.ReadAllText(configPath));
+                }
+                catch (Exception ex)
+                {
+                    PJMain.Error($"Failed to read default {typeof(T).Name} settings", ex);
+                    throw new InvalidOperationException($"Failed to load any data from config file {defaultFilename}", ex);
+                }
             }
 
             if (config == null)
@@ -79,18 +100,178 @@ namespace PassengerJobs.Generation
             return config;
         }
 
+        private static JsonSerializerSettings _jsonSettings = new()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            DefaultValueHandling = DefaultValueHandling.Ignore,
+            Culture = System.Globalization.CultureInfo.InvariantCulture,
+        };
+
+        private static void SaveStationConfig()
+        {
+            try
+            {
+                string configPath = Path.Combine(PJMain.ModEntry.Path, DEFAULT_STATION_CONFIG_FILE);
+
+                string serialized = JsonConvert.SerializeObject(_stationConfig, Formatting.Indented, _jsonSettings);
+                File.WriteAllText(configPath, serialized);
+            }
+            catch (Exception ex)
+            {
+                PJMain.Error("Failed to save station config", ex);
+            }
+        }
+
+        public static bool TryGetRuralStation(string id, out StationConfig.RuralStation? result)
+        {
+            foreach (var station in _stationConfig!.ruralStations)
+            {
+                if (station.id == id)
+                {
+                    result = station;
+                    return true;
+                }
+            }
+            result = null;
+            return false;
+        }
+
+        public static void SaveRuralStation(string id, Vector3 location, bool hideConcrete, bool hideLamps, bool swapSides)
+        {
+            StationConfig.RuralStation? station = null;
+
+            foreach (var existing in _stationConfig!.ruralStations)
+            {
+                if (existing.id == id)
+                {
+                    station = existing;
+                    break;
+                }
+            }
+
+            if (station is null)
+            {
+                station = new StationConfig.RuralStation()
+                {
+                    id = id,
+                };
+                _stationConfig.ruralStations = _stationConfig.ruralStations.Append(station).OrderBy(s => s.id).ToArray();
+            }
+
+            station.location = location;
+            station.hideConcrete = hideConcrete;
+            station.hideLamps = hideLamps;
+            station.swapSides = swapSides;
+
+            SaveStationConfig();
+            ReloadStations();
+        }
+
+        public static void ReloadStations()
+        {
+            LoadConfig();
+            CreateRuralStations();
+            ApplyPlatformData();
+        }
+
+        public static void SavePlatformConfig(string platformId, Vector3 cornerA, Vector3 cornerB, float depth)
+        {
+            string stationId = platformId.Split('-')[0];
+            var station = _stationConfig!.cityStations.FirstOrDefault(s => s.yardId == stationId);
+
+            if (station is null)
+            {
+                PJMain.Error($"Station {stationId} does not exist in the config");
+                return;
+            }
+
+            StationConfig.CityPlatform? platform = station.platforms.FirstOrDefault(p => p.id == platformId);
+            
+            if (platform is null)
+            {
+                platform = new StationConfig.CityPlatform()
+                {
+                    id = platformId
+                };
+
+                station.platforms = station.platforms.Append(platform).ToArray();
+            }
+
+            platform.spawnZoneA = cornerA;
+            platform.spawnZoneB = cornerB;
+            platform.spawnZoneDepth = depth;
+
+            SaveStationConfig();
+            ReloadStations();
+        }
+
+        public static void ApplyPlatformData()
+        {
+            foreach (var station in _stationConfig!.cityStations)
+            {
+                foreach (var platform in station.platforms)
+                {
+                    if (PlatformController.TryGetControllerForTrack(platform.id, out var controller))
+                    {
+                        var platformData = new PassStationData.PlatformData(GetTrackById(platform.id)!, platform);
+                        controller!.PlatformData = platformData;
+                    }
+                }
+            }
+        }
+
+        #endregion
+
+        //=====================================================================================
+        #region Startup
+
         public static void OnStationControllerStart(StationController station)
         {
             string yardId = station.stationInfo.YardID;
-            if (_stationConfig!.platforms.FirstOrDefault(t => t.yardId == yardId) is StationConfig.TrackSet platforms)
+
+            IEnumerable<Track> ParseTracks(IEnumerable<string> ids)
+            {
+                foreach (string id in ids)
+                {
+                    if (GetTrackById(id) is Track track)
+                    {
+                        yield return track;
+                    }
+                    else
+                    {
+                        PJMain.Error($"Invalid track id in config for station {yardId}: {id}");
+                    }
+                }
+            }
+
+            if (_stationConfig!.cityStations.FirstOrDefault(t => t.yardId == yardId) is StationConfig.CityStation config)
             {
                 var stationData = new PassStationData(station);
-                stationData.AddPlatforms(platforms.tracks.Select(GetTrackById));
 
-                var storage = _stationConfig.storage.FirstOrDefault(t => t.yardId == yardId);
-                if (storage != null)
+                foreach (var platformConfig in config.platforms)
                 {
-                    stationData.AddStorageTracks(storage.tracks.Select(GetTrackById));
+                    if (GetTrackById(platformConfig.id) is Track track)
+                    {
+                        stationData.AddPlatform(track, platformConfig);
+                    }
+                    else
+                    {
+                        PJMain.Error($"Invalid track id in config for station {yardId}: {platformConfig.id}");
+                    }
+                }
+
+                if (config.storage is not null)
+                {
+                    stationData.AddStorageTracks(ParseTracks(config.storage));
+                }
+
+                if (config.terminusTracks is not null)
+                {
+                    stationData.AddTerminusTracks(ParseTracks(config.terminusTracks));
+                }
+                else
+                {
+                    stationData.AddTerminusTracks(stationData.Platforms.Select(p => p.Track));
                 }
 
                 _stations.Add(yardId, stationData);
@@ -115,46 +296,35 @@ namespace PassengerJobs.Generation
 
             foreach (var station in _stationConfig!.ruralStations)
             {
-                var track = GetTrackById(station.trackId);
-                var railTrack = track.GetRailTrack();
+                RuralStationData? newStation;
 
-                PlatformController controller;
-                IEnumerable<RuralLoadingTask> tasks;
-                if (_stations.TryGetValue(station.id, out var stationData) && (stationData is RuralStationData ruralData))
+                if (_stations.TryGetValue(station.id, out var stationData) && (stationData is RuralStationData existing))
                 {
-                    RuralStationBuilder.DestroyDecorations(ruralData.Platform);
-                    controller = railTrack.GetComponents<PlatformController>().First(p => p.Platform.Id == ruralData.Platform.Id);
-                    tasks = ruralData.Platform.Tasks;
-                    _stations.Remove(station.id);
+                    RuralStationBuilder.DestroyDecorations(existing.Platform);
+                    newStation = RuralStationBuilder.CreateStation(station, existing);
                 }
                 else
                 {
-                    controller = railTrack.gameObject.AddComponent<PlatformController>();
-                    tasks = Enumerable.Empty<RuralLoadingTask>();
+                    newStation = RuralStationBuilder.CreateStation(station);
                 }
 
-                var platform = new RuralPlatformWrapper(station, track);
-                controller.Platform = platform;
-
-                foreach (var task in tasks)
+                if (newStation is null)
                 {
-                    platform.LoadingMachine.AddTask(task);
+                    _stations.Remove(station.id);
+                    continue;
                 }
 
-                ruralData = new RuralStationData(platform.LoadingMachine);
-                _stations.Add(station.id, ruralData);
+                _stations[station.id] = newStation;
 
-                RuralStationBuilder.GenerateDecorations(platform.LoadingMachine);
-
-                var routeTrack = new RouteTrack(ruralData, track, station.lowIdx, station.highIdx);
-                PJMain.Log($"Created rural station {station.id} on {track.ID} {station.lowIdx}-{station.highIdx}, {routeTrack.Length}m");
+                if (newStation.Platform.IsYardTrack)
+                {
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID}");
+                }
+                else
+                {
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
+                }
             }
-        }
-
-        public static void ReloadStations()
-        {
-            LoadConfig();
-            CreateRuralStations();
         }
 
         private static bool _routesInitialized = false;
@@ -172,14 +342,14 @@ namespace PassengerJobs.Generation
 
             foreach (var stationData in _stations.Values.OfType<PassStationData>())
             {
-                var routeData = _routeConfig!.expressRoutes.FirstOrDefault(t => t.start == stationData.YardID);
+                var routeData = _routeConfig!.expressRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (routeData != null)
                 {
                     var routeStations = GetRoutes(RouteType.Express, routeData.routes);
                     stationData.ExpressRoutes.AddRange(routeStations);
                 }
 
-                var localRoutes = _routeConfig!.localRoutes.FirstOrDefault(t => t.start == stationData.YardID);
+                var localRoutes = _routeConfig!.localRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (localRoutes != null)
                 {
                     var routeStations = GetRoutes(RouteType.Local, localRoutes.routes);
@@ -196,11 +366,22 @@ namespace PassengerJobs.Generation
             _routesInitialized = false;
         }
 
-        private static Track GetTrackById(string id)
+        #endregion
+
+        //=====================================================================================
+        #region Route Calculation
+
+        private static Track? GetTrackById(string id)
         {
-            return RailTrackRegistry.Instance.AllTracks
-                .First(rt => rt.logicTrack.ID.ToString() == id)
-                .logicTrack;
+            var railTrack = RailTrackRegistry.Instance.AllTracks
+                .FirstOrDefault(rt => rt.LogicTrack().ID.ToString() == id);
+
+            if (railTrack is null)
+            {
+                PJMain.Error($"GetTrackById({id}) not found");
+            }
+
+            return railTrack?.LogicTrack();
         }
 
         public static RouteTrack? GetRouteTrackById(string trackId)
@@ -219,11 +400,11 @@ namespace PassengerJobs.Generation
         public static RouteResult? GetRoute(PassStationData startStation, RouteType routeType, IEnumerable<string> existingDests, double minLength = 0)
         {
             EnsureInitialized();
-
+            
             var routeOptions = (routeType == RouteType.Express) ? startStation.ExpressRoutes : startStation.RegionalRoutes;
             var graph = CreateGraph(routeOptions, existingDests, minLength);
-
-            if (graph[0].Weight < 0.5f) return null;
+            
+            if ((graph.Count == 0) || (graph[0].Weight < 0.5f)) return null;
 
             return new RouteResult(graph[0].RouteType, graph[0].PickTracks());
         }
@@ -244,134 +425,7 @@ namespace PassengerJobs.Generation
             graph.Sort();
             return graph;
         }
-    }
 
-    public sealed class RouteResult
-    {
-        public readonly RouteType RouteType;
-        public readonly RouteTrack[] Tracks;
-
-        public RouteResult(RouteType routeType, RouteTrack[] tracks)
-        {
-            RouteType = routeType;
-            Tracks = tracks;
-        }
-
-        public double MinTrackLength => Tracks.Min(t => t.Length);
-    }
-
-    public readonly struct RouteTrack
-    {
-        public readonly IPassDestination Station;
-        public readonly Track Track;
-        public readonly int LowBound;
-        public readonly int HighBound;
-
-        public bool IsSegment => (LowBound >= 0) && (HighBound >= 0);
-
-        public double Length
-        {
-            get
-            {
-                if (IsSegment)
-                {
-                    var rail = Track.GetRailTrack().GetPointSet();
-                    return rail.points[HighBound].span - rail.points[LowBound].span;
-                }
-                else
-                {
-                    return Track.length;
-                }
-            }
-        }
-
-        public string PlatformID => IsSegment ? Station.YardID : Track.ID.ToString();
-        public string SaveID => IsSegment ? Station.YardID : Track.ID.FullID;
-        public string DisplayID => IsSegment ? $"{Station.YardID}-LP" : Track.ID.ToString();
-
-        public RouteTrack(IPassDestination station, Track track)
-        {
-            Station = station;
-            Track = track;
-            LowBound = HighBound = -1;
-        }
-
-        public RouteTrack(IPassDestination station, Track track, int lowBound, int highBound) :
-            this(station, track)
-        {
-            LowBound = lowBound;
-            HighBound = highBound;
-        }
-    }
-
-    public class RoutePath : IComparable<RoutePath>
-    {
-        public readonly RouteType RouteType;
-        public readonly RouteNode[] Nodes;
-        public readonly TrackType TrackType;
-        public float Weight;
-
-        public RoutePath(RouteData stations, TrackType trackType, double minLength = 0)
-        {
-            RouteType = stations.RouteType;
-            Nodes = stations.Destinations.Select(s => new RouteNode(s, minLength)).ToArray();
-            TrackType = trackType;
-
-            if (Nodes.Any(n => n.Weight == 0))
-            {
-                Weight = 0;
-            }
-            else
-            {
-                Weight = 1 + GetWeightNoise();
-            }
-        }
-
-        private static float GetWeightNoise()
-        {
-            // +/- 0.25
-            return (UnityEngine.Random.value + 1) / 4;
-        }
-
-        public RouteTrack[] PickTracks()
-        {
-            var result = new RouteTrack[Nodes.Length];
-            for (int i = 0; i < Nodes.Length; i++)
-            {
-                result[i] = Nodes[i].PickTrack();
-            }
-            return result;
-        }
-
-        public int CompareTo(RoutePath other)
-        {
-            return other.Weight.CompareTo(Weight);
-        }
-    }
-
-    public readonly struct RouteNode
-    {
-        public readonly IPassDestination Station;
-        public readonly IEnumerable<RouteTrack> Tracks;
-        public readonly double MinLength;
-        public readonly float Weight;
-
-        public RouteNode(IPassDestination station, double minLength = 0)
-        {
-            Station = station;
-            MinLength = minLength;
-
-            Tracks = station.GetPlatforms()
-                .GetUnusedTracks()
-                .Where(t => t.Length >= (minLength + YardTracksOrganizer.END_OF_TRACK_OFFSET_RESERVATION));
-
-            //return ((float)unused.Count() / tracks.Count) + ();
-            Weight = Tracks.Any() ? 1 : 0;
-        }
-
-        public readonly RouteTrack PickTrack()
-        {
-            return Tracks.PickOneValue()!.Value;
-        }
+        #endregion
     }
 }

@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using System.Linq;
 using PassengerJobs.Generation;
 
 namespace PassengerJobs.Patches
@@ -22,8 +23,9 @@ namespace PassengerJobs.Patches
         {
             if (__instance is PassengerChainController)
             {
-                CarSpawner.Instance.DeleteTrainCars(__instance.trainCarsForJobChain, true);
-                __instance.trainCarsForJobChain.Clear();
+                var trainCars = __instance.carsForJobChain.Select(lc => TrainCarRegistry.Instance.logicCarToTrainCar[lc]).ToList();
+                CarSpawner.Instance.DeleteTrainCars(trainCars, true);
+                __instance.carsForJobChain.Clear();
             }
         }
     }

@@ -34,7 +34,14 @@ namespace PassengerJobs
             {
                 if ((task is RuralTask_data ruralTask) && !ruralTask.isLoading)
                 {
-                    destinations.Add(new PassStopInfo(ruralTask.stationId));
+                    if (StationController.GetStationByYardID(ruralTask.stationId) is StationController industryYard)
+                    {
+                        destinations.Add(new PassStopInfo(ruralTask.destinationTrackID, industryYard.stationInfo));
+                    }
+                    else
+                    {
+                        destinations.Add(new PassStopInfo(ruralTask.stationId));
+                    }
                 }
                 else if (task.instanceTaskType == TaskType.Warehouse)
                 {

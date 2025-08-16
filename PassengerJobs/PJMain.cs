@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using UnityModManagerNet;
@@ -58,6 +59,24 @@ namespace PassengerJobs
             var harmony = new Harmony(modEntry.Info.Id);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
+#if DEBUG
+            string debugToolsDll = Path.Combine(ModEntry.Path, "PassengerJobs.DebugTools.dll");
+            var dtAssembly = Assembly.LoadFile(debugToolsDll);
+
+            if (dtAssembly is not null)
+            {
+                Log("Loaded Debug Tools");
+                //foreach (var initMethod in dtAssembly.GetTypes().SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static)))
+                //{
+                //    if ((initMethod.Name == "Initialize") && (initMethod.GetParameters().Length == 0))
+                //    {
+                //        initMethod.Invoke(null, Array.Empty<object>());
+                //    }
+                //}
+                harmony.PatchAll(dtAssembly);
+            }
+#endif
+
             return true;
         }
 
@@ -90,43 +109,4 @@ namespace PassengerJobs
 
         #endregion
     }
-
-    //[HarmonyPatch(typeof(FastTravelController))]
-    //internal static class FastTravelPatch
-    //{
-    //    private static readonly MethodInfo _isAllowedMethod = AccessTools.Method(typeof(GameFeatureFlags), nameof(GameFeatureFlags.IsAllowed));
-
-    //    [HarmonyPatch(nameof(FastTravelController.OnFastTravelRequested))]
-    //    [HarmonyTranspiler]
-    //    public static IEnumerable<CodeInstruction> IsAllowedPrefix(IEnumerable<CodeInstruction> instructions)
-    //    {
-    //        bool first = true;
-    //        bool prevWasCall = false;
-    //        foreach (var instruction in instructions)
-    //        {
-    //            if (prevWasCall)
-    //            {
-    //                yield return new CodeInstruction(OpCodes.Brfalse_S, instruction.operand);
-    //                prevWasCall = false;
-    //                continue;
-    //            }
-    //            else
-    //            {
-    //                yield return instruction;
-    //            }
-
-    //            if (instruction.Calls(_isAllowedMethod))
-    //            {
-    //                if (first)
-    //                {
-    //                    first = false;
-    //                }
-    //                else
-    //                {
-    //                    prevWasCall = true;
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
 }

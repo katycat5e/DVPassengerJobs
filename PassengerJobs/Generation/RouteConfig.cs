@@ -6,27 +6,38 @@ namespace PassengerJobs.Generation
 {
     public class StationConfig
     {
-        public TrackSet[] platforms;
-        public TrackSet[] storage;
-
+        public CityStation[] cityStations;
         public RuralStation[] ruralStations;
 
-        public class TrackSet
+        public class CityStation
         {
             public string yardId;
-            public string[] tracks;
+            public CityPlatform[] platforms;
+            public string[] terminusTracks;
+            public string[] storage;
+        }
+
+        public class CityPlatform
+        {
+            public string id;
+            public Vector3? spawnZoneA;
+            public Vector3? spawnZoneB;
+            public float? spawnZoneDepth;
+            public float? spacing;
         }
 
         public class RuralStation
         {
             public string id;
-            public string name;
-            public string trackId;
-            public int lowIdx;
-            public int highIdx;
+            
+            public Vector3 location;
+            public bool swapSides;
 
-            public Vector3? platformOffset;
-            public Vector3? platformRotation;
+            // Platform configuration
+            public bool hideConcrete;
+            public bool hideLamps;
+            public float extraHeight;
+
             public float? markerAngle;
         }
     }

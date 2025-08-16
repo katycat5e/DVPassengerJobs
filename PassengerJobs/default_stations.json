@@ -1,359 +1,307 @@
 ﻿{
-  "platforms": [
+  "cityStations": [
     {
-      "yardId": "CSW",
-      "tracks": [ "CSW-B6LP", "CSW-B5LP", "CSW-B4LP", "CSW-B3LP" ]
+      "yardId": "CW",
+      "platforms": [ "CW-B6LP", "CW-B5LP", "CW-B4LP", "CW-B3LP" ],
+      "storage": [ "CW-B2SP", "CW-B1SP" ]
     },
     {
       "yardId": "MF",
-      "tracks": [ "MF-D1LP", "MF-D2LP" ]
+      "platforms": [ "MF-D1LP", "MF-D2LP" ],
+      "storage": [ "MF-D4SP" ]
     },
     {
       "yardId": "FF",
-      "tracks": [ "FF-B1LP", "FF-B2LP" ]
+      "platforms": [ "FF-B1LP", "FF-B2LP" ],
+      "storage": [ "FF-B3SP", "FF-B5SP", "FF-B4SP" ]
     },
     {
       "yardId": "HB",
-      "tracks": [ "HB-F1LP", "HB-F2LP" ]
+      "platforms": [ "HB-F1LP", "HB-F2LP" ],
+      "storage": [ "HB-F4SP", "HB-F3SP" ]
     },
     {
       "yardId": "GF",
-      "tracks": [ "GF-C3LP" ]
-    }
-  ],
-
-  "storage": [
-    {
-      "yardId": "CSW",
-      "tracks": [ "CSW-B2SP", "CSW-B1SP" ]
+      "platforms": [ "GF-C3LP", "GF-C2LP" ],
+      "terminusTracks": [ "GF-C3LP" ],
+      "storage": [ "GF-C1SP" ]
     },
     {
-      "yardId": "MF",
-      "tracks": [ "MF-D4SP" ]
-    },
-    {
-      "yardId": "FF",
-      "tracks": [ "FF-B3SP", "FF-B5SP", "FF-B4SP" ]
-    },
-    {
-      "yardId": "HB",
-      "tracks": [ "HB-F4SP", "HB-F3SP" ]
-    },
-    {
-      "yardId": "GF",
-      "tracks": [ "GF-C1SP" ]
+      "yardId": "CS",
+      "platforms": [ "CS-A1LP", "CS-A2LP" ],
+      "terminusTracks": []
     }
   ],
 
   "ruralStations": [
     {
-      "id": "HN",
-      "name": "Highlands North",
-      "trackId": "#Y-#S301#T",
-      "lowIdx": 9740,
-      "highIdx": 9980,
-      "platformRotation": {
-        "x": 0,
-        "y": 1.8,
-        "z": 0
+      "id": "AM",
+      "location": {
+        "x": 11792.7,
+        "y": 160.754517,
+        "z": 7433.053
       },
-      "platformOffset": {
-        "x": -1,
-        "y": -0.2,
-        "z": 5
-      },
-      "markerAngle": -45
+      "extraHeight": -1.0
     },
-
-    {
-      "id": "MR",
-      "name": "Mountain Retreat",
-      "trackId": "#Y-#S369#T",
-      "lowIdx": 3760,
-      "highIdx": 4000,
-      "platformRotation": {
-        "x": 0,
-        "y": 179.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.7,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 45
-    },
-
-    {
-      "id": "SO",
-      "name": "Spiral Overlook",
-      "trackId": "#Y-#S480#T",
-      "lowIdx": 3960,
-      "highIdx": 4200,
-      "platformRotation": {
-        "x": 0,
-        "y": 179,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.3,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": -100
-    },
-
-    {
-      "id": "NP",
-      "name": "Northern Pass",
-      "trackId": "#Y-#S369#T",
-      "lowIdx": 12795,
-      "highIdx": 13035,
-      "platformRotation": {
-        "x": 0,
-        "y": 185.6,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.1,
-        "y": -0.3,
-        "z": 0
-      },
-      "markerAngle": 90
-    },
-
-    {
-      "id": "RJ",
-      "name": "Riverside Junction",
-      "trackId": "#Y-#S311#T",
-      "lowIdx": 12970,
-      "highIdx": 13210,
-      "platformRotation": {
-        "x": 0,
-        "y": 179,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.9,
-        "y": -0.3,
-        "z": 5
-      },
-      "markerAngle": 45
-    },
-
-    {
-      "id": "GFO",
-      "name": "Goods Factory Overlook",
-      "trackId": "#Y-#S418#T",
-      "lowIdx": 7820,
-      "highIdx": 8060,
-      "platformRotation": {
-        "x": 0,
-        "y": 181,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.5,
-        "y": -0.2,
-        "z": 0
-      },
-      "markerAngle": 180
-    },
-
-    {
-      "id": "FW",
-      "name": "Western Forest",
-      "trackId": "#Y-#S70#T",
-      "lowIdx": 5880,
-      "highIdx": 6120,
-      "platformRotation": {
-        "x": 0,
-        "y": 181,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -1.3,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 180
-    },
-
-    {
-      "id": "WF",
-      "name": "Wheat Fields",
-      "trackId": "#Y-#S491#T",
-      "lowIdx": 4336,
-      "highIdx": 4589
-    },
-
-    {
-      "id": "WL",
-      "name": "Western Lake",
-      "trackId": "#Y-#S311#T",
-      "lowIdx": 2100,
-      "highIdx": 2340,
-      "platformRotation": {
-        "x": 0,
-        "y": -1.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.9,
-        "y": -0.2,
-        "z": -5
-      },
-      "markerAngle": 90
-    },
-
-    {
-      "id": "HV",
-      "name": "Hidden Valley",
-      "trackId": "#Y-#S378#T",
-      "lowIdx": 9050,
-      "highIdx": 9290,
-      "platformRotation": {
-        "x": 0,
-        "y": 181.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": -0.6,
-        "y": 0,
-        "z": 0
-      }
-    },
-
-    {
-      "id": "RS",
-      "name": "Radio Summit",
-      "trackId": "#Y-#S249#T",
-      "lowIdx": 1310,
-      "highIdx": 1550,
-      "platformRotation": {
-        "x": 0,
-        "y": 179.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.1,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": -90
-    },
-
     {
       "id": "CI",
-      "name": "Central Industries",
-      "trackId": "#Y-#S344#T",
-      "lowIdx": 60,
-      "highIdx": 300,
-      "platformRotation": {
-        "x": 0,
-        "y": 180,
-        "z": 0
+      "location": {
+        "x": 5312.737,
+        "y": 146.535461,
+        "z": 5354.309
       },
-      "platformOffset": {
-        "x": 1,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 70
+      "swapSides": true,
+      "markerAngle": 90.0,
+      "extraHeight": -1
     },
-
     {
-      "id": "SL",
-      "name": "Southern Lakes",
-      "trackId": "#Y-#S502#T",
-      "lowIdx": 3700,
-      "highIdx": 3940,
-      "platformRotation": {
-        "x": 0,
-        "y": 178.5,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 2.5,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": -80
-    },
-
-    {
-      "id": "VSW",
-      "name": "Valley Southwest",
-      "trackId": "#Y-#S362#T",
-      "lowIdx": 4980,
-      "highIdx": 5220,
-      "platformRotation": {
-        "x": 0,
-        "y": 0.4,
-        "z": 0
-      },
-      "platformOffset": {
-        "x": 0.5,
-        "y": 0,
-        "z": 0
+      "id": "CME",
+      "location": {
+        "x": 15532.8818,
+        "y": 204.4381,
+        "z": 11374.4219
       }
     },
-
     {
-      "id": "OV",
-      "name": "Ocean View",
-      "trackId": "#Y-#S63#T",
-      "lowIdx": 9530,
-      "highIdx": 9770,
-      "platformRotation": {
-        "x": 0,
-        "y": 4.3,
-        "z": 0
+      "id": "CMS",
+      "location": {
+        "x": 8487.341,
+        "y": 156.609726,
+        "z": 3403.3125
       },
-      "platformOffset": {
-        "x": 2.4,
-        "y": 0,
-        "z": 5
-      },
-      "markerAngle": -90
+      "swapSides": true
     },
-
     {
-      "id": "CMP",
-      "name": "Coal Mine",
-      "trackId": "CM-A3L",
-      "lowIdx": 1160,
-      "highIdx": 1400,
-      "platformRotation": {
-        "x": 0,
-        "y": 0.4,
-        "z": 0
+      "id": "CP",
+      "location": {
+        "x": 2073.348,
+        "y": 145.267212,
+        "z": 8931.03
       },
-      "platformOffset": {
-        "x": -0.8,
-        "y": 0,
-        "z": 0
-      },
-      "markerAngle": 200
+      "swapSides": true,
+      "extraHeight": -0.1
     },
-
     {
-      "id": "AM",
-      "name": "Alpine Meadows",
-      "trackId": "#Y-#S448#T",
-      "lowIdx": 2030,
-      "highIdx": 2270,
-      "platformRotation": {
-        "x": 0,
-        "y": -0.7,
-        "z": 0
+      "id": "FM",
+      "location": {
+        "x": 6018.0,
+        "y": 124.0,
+        "z": 6626.0
       },
-      "platformOffset": {
-        "x": -0.9,
-        "y": -0.5,
-        "z": 0
+      "swapSides": true
+    },
+    {
+      "id": "FRC",
+      "location": {
+        "x": 5764.708,
+        "y": 145.195129,
+        "z": 8758.323
       },
-      "markerAngle": -45
+      "swapSides": true,
+      "extraHeight": -1.2
+    },
+    {
+      "id": "FRS",
+      "location": {
+        "x": 5326.653,
+        "y": 175.088455,
+        "z": 3693.73853
+      },
+      "swapSides": true,
+      "extraHeight": -1.1
+    },
+    {
+      "id": "GFO",
+      "location": {
+        "x": 12939.7422,
+        "y": 190.8844,
+        "z": 11526.7051
+      },
+      "extraHeight": -1
+    },
+    {
+      "id": "HN",
+      "location": {
+        "x": 12176.8506,
+        "y": 189.277588,
+        "z": 15517.5215
+      },
+      "swapSides": true,
+      "extraHeight": -1,
+      "markerAngle": 160.0
+    },
+    {
+      "id": "HV",
+      "location": {
+        "x": 13631.4189,
+        "y": 161.466568,
+        "z": 6947.2627
+      },
+      "swapSides": true,
+      "extraHeight": -1
+    },
+    {
+      "id": "IME",
+      "location": {
+        "x": 14938.7744,
+        "y": 248.259033,
+        "z": 15141.7217
+      }
+    },
+    {
+      "id": "IMW",
+      "location": {
+        "x": 2089.65039,
+        "y": 133.771973,
+        "z": 13401.6113
+      }
+    },
+    {
+      "id": "MB",
+      "location": {
+        "x": 12555.1514,
+        "y": 215.509781,
+        "z": 14738.9111
+      },
+      "swapSides": true
+    },
+    {
+      "id": "MR",
+      "location": {
+        "x": 3897.00366,
+        "y": 151.275009,
+        "z": 14342.68
+      },
+      "swapSides": true,
+      "extraHeight": -1.0,
+      "markerAngle": 180.0
+    },
+    {
+      "id": "NP",
+      "location": {
+        "x": 5541.986,
+        "y": 162.702789,
+        "z": 13954.9209
+      },
+      "swapSides": true,
+      "extraHeight": -1.0,
+      "markerAngle": 20.0
+    },
+    {
+      "id": "OR",
+      "location": {
+        "x": 6415.56348,
+        "y": 144.12381,
+        "z": 11011.3164
+      },
+      "swapSides": true,
+      "hideLamps": true
+    },
+    {
+      "id": "OWC",
+      "location": {
+        "x": 4747.0,
+        "y": 123.0,
+        "z": 6296.0
+      },
+      "swapSides": true
+    },
+    {
+      "id": "OWN",
+      "location": {
+        "x": 11535.1387,
+        "y": 122.406914,
+        "z": 11638.7725
+      }
+    },
+    {
+      "id": "RJ",
+      "location": {
+        "x": 15714.89,
+        "y": 157.255356,
+        "z": 8127.413
+      },
+      "markerAngle": 180.0,
+      "extraHeight": -1
+    },
+    {
+      "id": "RS",
+      "location": {
+        "x": 9851.902,
+        "y": 158.187866,
+        "z": 5740.5127
+      },
+      "swapSides": true,
+      "markerAngle": 90.0,
+      "extraHeight": -1.0
+    },
+    {
+      "id": "SL",
+      "location": {
+        "x": 6390.53369,
+        "y": 167.738281,
+        "z": 3172.55957
+      },
+      "swapSides": true,
+      "markerAngle": -90.0,
+      "extraHeight": -1
+    },
+    {
+      "id": "SM",
+      "location": {
+        "x": 7800.0,
+        "y": 132.0,
+        "z": 7225.0
+      },
+      "swapSides": true
+    },
+    {
+      "id": "SO",
+      "location": {
+        "x": 11229.6367,
+        "y": 183.6388,
+        "z": 13101.377
+      },
+      "swapSides": true,
+      "extraHeight": -0.5,
+      "markerAngle": 90.0
+    },
+    {
+      "id": "SW",
+      "location": {
+        "x": 1364.18542,
+        "y": 147.419846,
+        "z": 2219.94019
+      },
+      "hideConcrete": true,
+      "hideLamps": true
+    },
+    {
+      "id": "VSW",
+      "location": {
+        "x": 3199.84546,
+        "y": 138.706543,
+        "z": 3161.954
+      },
+      "extraHeight": -1
+    },
+    {
+      "id": "WF",
+      "location": {
+        "x": 9336.0,
+        "y": 122.0,
+        "z": 9405.0
+      }
+    },
+    {
+      "id": "WL",
+      "location": {
+        "x": 3819.96,
+        "y": 125.730927,
+        "z": 8482.87
+      },
+      "extraHeight": -1.0,
+      "markerAngle": -90.0
     }
   ]
 }

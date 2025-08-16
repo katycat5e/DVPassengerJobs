@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyName>PassengerJobs.DebugTools</AssemblyName>
+		<TargetFramework>netframework4.8</TargetFramework>
+		<LangVersion>10</LangVersion>
+		<Nullable>disable</Nullable>
+		<RootNamespace>PassengerJobs.DebugTools</RootNamespace>
+	</PropertyGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\PassengerJobs\PassengerJobs.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="0Harmony" />
+		<Reference Include="Assembly-CSharp" />
+		<Reference Include="CommsRadioAPI" />
+		<Reference Include="DV.PointSet" />
+		<Reference Include="DV.RailTrack" />
+		<Reference Include="DV.Utils" />
+		<Reference Include="net.smkd.vector3d" />
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
+		<Reference Include="System.Xml.Linq" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="System.Data" />
+		<Reference Include="System.Xml" />
+		<Reference Include="UnityEngine" />
+		<Reference Include="UnityEngine.CoreModule" />
+		<Reference Include="UnityEngine.PhysicsModule" />
+		<Reference Include="WorldStreamer" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Krafs.Publicizer" Version="2.2.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<Publicize Include="Assembly-CSharp" IncludeCompilerGeneratedMembers="false" />
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
+	</Target>
+</Project>

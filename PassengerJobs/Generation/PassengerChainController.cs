@@ -44,15 +44,17 @@ namespace PassengerJobs.Generation
                 {
                     var newChain = generator.GenerateJob(
                         lastJobInChain.jobType,
-                        new PassConsistInfo(previousJob.DestinationTracks.Last(), trainCarsForJobChain.Select(c => c.logicCar).ToList()));
+                        new PassConsistInfo(previousJob.DestinationTracks.Last(), carsForJobChain.ToList()));
 
                     if (newChain == null)
                     {
                         PJMain.Warning($"Failed to create new chain with cars from job {lastJobInChain.ID}");
-                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCarsForJobChain, true);
+
+                        var trainCars = carsForJobChain.Select(lc => TrainCarRegistry.Instance.logicCarToTrainCar[lc]).ToList();
+                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCars, true);
                     }
 
-                    trainCarsForJobChain.Clear();
+                    carsForJobChain.Clear();
                 }
             }
             else

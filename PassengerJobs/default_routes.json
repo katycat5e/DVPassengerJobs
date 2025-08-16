@@ -1,153 +1,119 @@
 ﻿{
   "expressRoutes": [
     {
-      "start": "CSW",
+      "start": "CW",
       "routes": [
         [ "MF", "FF" ],
         [ "MF", "FF", "GF" ],
         [ "MF", "FF", "GF", "HB" ],
-        [ "FF" ],
+
         [ "FF", "GF" ],
-        [ "HB" ],
-        [ "HB", "FF" ],
-        [ "HB", "FF", "MF" ],
-        [ "GF" ],
+        [ "FF", "GF", "HB" ],
+
+        [ "HB", "GF" ],
+        [ "HB", "GF", "FF" ],
+        [ "HB", "GF", "FF", "MF" ],
+
+        [ "CS", "HB" ],
+        [ "CS", "HB", "GF" ],
+        [ "CS", "HB", "GF", "FF" ],
+
         [ "GF", "HB" ],
-        [ "GF", "FF" ]
+        [ "GF", "FF" ],
+        [ "GF", "FF", "MF" ]
       ]
     },
     {
       "start": "MF",
       "routes": [
-        [ "FF" ],
         [ "FF", "GF" ],
-        [ "FF", "GF", "CSW" ],
-        [ "GF" ],
-        [ "CSW", "HB" ],
-        [ "CSW", "HB", "FF" ],
-        [ "CSW", "FF" ],
-        [ "CSW", "GF" ],
-        [ "HB" ]
+        [ "FF", "GF", "CW" ],
+        [ "FF", "GF", "HB" ],
+
+        [ "GF", "HB" ],
+
+        [ "CW", "HB" ],
+        [ "CW", "HB", "GF" ],
+        [ "CW", "HB", "GF", "FF" ],
+        [ "CW", "CS", "HB" ],
+        [ "CW", "CS", "HB", "GF" ],
+        [ "CW", "CS", "HB", "GF", "FF" ],
+
+        [ "CS", "HB" ],
+        [ "CS", "HB", "GF" ],
+
+        [ "HB", "GF" ],
+        [ "HB", "GF", "FF" ]
       ]
     },
     {
       "start": "FF",
       "routes": [
-        [ "MF" ],
-        [ "MF", "CSW" ],
-        [ "CSW", "HB" ],
-        [ "CSW", "GF" ],
-        [ "GF", "CSW" ],
+        [ "MF", "CW" ],
+        [ "MF", "CW", "HB" ],
+        [ "MF", "CW", "HB", "GF" ],
+        [ "MF", "CW", "CS", "HB" ],
+        [ "MF", "CW", "CS", "HB", "GF" ],
+
+        [ "CW", "HB" ],
+        [ "CW", "HB", "GF" ],
+        [ "CW", "CS", "HB" ],
+        [ "CW", "CS", "HB"],
+        [ "CW", "GF" ],
+
+        [ "GF", "CW" ],
+        [ "GF", "CW", "MF" ],
         [ "GF", "HB" ],
-        [ "HB" ]
+        [ "GF", "HB", "CS", "CW" ],
+
+        [ "CS", "HB"]
       ]
     },
     {
       "start": "GF",
       "routes": [
         [ "FF", "MF" ],
-        [ "FF", "MF", "CSW" ],
-        [ "FF", "MF", "CSW", "HB" ],
-        [ "FF", "CSW" ],
-        [ "CSW", "MF" ],
-        [ "CSW", "FF" ],
-        [ "CSW", "HB" ],
-        [ "HB" ],
-        [ "HB", "CSW" ]
+        [ "FF", "MF", "CW" ],
+        [ "FF", "MF", "CW", "HB" ],
+        [ "FF", "MF", "CW", "CS", "HB" ],
+        [ "FF", "CW" ],
+        [ "FF", "CW", "HB" ],
+        [ "FF", "CW", "CS", "HB" ],
+
+        [ "CW", "MF" ],
+        [ "CW", "MF", "FF" ],
+        [ "CW", "FF" ],
+        [ "CW", "HB" ],
+        [ "CW", "CS", "HB" ],
+
+        [ "HB", "CW" ],
+        [ "HB", "CS", "CW" ],
+
+        [ "CS", "HB" ]
       ]
     },
     {
       "start": "HB",
       "routes": [
-        [ "CSW" ],
-        [ "CSW", "MF" ],
-        [ "CSW", "MF", "FF", "GF" ],
-        [ "CSW", "FF" ],
-        [ "CSW", "GF" ],
+        [ "CW", "MF" ],
+        [ "CW", "MF", "FF", "GF" ],
+        [ "CW", "FF" ],
+        [ "CW", "GF" ],
+
+        [ "CS", "CW" ],
+        [ "CS", "CW", "MF" ],
+        [ "CS", "CW", "MF", "FF", "GF" ],
+        [ "CS", "CW", "FF" ],
+        [ "CS", "CW", "GF" ],
+
         [ "FF", "MF" ],
+        [ "FF", "MF", "CW" ],
+
         [ "GF", "FF" ],
         [ "GF", "FF", "MF" ],
-        [ "GF", "FF", "MF", "CSW" ]
+        [ "GF", "FF", "MF", "CW" ]
       ]
     }
   ],
-
-  "localRoutes": [
-    {
-      "start": "CSW",
-      "routes": [
-        [ "VSW", "SL", "OV", "HB" ],
-        [ "CI", "AM", "OV", "HB" ],
-        [ "CI", "RS", "HB" ],
-        [ "CI", "RS", "HV", "HB" ],
-        [ "CI", "WF", "GF" ],
-        [ "CI", "WF", "FF" ],
-        [ "WL", "RJ", "FF" ],
-        [ "FW", "MR", "NP", "FF" ]
-      ]
-    },
-
-    {
-      "start": "MF",
-      "routes": [
-        [ "VSW", "SL", "OV", "HB" ],
-        [ "CI", "AM", "OV", "HB" ],
-        [ "CI", "RS", "HB" ],
-        [ "CI", "RS", "HV", "HB" ],
-        [ "CI", "WF", "GF" ],
-        [ "CI", "WF", "FF" ],
-        [ "MR", "NP", "FF" ]
-      ]
-    },
-
-    {
-      "start": "FF",
-      "routes": [
-        [ "NP", "MR", "FW", "CSW" ],
-        [ "NP", "MR", "MF" ],
-        [ "RJ", "WL", "CSW" ],
-        [ "WF", "CI", "CSW" ],
-        [ "WF", "AM", "OV", "HB" ],
-        [ "WF", "RS", "HB" ],
-        [ "WF", "RS", "HV", "HB" ],
-        [ "SO", "GFO", "HV", "HB" ],
-        [ "SO", "CMP", "GFO", "HV", "HB" ],
-        [ "SO", "HN", "GF" ],
-        [ "HN", "SO", "GF" ]
-      ]
-    },
-
-    {
-      "start": "HB",
-      "routes": [
-        [ "OV", "SL", "VSW", "CSW" ],
-        [ "OV", "SL", "VSW", "MF" ],
-        [ "OV", "AM", "CI", "CSW" ],
-        [ "OV", "AM", "WF", "GF" ],
-        [ "RS", "CI", "CSW" ],
-        [ "RS", "CI", "MF" ],
-        [ "RS", "WF", "GF" ],
-        [ "RS", "WF", "FF" ],
-        [ "HV", "RS", "WF", "GF" ],
-        [ "HV", "RS", "WF", "FF" ],
-        [ "HV", "GFO", "SO", "FF" ],
-        [ "HV", "GFO", "HN", "FF" ],
-        [ "HV", "GFO", "CMP", "SO", "FF" ],
-        [ "HV", "GFO", "CMP", "SO", "GF" ]
-      ]
-    },
-
-    {
-      "start": "GF",
-      "routes": [
-        [ "HN", "SO", "FF" ],
-        [ "SO", "HN", "FF" ],
-        [ "SO", "CMP", "GFO", "HV", "HB" ],
-        [ "SO", "GFO", "HV", "HB" ],
-        [ "WF", "CI", "CSW" ],
-        [ "WF", "AM", "OV", "HB" ],
-        [ "WF", "RS", "HB" ]
-      ]
-    }
-  ]
+  "localRoutes": []
 }

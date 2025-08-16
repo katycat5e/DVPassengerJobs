@@ -20,22 +20,20 @@ namespace PassengerJobs.Platforms
         public readonly int LowerBound;
         public readonly int UpperBound;
 
-        public Vector3? PlatformOffset;
-        public Vector3? PlatformRotation;
+        public bool IsYardTrack { get; }
+
         public float? MarkerAngle;
 
         public readonly List<RuralLoadingTask> Tasks = new();
 
-        public RuralLoadingMachine(StationConfig.RuralStation stationData, Track track)
+        public RuralLoadingMachine(string id, Track track, int lowerBound, int upperBound, float? markerAngle, bool isYardTrack)
         {
-            Id = stationData.id;
+            Id = id;
             Track = track;
-            LowerBound = stationData.lowIdx;
-            UpperBound = stationData.highIdx;
-
-            PlatformOffset = stationData.platformOffset;
-            PlatformRotation = stationData.platformRotation;
-            MarkerAngle = stationData.markerAngle;
+            LowerBound = lowerBound;
+            UpperBound = upperBound;
+            IsYardTrack = isYardTrack;
+            MarkerAngle = markerAngle;
         }
 
         public void AddTask(RuralLoadingTask task)
@@ -60,6 +58,18 @@ namespace PassengerJobs.Platforms
                     yield return new RuralLoadTaskWrapper(task);
                 }
             }
+        }
+
+        public bool AnyLoadableTrainPresent()
+        {
+            foreach (var task in Tasks)
+            {
+                if (task.readyForMachine && AreCarsStoppedAtPlatform(task.Cars))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public bool AnyLoadableTrainPresent(bool loading)
@@ -88,11 +98,12 @@ namespace PassengerJobs.Platforms
         {
             if (car.CurrentTrack != Track) return false;
 
-            if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar))
+            if (TrainCarRegistry.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar))
             {
-                return (Mathf.Abs(trainCar.GetForwardSpeed()) <= 0.3f) &&
-                    IsBetween(trainCar.Bogies[1].point1.index) &&
-                    IsBetween(trainCar.Bogies[0].point1.index);
+                if (Mathf.Abs(trainCar.GetForwardSpeed()) > 0.3f) return false;
+                
+                return IsYardTrack ||
+                    (IsBetween(trainCar.Bogies[1].point1.index) && IsBetween(trainCar.Bogies[0].point1.index));
             }
 
             // couldn't find physical car or car was moving

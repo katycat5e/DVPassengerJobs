@@ -13,12 +13,14 @@ namespace PassengerJobs.Platforms
     {
         string Id { get; }
         string DisplayId { get; }
+        string TrackId { get; }
 
         Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal);
         List<PlatformTask> GetLoadableTasks(bool loading);
         void RemoveTask(PlatformTask task);
 
         Car? TransferOneCarOfTask(PlatformTask task, bool loading);
+        bool IsAnyTrainPresent();
         bool IsAnyTrainPresent(bool loading);
         bool AreCarsStoppedAtPlatform(List<Car> cars);
 
@@ -28,7 +30,7 @@ namespace PassengerJobs.Platforms
     {
         public static bool IsConsistAttachedToLoco(IEnumerable<Car> cars)
         {
-            if (IdGenerator.Instance.logicCarToTrainCar.TryGetValue(cars.First(), out var trainCar))
+            if (TrainCarRegistry.Instance.logicCarToTrainCar.TryGetValue(cars.First(), out var trainCar))
             {
                 return trainCar.trainset.locoIndices.Any();
             }
@@ -50,6 +52,7 @@ namespace PassengerJobs.Platforms
 
         public string Id => Track.ID.ToString();
         public string DisplayId => Track.ID.TrackPartOnly;
+        public string TrackId => Track.ID.ToString();
 
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
@@ -107,6 +110,18 @@ namespace PassengerJobs.Platforms
             }
         }
 
+        public bool IsAnyTrainPresent()
+        {
+            foreach (WarehouseTask warehouseTask in Warehouse.currentTasks)
+            {
+                if (warehouseTask.readyForMachine && AreCarsStoppedAtPlatform(warehouseTask.cars))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public bool IsAnyTrainPresent(bool loading)
         {
             WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
@@ -136,7 +151,7 @@ namespace PassengerJobs.Platforms
 
             foreach (var car in cars)
             {
-                if (!IdGenerator.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) ||
+                if (!TrainCarRegistry.Instance.logicCarToTrainCar.TryGetValue(car, out TrainCar trainCar) ||
                     Mathf.Abs(trainCar.GetForwardSpeed()) > 0.05f)
                 {
                     // couldn't find physical car or car was moving
@@ -152,13 +167,14 @@ namespace PassengerJobs.Platforms
     {
         public readonly RuralLoadingMachine LoadingMachine;
 
-        public RuralPlatformWrapper(StationConfig.RuralStation stationData, Track track)
+        public RuralPlatformWrapper(RuralLoadingMachine machine)
         {
-            LoadingMachine = new RuralLoadingMachine(stationData, track);
+            LoadingMachine = machine;
         }
 
         public string Id => LoadingMachine.Id;
         public string DisplayId => LoadingMachine.Id;
+        public string TrackId => LoadingMachine.IsYardTrack ? LoadingMachine.Track.ID.ToString() : LoadingMachine.Id;
 
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
@@ -198,6 +214,11 @@ namespace PassengerJobs.Platforms
         public bool AreCarsStoppedAtPlatform(List<Car> cars)
         {
             return LoadingMachine.AreCarsStoppedAtPlatform(cars);
+        }
+
+        public bool IsAnyTrainPresent()
+        {
+            return LoadingMachine.AnyLoadableTrainPresent();
         }
 
         public bool IsAnyTrainPresent(bool loading)

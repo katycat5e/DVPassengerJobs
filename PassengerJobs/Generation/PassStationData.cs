@@ -5,13 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace PassengerJobs.Generation
 {
     public interface IPassDestination
     {
         string YardID { get; }
-        IEnumerable<RouteTrack> GetPlatforms();
+        IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks = false);
         IEnumerable<Track> AllTracks { get; }
     }
 
@@ -31,8 +32,10 @@ namespace PassengerJobs.Generation
     {
         public readonly StationController Controller;
         public string YardID => Controller.stationInfo.YardID;
-        public readonly List<Track> PlatformTracks = new();
+        public readonly List<PlatformData> Platforms = new();
         public readonly List<Track> StorageTracks = new();
+        public readonly List<Track> TerminusTracks = new();
+
         public readonly List<RouteData> ExpressRoutes = new();
         public readonly List<RouteData> RegionalRoutes = new();
 
@@ -41,15 +44,48 @@ namespace PassengerJobs.Generation
             Controller = controller;
         }
 
-        public void AddPlatforms(IEnumerable<Track> platforms) => PlatformTracks.AddRange(platforms);
+        public void AddPlatform(Track track, StationConfig.CityPlatform config) => Platforms.Add(new(track, config));
+        public void AddTerminusTracks(IEnumerable<Track> terminusTracks) => TerminusTracks.AddRange(terminusTracks);
         public void AddStorageTracks(IEnumerable<Track> storageTracks) => StorageTracks.AddRange(storageTracks);
 
-        public IEnumerable<RouteTrack> GetPlatforms()
+        public IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks = false)
         {
-            return PlatformTracks.Select(t => new RouteTrack(this, t));
+            if (onlyTerminusTracks)
+            {
+                return TerminusTracks.Select(t => new RouteTrack(this, t));
+            }
+            else
+            {
+                return Platforms.Select(p => new RouteTrack(this, p.Track));
+            }
         }
 
-        public IEnumerable<Track> AllTracks => PlatformTracks.Concat(StorageTracks);
+        public IEnumerable<Track> AllTracks => Platforms.Select(p => p.Track).Concat(StorageTracks);
+
+        public class PlatformData
+        {
+            public readonly Track Track;
+
+            public readonly bool HasSpawnZone;
+            public readonly Vector3 CornerA;
+            public readonly Vector3 CornerB;
+            public readonly float Depth;
+            public readonly float? PeepSpacing;
+
+            public PlatformData(Track track, StationConfig.CityPlatform config)
+            {
+                Track = track;
+
+                if (config.spawnZoneA.HasValue && config.spawnZoneB.HasValue && config.spawnZoneDepth.HasValue)
+                {
+                    HasSpawnZone = true;
+                    CornerA = config.spawnZoneA.Value;
+                    CornerB = config.spawnZoneB.Value;
+                    Depth = config.spawnZoneDepth.Value;
+                    PeepSpacing = config.spacing;
+                }
+            }
+        }
     }
 
     public class RuralStationData : IPassDestination
@@ -63,8 +99,18 @@ namespace PassengerJobs.Generation
             Platform = platform;
         }
 
-        public IEnumerable<RouteTrack> GetPlatforms()
+        public IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks)
         {
+            if (onlyTerminusTracks)
+            {
+                return Enumerable.Empty<RouteTrack>();
+            }
+            
+            if (Platform.IsYardTrack)
+            {
+                return new[] { new RouteTrack(this, Platform.Track) };
+            }
+
             return new[] { new RouteTrack(this, Platform.Track, Platform.LowerBound, Platform.UpperBound) };
         }
 

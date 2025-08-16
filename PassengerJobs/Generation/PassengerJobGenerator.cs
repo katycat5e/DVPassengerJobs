@@ -17,6 +17,8 @@ namespace PassengerJobs.Generation
         private const float BASE_WAGE_SCALE = 0.5f;
         private const float BASE_TO_BONUS_MULTIPLIER = 2;
 
+        private const int MAX_REGIONAL_CARS = 4;
+
         public static bool TryGetInstance(string yardId, out PassengerJobGenerator generator) =>
             _instances.TryGetValue(yardId, out generator);
 
@@ -87,24 +89,25 @@ namespace PassengerJobs.Generation
             _nextJobType = (new[] { PassJobType.Express, PassJobType.Local }).PickOneValue()!.Value;
 
             // create warehouse/sign controllers
-            foreach (var platform in _stationData.PlatformTracks)
+            foreach (var platform in _stationData.Platforms)
             {
-                var holder = new GameObject($"Platform_{platform.ID}");
+                var holder = new GameObject($"Platform_{platform.Track.ID}");
                 holder.transform.SetParent(Controller.transform, false);
 
                 var platformController = holder.AddComponent<PlatformController>();
-                platformController.Platform = new StationPlatformWrapper(platform);
-                platformController.SetSignsEnabled(_playerWasInRange);
+                platformController.Platform = new StationPlatformWrapper(platform.Track);
+                platformController.PlatformData = platform;
+                platformController.SetDecorationsEnabled(_playerWasInRange);
                 PlatformControllers.Add(platformController);
 
-                PJMain.Log($"Successfully created platform controller for track {platform.ID}");
+                PJMain.Log($"Successfully created platform controller for track {platform.Track.ID}");
             }
 
             var sb = new StringBuilder($"Created generator for {Controller.stationInfo.Name}:\n");
             sb.Append("Coach Storage: ");
             sb.AppendLine(string.Join(", ", _stationData.StorageTracks.Select(t => t.ID)));
             sb.Append("Platforms: ");
-            sb.Append(string.Join(", ", _stationData.PlatformTracks.Select(t => t.ID)));
+            sb.Append(string.Join(", ", _stationData.Platforms.Select(t => t.Track.ID)));
             PJMain.Log(sb.ToString());
 
             _instances.Add(_stationData.YardID, this);
@@ -119,7 +122,7 @@ namespace PassengerJobs.Generation
         {
             // Use our associated station controller to create the track ID signs
             var allStationTracks = _stationData.AllTracks.ToHashSet();
-            var stationRailTracks = RailTrackRegistry.Instance.AllTracks.Where(rt => allStationTracks.Contains(rt.logicTrack)).ToList();
+            var stationRailTracks = RailTrackRegistry.Instance.AllTracks.Where(rt => allStationTracks.Contains(rt.LogicTrack())).ToList();
 
             Controller.GenerateTrackIdObject(stationRailTracks);
         }
@@ -141,7 +144,7 @@ namespace PassengerJobs.Generation
             {
                 foreach (var platform in PlatformControllers)
                 {
-                    platform.SetSignsEnabled(nowInRange);
+                    platform.SetDecorationsEnabled(nowInRange);
                 }
             }
 
@@ -168,7 +171,7 @@ namespace PassengerJobs.Generation
         private IEnumerator GeneratePassengerJobs()
         {
             int watchdog = 15;
-            while ((watchdog > 0) && _stationData.PlatformTracks.GetUnusedTracks().Any())
+            while ((watchdog > 0) && _stationData.TerminusTracks.GetUnusedTracks().Any())
             {
                 yield return _generationDelay;
 
@@ -204,9 +207,9 @@ namespace PassengerJobs.Generation
             if (consistInfo == null)
             {
                 // generate a new consist
-                var potentialStart = _stationData.GetPlatforms().GetUnusedTracks().PickOneValue();
+                var potentialStart = _stationData.TerminusTracks.GetUnusedTracks().PickOne();
                 if (potentialStart == null) return null;
-                startPlatform = potentialStart.Value;
+                startPlatform = new RouteTrack(_stationData, potentialStart);
 
                 destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests);
                 if (destinations == null) return null;
@@ -216,7 +219,15 @@ namespace PassengerJobs.Generation
                 TrainCarLivery livery = ConsistManager.GetPassengerCars().PickOne()!;
                 double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
                 nTotalCars = (int)Math.Floor((minLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS) / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
-                nTotalCars -= (jobType == PassJobType.Express) ? 2 : 1;
+
+                if (jobType == PassJobType.Local)
+                {
+                    nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
+                }
+                else
+                {
+                    nTotalCars -= 2;
+                }
 
                 jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
             }
@@ -264,7 +275,7 @@ namespace PassengerJobs.Generation
             }
             else
             {
-                chainController.trainCarsForJobChain = consistInfo.cars.Select(c => IdGenerator.Instance.logicCarToTrainCar[c]).ToList();
+                chainController.carsForJobChain = consistInfo.cars.ToList();
 
                 jobDefinition = PopulateExpressJobExistingCars(
                     chainController, Controller.logicStation, startPlatform, destinations,
@@ -336,14 +347,14 @@ namespace PassengerJobs.Generation
             ExpressStationsChainData chainData, float timeLimit, float initialPay)
         {
             // Spawn the cars
-            RailTrack startRT = LogicController.Instance.LogicToRailTrack[startTrack.Track];
+            RailTrack startRT = startTrack.Track.RailTrack();
             
             var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true, 
                 true,0, false, false);
 
             if (spawnedCars == null) return null;
 
-            chainController.trainCarsForJobChain = spawnedCars;
+            chainController.carsForJobChain = spawnedCars.Select(c => c.logicCar).ToList();
             var logicCars = TrainCar.ExtractLogicCars(spawnedCars);
             if (logicCars == null)
             {
