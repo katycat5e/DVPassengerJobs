@@ -1,8 +1,7 @@
 ﻿#nullable disable
-
 using UnityEngine;
 
-namespace PassengerJobs.Generation
+namespace PassengerJobs.Config
 {
     public class StationConfig
     {
@@ -29,7 +28,7 @@ namespace PassengerJobs.Generation
         public class RuralStation
         {
             public string id;
-            
+
             public Vector3 location;
             public bool swapSides;
 
@@ -39,18 +38,6 @@ namespace PassengerJobs.Generation
             public float extraHeight;
 
             public float? markerAngle;
-        }
-    }
-
-    public class RouteConfig
-    {
-        public RouteSet[] expressRoutes;
-        public RouteSet[] localRoutes;
-
-        public class RouteSet
-        {
-            public string start;
-            public string[][] routes;
         }
     }
 }

@@ -1,38 +1,101 @@
-﻿{
+{
   "cityStations": [
     {
       "yardId": "CW",
-      "platforms": [ "CW-B6LP", "CW-B5LP", "CW-B4LP", "CW-B3LP" ],
-      "storage": [ "CW-B2SP", "CW-B1SP" ]
+      "platforms": [
+        {
+          "id": "CW-B6LP"
+        },
+        {
+          "id": "CW-B5LP"
+        },
+        {
+          "id": "CW-B4LP"
+        },
+        {
+          "id": "CW-B3LP"
+        }
+      ],
+      "storage": [
+        "CW-B2SP",
+        "CW-B1SP"
+      ]
     },
     {
       "yardId": "MF",
-      "platforms": [ "MF-D1LP", "MF-D2LP" ],
-      "storage": [ "MF-D4SP" ]
+      "platforms": [
+        {
+          "id": "MF-D1LP"
+        },
+        {
+          "id": "MF-D2LP"
+        }
+      ],
+      "storage": [
+        "MF-D4SP"
+      ]
     },
     {
       "yardId": "FF",
-      "platforms": [ "FF-B1LP", "FF-B2LP" ],
-      "storage": [ "FF-B3SP", "FF-B5SP", "FF-B4SP" ]
+      "platforms": [
+        {
+          "id": "FF-B1LP"
+        },
+        {
+          "id": "FF-B2LP"
+        }
+      ],
+      "storage": [
+        "FF-B3SP",
+        "FF-B5SP",
+        "FF-B4SP"
+      ]
     },
     {
       "yardId": "HB",
-      "platforms": [ "HB-F1LP", "HB-F2LP" ],
-      "storage": [ "HB-F4SP", "HB-F3SP" ]
+      "platforms": [
+        {
+          "id": "HB-F1LP"
+        },
+        {
+          "id": "HB-F2LP"
+        }
+      ],
+      "storage": [
+        "HB-F4SP",
+        "HB-F3SP"
+      ]
     },
     {
       "yardId": "GF",
-      "platforms": [ "GF-C3LP", "GF-C2LP" ],
-      "terminusTracks": [ "GF-C3LP" ],
-      "storage": [ "GF-C1SP" ]
+      "platforms": [
+        {
+          "id": "GF-C3LP"
+        },
+        {
+          "id": "GF-C2LP"
+        }
+      ],
+      "terminusTracks": [
+        "GF-C3LP"
+      ],
+      "storage": [
+        "GF-C1SP"
+      ]
     },
     {
       "yardId": "CS",
-      "platforms": [ "CS-A1LP", "CS-A2LP" ],
+      "platforms": [
+        {
+          "id": "CS-A1LP"
+        },
+        {
+          "id": "CS-A2LP"
+        }
+      ],
       "terminusTracks": []
     }
   ],
-
   "ruralStations": [
     {
       "id": "AM",
@@ -51,8 +114,8 @@
         "z": 5354.309
       },
       "swapSides": true,
-      "markerAngle": 90.0,
-      "extraHeight": -1
+      "extraHeight": -1.0,
+      "markerAngle": 90.0
     },
     {
       "id": "CME",
@@ -117,7 +180,7 @@
         "y": 190.8844,
         "z": 11526.7051
       },
-      "extraHeight": -1
+      "extraHeight": -1.0
     },
     {
       "id": "HN",
@@ -127,7 +190,7 @@
         "z": 15517.5215
       },
       "swapSides": true,
-      "extraHeight": -1,
+      "extraHeight": -1.0,
       "markerAngle": 160.0
     },
     {
@@ -138,7 +201,7 @@
         "z": 6947.2627
       },
       "swapSides": true,
-      "extraHeight": -1
+      "extraHeight": -1.0
     },
     {
       "id": "IME",
@@ -221,8 +284,8 @@
         "y": 157.255356,
         "z": 8127.413
       },
-      "markerAngle": 180.0,
-      "extraHeight": -1
+      "extraHeight": -1.0,
+      "markerAngle": 180.0
     },
     {
       "id": "RS",
@@ -232,8 +295,8 @@
         "z": 5740.5127
       },
       "swapSides": true,
-      "markerAngle": 90.0,
-      "extraHeight": -1.0
+      "extraHeight": -1.0,
+      "markerAngle": 90.0
     },
     {
       "id": "SL",
@@ -243,8 +306,8 @@
         "z": 3172.55957
       },
       "swapSides": true,
-      "markerAngle": -90.0,
-      "extraHeight": -1
+      "extraHeight": -1.0,
+      "markerAngle": -90.0
     },
     {
       "id": "SM",
@@ -283,7 +346,7 @@
         "y": 138.706543,
         "z": 3161.954
       },
-      "extraHeight": -1
+      "extraHeight": -1.0
     },
     {
       "id": "WF",

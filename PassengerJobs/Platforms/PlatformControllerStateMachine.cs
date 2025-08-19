@@ -59,6 +59,7 @@ namespace PassengerJobs.Platforms
                     _controller.OverrideText = LocalizationKey.SIGN_DEPARTING.L();
                 }
 
+                boardingFinished &= !((newState == PlatformState.Loading) || (newState == PlatformState.Unloading));
                 if (boardingFinished)
                 {
                     PlatformController.PlayBellSound();

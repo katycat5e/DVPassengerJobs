@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using DV.Utils;
 using UnityEngine;
-using DV.PointSet;
+using PassengerJobs.Config;
 
 namespace PassengerJobs.Generation
 {
@@ -21,6 +21,8 @@ namespace PassengerJobs.Generation
 
         private static StationConfig? _stationConfig = null;
         private static RouteConfig? _routeConfig = null;
+
+        private static RouteGraph _localRoutes = new(RouteType.Local);
 
         private static readonly Dictionary<string, IPassDestination> _stations = new();
 
@@ -332,13 +334,18 @@ namespace PassengerJobs.Generation
         {
             if (_routesInitialized) return;
 
-            static IEnumerable<RouteData> GetRoutes(RouteType routeType, string[][] destIds)
+            static IEnumerable<RouteData> GetRoutes(RouteType routeType, IEnumerable<string[]> destIds)
             {
                 foreach (var route in destIds)
                 {
                     yield return new RouteData(routeType, route.Select(s => _stations[s]).ToArray());
                 }
             }
+
+            _localRoutes.MinLength = _routeConfig!.minLocalLength;
+            _localRoutes.MaxLength = _routeConfig!.maxLocalLength;
+
+            BuildRouteGraph(_localRoutes, _routeConfig.localNodes);
 
             foreach (var stationData in _stations.Values.OfType<PassStationData>())
             {
@@ -349,15 +356,60 @@ namespace PassengerJobs.Generation
                     stationData.ExpressRoutes.AddRange(routeStations);
                 }
 
+                // dynamically generated routes from station nodes
+                var localRouteData = GetRoutes(RouteType.Local, _localRoutes.GetAllRoutes(stationData.YardID));
+                stationData.RegionalRoutes.AddRange(localRouteData);
+
+                // extra statically defined routes
                 var localRoutes = _routeConfig!.localRoutes?.FirstOrDefault(t => t.start == stationData.YardID);
                 if (localRoutes != null)
                 {
-                    var routeStations = GetRoutes(RouteType.Local, localRoutes.routes);
-                    stationData.RegionalRoutes.AddRange(routeStations);
+                    localRouteData = GetRoutes(RouteType.Local, localRoutes.routes);
+                    stationData.RegionalRoutes.AddRange(localRouteData);
                 }
             }
 
             _routesInitialized = true;
+        }
+
+        private static void BuildRouteGraph(RouteGraph graph, IEnumerable<RouteConfig.Node> nodeData)
+        {
+            graph.Reset();
+
+            foreach (var node in nodeData)
+            {
+                if (!_stations.TryGetValue(node.id, out var stationData))
+                {
+                    PJMain.Warning($"Couldn't match route node {node.id} with any station");
+                    continue;
+                }
+
+                bool isTerminus = stationData.GetPlatforms(true).Any();
+                graph.CreateNode(node.id, isTerminus);
+            }
+
+            foreach (var node in nodeData)
+            {
+                if (node.linkA is not null)
+                {
+                    foreach (var toConnect in node.linkA)
+                    {
+                        graph.CreateLink(node.id, toConnect, RouteGraph.LinkSide.A);
+                    }
+                }
+                else
+                {
+                    PJMain.Warning($"No links specified for route node {node.id}");
+                }
+
+                if (node.linkB is not null)
+                {
+                    foreach (var toConnect in node.linkB)
+                    {
+                        graph.CreateLink(node.id, toConnect, RouteGraph.LinkSide.B);
+                    }
+                }
+            }
         }
 
         private static void HandleGameUnloading()

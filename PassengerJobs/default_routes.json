@@ -1,119 +1,250 @@
 ﻿{
-  "expressRoutes": [
-    {
-      "start": "CW",
-      "routes": [
-        [ "MF", "FF" ],
-        [ "MF", "FF", "GF" ],
-        [ "MF", "FF", "GF", "HB" ],
+	"expressRoutes": [
+		{
+			"start": "CW",
+			"routes": [
+				["MF", "FF"],
+				["MF", "FF", "GF"],
+				["MF", "FF", "GF", "HB"],
 
-        [ "FF", "GF" ],
-        [ "FF", "GF", "HB" ],
+				["FF", "GF"],
+				["FF", "GF", "HB"],
 
-        [ "HB", "GF" ],
-        [ "HB", "GF", "FF" ],
-        [ "HB", "GF", "FF", "MF" ],
+				["HB", "GF"],
+				["HB", "GF", "FF"],
+				["HB", "GF", "FF", "MF"],
 
-        [ "CS", "HB" ],
-        [ "CS", "HB", "GF" ],
-        [ "CS", "HB", "GF", "FF" ],
+				["CS", "HB"],
+				["CS", "HB", "GF"],
+				["CS", "HB", "GF", "FF"],
 
-        [ "GF", "HB" ],
-        [ "GF", "FF" ],
-        [ "GF", "FF", "MF" ]
-      ]
-    },
-    {
-      "start": "MF",
-      "routes": [
-        [ "FF", "GF" ],
-        [ "FF", "GF", "CW" ],
-        [ "FF", "GF", "HB" ],
+				["GF", "HB"],
+				["GF", "FF"],
+				["GF", "FF", "MF"]
+			]
+		}, {
+			"start": "MF",
+			"routes": [
+				["FF", "GF"],
+				["FF", "GF", "CW"],
+				["FF", "GF", "HB"],
 
-        [ "GF", "HB" ],
+				["GF", "HB"],
 
-        [ "CW", "HB" ],
-        [ "CW", "HB", "GF" ],
-        [ "CW", "HB", "GF", "FF" ],
-        [ "CW", "CS", "HB" ],
-        [ "CW", "CS", "HB", "GF" ],
-        [ "CW", "CS", "HB", "GF", "FF" ],
+				["CW", "HB"],
+				["CW", "HB", "GF"],
+				["CW", "HB", "GF", "FF"],
+				["CW", "CS", "HB"],
+				["CW", "CS", "HB", "GF"],
+				["CW", "CS", "HB", "GF", "FF"],
 
-        [ "CS", "HB" ],
-        [ "CS", "HB", "GF" ],
+				["CS", "HB"],
+				["CS", "HB", "GF"],
 
-        [ "HB", "GF" ],
-        [ "HB", "GF", "FF" ]
-      ]
-    },
-    {
-      "start": "FF",
-      "routes": [
-        [ "MF", "CW" ],
-        [ "MF", "CW", "HB" ],
-        [ "MF", "CW", "HB", "GF" ],
-        [ "MF", "CW", "CS", "HB" ],
-        [ "MF", "CW", "CS", "HB", "GF" ],
+				["HB", "GF"],
+				["HB", "GF", "FF"]
+			]
+		}, {
+			"start": "FF",
+			"routes": [
+				["MF", "CW"],
+				["MF", "CW", "HB"],
+				["MF", "CW", "HB", "GF"],
+				["MF", "CW", "CS", "HB"],
+				["MF", "CW", "CS", "HB", "GF"],
 
-        [ "CW", "HB" ],
-        [ "CW", "HB", "GF" ],
-        [ "CW", "CS", "HB" ],
-        [ "CW", "CS", "HB"],
-        [ "CW", "GF" ],
+				["CW", "HB"],
+				["CW", "HB", "GF"],
+				["CW", "CS", "HB"],
+				["CW", "CS", "HB"],
+				["CW", "GF"],
 
-        [ "GF", "CW" ],
-        [ "GF", "CW", "MF" ],
-        [ "GF", "HB" ],
-        [ "GF", "HB", "CS", "CW" ],
+				["GF", "CW"],
+				["GF", "CW", "MF"],
+				["GF", "HB"],
+				["GF", "HB", "CS", "CW"],
 
-        [ "CS", "HB"]
-      ]
-    },
-    {
-      "start": "GF",
-      "routes": [
-        [ "FF", "MF" ],
-        [ "FF", "MF", "CW" ],
-        [ "FF", "MF", "CW", "HB" ],
-        [ "FF", "MF", "CW", "CS", "HB" ],
-        [ "FF", "CW" ],
-        [ "FF", "CW", "HB" ],
-        [ "FF", "CW", "CS", "HB" ],
+				["CS", "HB"]
+			]
+		}, {
+			"start": "GF",
+			"routes": [
+				["FF", "MF"],
+				["FF", "MF", "CW"],
+				["FF", "MF", "CW", "HB"],
+				["FF", "MF", "CW", "CS", "HB"],
+				["FF", "CW"],
+				["FF", "CW", "HB"],
+				["FF", "CW", "CS", "HB"],
 
-        [ "CW", "MF" ],
-        [ "CW", "MF", "FF" ],
-        [ "CW", "FF" ],
-        [ "CW", "HB" ],
-        [ "CW", "CS", "HB" ],
+				["CW", "MF"],
+				["CW", "MF", "FF"],
+				["CW", "FF"],
+				["CW", "HB"],
+				["CW", "CS", "HB"],
 
-        [ "HB", "CW" ],
-        [ "HB", "CS", "CW" ],
+				["HB", "CW"],
+				["HB", "CS", "CW"],
 
-        [ "CS", "HB" ]
-      ]
-    },
-    {
-      "start": "HB",
-      "routes": [
-        [ "CW", "MF" ],
-        [ "CW", "MF", "FF", "GF" ],
-        [ "CW", "FF" ],
-        [ "CW", "GF" ],
+				["CS", "HB"]
+			]
+		}, {
+			"start": "HB",
+			"routes": [
+				["CW", "MF"],
+				["CW", "MF", "FF", "GF"],
+				["CW", "FF"],
+				["CW", "GF"],
 
-        [ "CS", "CW" ],
-        [ "CS", "CW", "MF" ],
-        [ "CS", "CW", "MF", "FF", "GF" ],
-        [ "CS", "CW", "FF" ],
-        [ "CS", "CW", "GF" ],
+				["CS", "CW"],
+				["CS", "CW", "MF"],
+				["CS", "CW", "MF", "FF", "GF"],
+				["CS", "CW", "FF"],
+				["CS", "CW", "GF"],
 
-        [ "FF", "MF" ],
-        [ "FF", "MF", "CW" ],
+				["FF", "MF"],
+				["FF", "MF", "CW"],
 
-        [ "GF", "FF" ],
-        [ "GF", "FF", "MF" ],
-        [ "GF", "FF", "MF", "CW" ]
-      ]
-    }
-  ],
-  "localRoutes": []
+				["GF", "FF"],
+				["GF", "FF", "MF"],
+				["GF", "FF", "MF", "CW"]
+			]
+		}
+	],
+	"localNodes": [
+		{
+			"id": "CW",
+			"linkA": ["CP", "MF", "WL"],
+			"linkB": ["FRC", "OWC", "CI", "VSW", "SW"]
+		}, {
+			"id": "CP",
+			"linkA": ["CW", "WL"],
+			"linkB": ["IMW"]
+		}, {
+			"id": "MF",
+			"linkA": ["CW", "WL"],
+			"linkB": ["IMW"]
+		}, {
+			"id": "IMW",
+			"linkA": ["CP", "MF"],
+			"linkB": ["MR"]
+		}, {
+			"id": "MR",
+			"linkA": ["IMW"],
+			"linkB": ["NP"]
+		}, {
+			"id": "NP",
+			"linkA": ["MR"],
+			"linkB": ["OR", "FF"]
+		}, {
+			"id": "OR",
+			"linkA": ["NP", "FF"],
+			"linkB": ["FRC", "WL"]
+		}, {
+			"id": "WL",
+			"linkA": ["CW", "CP", "MF"],
+			"linkB": ["OR", "FRC"]
+		}, {
+			"id": "FRC",
+			"linkA": ["WL", "OR"],
+			"linkB": ["CW", "SW", "VSW", "CI", "FRS", "CMS", "RS", "SM"]
+		}, {
+			"id": "SW",
+			"linkA": ["CW", "FRC", "OWC"],
+			"linkB": ["VSW", "FRS", "SL"]
+		}, {
+			"id": "VSW",
+			"linkA": ["SW", "FRS", "SL"],
+			"linkB": ["CW", "FRC", "OWC", "CI"]
+		}, {
+			"id": "CI",
+			"linkA": ["VSW", "CW", "FRC", "OWC"],
+			"linkB": ["FM", "FRC", "SM", "RS", "CMS"]
+		}, {
+			"id": "OWC",
+			"linkA": ["CI", "VSW", "SW", "CW"],
+			"linkB": ["FM"]
+		}, {
+			"id": "FM",
+			"linkA": ["OWC"],
+			"linkB": ["SM", "RS", "CMS", "CI", "FRS"]
+		}, {
+			"id": "SM",
+			"linkA": ["FRC", "FM", "FRS", "CI", "CMS", "RS"],
+			"linkB": ["WF"]
+		}, {
+			"id": "WF",
+			"linkA": ["SM"],
+			"linkB": ["FF", "HN", "SO", "OWN", "GF"]
+		}, {
+			"id": "GF",
+			"linkA": ["WF", "FF", "OWN", "HN", "SO"],
+			"linkB": ["AM", "HV"]
+		}, {
+			"id": "OWN",
+			"linkA": ["FF", "HN", "SO", "GF", "WF"]
+		}, {
+			"id": "FF",
+			"linkA": ["NP", "OR"],
+			"linkB": ["HN", "SO", "OWN", "GF", "WF"]
+		}, {
+			"id": "HN",
+			"linkA": ["FF", "OWN", "GF", "WF"],
+			"linkB": ["CME", "SO", "GFO"]
+		}, {
+			"id": "SO",
+			"linkA": ["FF", "OWN", "GF", "WF"],
+			"linkB": ["MB", "HN", "IME", "CME", "GFO"]
+		}, {
+			"id": "MB",
+			"linkA": ["SO", "GFO", "CME"]
+		}, {
+			"id": "IME",
+			"linkA": ["SO", "GFO", "CME"]
+		}, {
+			"id": "CME",
+			"linkA": ["GFO", "SO", "MB", "HN", "IME"],
+			"linkB": ["RJ"]
+		}, {
+			"id": "RJ",
+			"linkA": ["CME"],
+			"linkB": ["HV", "HB"]
+		}, {
+			"id": "GFO",
+			"linkA": ["SO", "MB", "HN", "IME", "CME"],
+			"linkB": ["AM", "HV"]
+		}, {
+			"id": "HV",
+			"linkA": ["AM", "GFO", "GF"],
+			"linkB": ["RJ", "HB"]
+		}, {
+			"id": "AM",
+			"linkA": ["GFO", "GF", "HV"],
+			"linkB": ["RS", "HB", "CS"]
+		}, {
+			"id": "RS",
+			"linkA": ["CI", "FRS", "FM", "FRC", "SM"],
+			"linkB": ["AM", "HB", "CS"]
+		}, {
+			"id": "FRS",
+			"linkA": ["SW", "VSW", "SL"],
+			"linkB": ["FM", "FRC", "SM", "RS", "CMS", "CI"]
+		}, {
+			"id": "SL",
+			"linkA": ["SW", "VSW", "FRS"],
+			"linkB": ["CMS", "CS"]
+		}, {
+			"id": "CMS",
+			"linkA": ["CI", "FRS", "FM", "FRC", "SM"],
+			"linkB": ["SL", "CS"]
+		}, {
+			"id": "CS",
+			"linkA": ["SL", "CMS"],
+			"linkB": ["RS", "AM", "HB"]
+		}, {
+			"id": "HB",
+			"linkA": ["CS", "RS", "AM"],
+			"linkB": ["HV", "RJ"]
+		}
+	]
 }

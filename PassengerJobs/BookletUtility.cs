@@ -238,7 +238,7 @@ namespace PassengerJobs
             TrackID = trackId;
             YardID = station.YardID;
             StationColor = station.StationColor;
-            TrackDisplayId = trackId.TrackPartOnly;
+            TrackDisplayId = trackId.TrackPartOnly.Contains("#") ? "1LP" : trackId.TrackPartOnly;
         }
 
         public PassStopInfo(string stopID)

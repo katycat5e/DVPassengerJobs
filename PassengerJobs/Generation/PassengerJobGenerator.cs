@@ -259,7 +259,9 @@ namespace PassengerJobs.Generation
             // calculate haul payment
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
-            float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
+
+            var equivalentPayJobType = (jobType == PassJobType.Local) ? JobType.EmptyHaul : JobType.Transport;
+            float transportPayment = JobPaymentCalculator.CalculateJobPayment(equivalentPayJobType, haulDistance, transportPaymentData);
 
 
             // scale job payment depending on settings
