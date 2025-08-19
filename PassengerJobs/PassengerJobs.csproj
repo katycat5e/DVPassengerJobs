@@ -70,5 +70,6 @@
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
     <Exec Command="curl.exe &quot;https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&amp;gid=633527484&quot; -L &quot;https://docs.google.com&quot; -o &quot;$(TargetDir)\translations.csv&quot; &gt;NUL" />
+    <Copy SourceFiles="$(TargetDir)\translations.csv" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
   </Target>
 </Project>
