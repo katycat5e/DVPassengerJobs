@@ -1,4 +1,5 @@
 ﻿using DV.Logic.Job;
+using PassengerJobs.Config;
 using PassengerJobs.Platforms;
 using System;
 using System.Collections.Generic;

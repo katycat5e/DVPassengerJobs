@@ -7,6 +7,7 @@ using UnityEngine;
 
 using SMath = System.Math;
 using EQPoint = DV.PointSet.EquiPointSet.Point;
+using PassengerJobs.Config;
 
 namespace PassengerJobs.Platforms
 {
