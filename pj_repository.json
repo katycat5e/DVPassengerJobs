@@ -2,6 +2,11 @@
   "Releases": [
 	{
       "Id": "PassengerJobs",
+      "Version": "5.1.0",
+      "DownloadUrl": "https://github.com/katycat5e/DVPassengerJobs/releases/download/v5.1/PassengerJobs.zip"
+    },
+	{
+      "Id": "PassengerJobs",
       "Version": "5.0.0",
       "DownloadUrl": "https://github.com/katycat5e/DVPassengerJobs/releases/download/v5.0/PassengerJobs.zip"
     },
