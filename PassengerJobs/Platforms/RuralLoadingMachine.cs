@@ -11,9 +11,10 @@ using UnityEngine;
 
 namespace PassengerJobs.Platforms
 {
-    public class RuralLoadingMachine
+    public class RuralLoadingMachine : IDisposable
     {
         private static readonly WarehouseMachine _dummyWarehouse = new(null, null);
+        private static Dictionary<string, RuralLoadingMachine> _allRuralLoadingMachine = new();
 
         public readonly string Id;
         public readonly Track Track;
@@ -26,6 +27,11 @@ namespace PassengerJobs.Platforms
 
         public readonly List<RuralLoadingTask> Tasks = new();
 
+        public static bool TryGetById(string id, out RuralLoadingMachine? machine)
+        {
+            return _allRuralLoadingMachine.TryGetValue(id, out machine);
+        }
+
         public RuralLoadingMachine(string id, Track track, int lowerBound, int upperBound, float? markerAngle, bool isYardTrack)
         {
             Id = id;
@@ -34,6 +40,14 @@ namespace PassengerJobs.Platforms
             UpperBound = upperBound;
             IsYardTrack = isYardTrack;
             MarkerAngle = markerAngle;
+
+            _allRuralLoadingMachine[id] = this;
+        }
+
+        public void Dispose()
+        {
+            PJMain.Log($"Disposing rural loading machine {Id}");
+            _allRuralLoadingMachine.Remove(Id);
         }
 
         public void AddTask(RuralLoadingTask task)
