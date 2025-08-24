@@ -21,4 +21,27 @@ public static class MultiplayerManager
 
         // All players are required to have Passenger Jobs mod installed.
         MultiplayerAPI.Instance.SetModCompatibility(PJMain.ModEntry.Info.Id, MultiplayerCompatibility.All);
+
+        // Register custom task types for Multiplayer serialisation and deserialisation.
+        MultiplayerAPI.Instance.RegisterTaskType<RuralLoadingTask>
+        (
+            RuralLoadingTask.TaskType,
+            task => new RuralLoadingTaskData { TaskType = RuralLoadingTask.TaskType }.FromTask(task),
+            type => new RuralLoadingTaskData { TaskType = type }
+        );
+
+        MultiplayerAPI.Instance.RegisterTaskType<CityLoadingTask>
+        (
+            CityLoadingTask.TaskType,
+            task => new CityLoadingTaskData { TaskType = CityLoadingTask.TaskType }.FromTask(task),
+            type => new CityLoadingTaskData { TaskType = type }
+        );
+    }
+
+    #region helpers
+    public static TrainCar GetTrainCarFromID(string carId)
+    {
+        return TrainCarRegistry.Instance.logicCarToTrainCar.FirstOrDefault(kvp => kvp.Value.ID == carId).Value;
+    }
+    #endregion
 }
