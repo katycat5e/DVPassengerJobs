@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
+using MPAPI;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
 using System;
@@ -64,7 +65,11 @@ namespace PassengerJobs.Generation
         {
             get
             {
+                if (MultiplayerAPI.IsMultiplayerLoaded && !MultiplayerAPI.Instance.IsHost)
+                    return false;
+                
                 float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
+
                 return _stationRange.IsPlayerInJobGenerationZone(playerDist);
             }
         }
