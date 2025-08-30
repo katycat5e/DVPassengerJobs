@@ -168,6 +168,11 @@ public static class MultiplayerManager
 
         PJMain.Log(sb.ToString());
 #endif
+        SetStationTranslations(packet.RuralStationTranslations);
+        
+        SignManager.SetSigns(packet.SignLocations);
+
+        RouteManager.SetStations(packet.CityStations, packet.RuralStations);
 
 
     }

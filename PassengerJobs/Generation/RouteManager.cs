@@ -178,6 +178,27 @@ namespace PassengerJobs.Generation
             ApplyPlatformData();
         }
 
+        public static void SetStations(StationConfig.CityStation[]? newCityStations, StationConfig.RuralStation[]? newRuralStations)
+        {
+
+            if(newCityStations == null && newRuralStations == null)
+            {
+                PJMain.Warning($"Tried to set stations, but new stations are null");
+                return;
+            }
+
+            newCityStations ??= Array.Empty<StationConfig.CityStation>();
+            newRuralStations ??= Array.Empty<StationConfig.RuralStation>();
+
+            _stationConfig ??= new StationConfig();
+
+            _stationConfig.cityStations = newCityStations;
+            _stationConfig.ruralStations = newRuralStations;
+
+            //CreateRuralStations();
+            //ApplyPlatformData();
+        }
+
         public static void SavePlatformConfig(string platformId, Vector3 cornerA, Vector3 cornerB, float depth)
         {
             string stationId = platformId.Split('-')[0];
