@@ -43,7 +43,7 @@ namespace PassengerJobs
                         destinations.Add(new PassStopInfo(ruralTask.stationId));
                     }
                 }
-                else if (task.instanceTaskType == TaskType.Warehouse)
+                else if (task.instanceTaskType == CityLoadingTask.TaskType)
                 {
                     if (task.warehouseTaskType == WarehouseTaskType.Unloading)
                     {

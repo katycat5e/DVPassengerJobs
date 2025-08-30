@@ -57,7 +57,7 @@ namespace PassengerJobs.Platforms
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
             WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-            return new WarehouseTask(cars, taskType, Warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
+            return new CityLoadingTask(cars, taskType, Warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
         }
 
         public List<PlatformTask> GetLoadableTasks(bool loading)
