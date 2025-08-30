@@ -34,6 +34,7 @@ namespace PassengerJobs.Platforms
     public static class SignManager
     {
         private static readonly Dictionary<string, List<SignDefinition>> _signLocations = new();
+        public static Dictionary<string, List<SignDefinition>> SignLocations => _signLocations.ToDictionary(kvp=> kvp.Key, kvp => kvp.Value);
 
         public static void TryLoadSignLocations()
         {

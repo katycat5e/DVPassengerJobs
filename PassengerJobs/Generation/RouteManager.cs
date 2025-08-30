@@ -26,6 +26,8 @@ namespace PassengerJobs.Generation
 
         private static readonly Dictionary<string, IPassDestination> _stations = new();
 
+        public static StationConfig.CityStation[]? CityStations => _stationConfig?.cityStations?.ToArray();
+        public static StationConfig.RuralStation[]? RuralStations => _stationConfig?.ruralStations?.ToArray();
         public static bool IsPassengerStation(string yardId) => _stationConfig?.cityStations.Any(p => p.yardId == yardId) == true;
 
         static RouteManager()
