@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PassengerJobs.Multiplayer.Serialisers;
+namespace PassengerJobs.Multiplayer.Serializers;
 
 public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
 {

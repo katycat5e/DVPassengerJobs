@@ -9,13 +9,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PassengerJobs.Multiplayer.Serialisers;
+namespace PassengerJobs.Multiplayer.Serializers;
 
 public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 {
     public ushort[]? CarNetIDs { get; set; }
     public WarehouseTaskType WarehouseTaskType { get; set; }
-    public string WarehouseMachineId { get; set; }
+    public string WarehouseMachineId { get; set; } = string.Empty;
     public CargoType CargoType { get; set; }
     public float CargoAmount { get; set; }
     public bool ReadyForMachine { get; set; }
@@ -79,13 +79,14 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
             .ToList();
 
 
-        CityLoadingTask newTask = new CityLoadingTask(
+        CityLoadingTask newTask = new CityLoadingTask
+        (
            cars,
            WarehouseTaskType,
            JobSaveManager.Instance.GetWarehouseMachineWithId(WarehouseMachineId),
            CargoType,
            CargoAmount
-       );
+        );
 
         newTask.readyForMachine = ReadyForMachine;
 
