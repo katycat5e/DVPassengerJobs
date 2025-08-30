@@ -91,6 +91,19 @@ public static class MultiplayerManager
             return;
         }
 
+        var packet = new ClientBoundPJSettingsPacket
+        {
+            UseCustomWages = PJMain.Settings.UseCustomWages,
+            CoachLights = PJMain.Settings.CoachLights,
+            UseCustomCoachLightColour = PJMain.Settings.UseCustomCoachLightColour,
+            CustomCoachLightColour = PJMain.Settings.CustomCoachLightColour,
+            CoachLightsRequirePower = PJMain.Settings.CoachLightsRequirePower
+        };
+
+        if (player == null)
+            _server.SendPacketToAll(packet);
+        else
+            _server.SendPacketToPlayer(packet, player);
     }
 
     public static void SendPJStationData(IPlayer? player = null)
