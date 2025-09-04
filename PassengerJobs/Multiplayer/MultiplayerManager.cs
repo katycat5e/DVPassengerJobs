@@ -65,12 +65,17 @@ public static class MultiplayerManager
         PJMain.Log("Server created");
         _server = server;
         _server.OnPlayerConnected += OnPlayerConnected;
+
+        // Listen for settings changes
+        PJMain.Settings.OnSettingsChanged += OnSettingsChanged;
     }
 
     private static void OnServerStopped()
     {
         PJMain.Log("Server stopped");
         _server = null;
+
+        PJMain.Settings.OnSettingsChanged -= OnSettingsChanged;
     }
 
     private static void OnPlayerConnected(IPlayer player)
@@ -87,6 +92,13 @@ public static class MultiplayerManager
         SendPJStationData(player);
     }
 
+    public static void OnSettingsChanged()
+    {
+        if (_server == null)
+            return;
+
+        SendPJSettings();
+    }
     public static void SendPJSettings(IPlayer? player = null)
     {
         if (_server == null)
@@ -149,6 +161,9 @@ public static class MultiplayerManager
         // Register for incoming packets
         _client.RegisterPacket<ClientBoundPJSettingsPacket>(OnClientBoundPJSettingsPacket);
         _client.RegisterSerializablePacket<ClientBoundPJStationDataPacket>(OnClientBoundPJStationDataPacket);
+
+        // Block local changes to settings
+        PJMain.Settings.MPActive = true;
     }
 
     private static void OnClientStopped()
@@ -156,10 +171,18 @@ public static class MultiplayerManager
         PJMain.Log("Client stopped");
         _client = null;
 
-        if (!UnloadWatcher.isQuitting)
-            PJMain.Translations.Reload();
+        if (UnloadWatcher.isQuitting)
+            return;
+
+        PJMain.Translations.Reload();
 
         SignManager.TryLoadSignLocations();
+
+        // Unblock local changes to settings
+        PJMain.Settings.MPActive = false;
+
+        // Force restore of player's settings
+        PJMain.ReloadSettings();
     }
 
     public static void RegisterForJobAddedEvents(StationController controller)
@@ -219,6 +242,16 @@ public static class MultiplayerManager
     private static void OnClientBoundPJSettingsPacket(ClientBoundPJSettingsPacket packet)
     {
         PJMain.Log($"OnClientBoundPJSettingsPacket() UseCustomWages: {packet.UseCustomWages}, CoachLightMode: {packet.CoachLights}, UseCustomCoachLightColour: {packet.UseCustomCoachLightColour}, CustomCoachLightColour: {packet.CustomCoachLightColour}, CoachLightsRequirePower: {packet.CoachLightsRequirePower}");
+
+        // Load settings from packet
+        PJMain.Settings.UseCustomWages = packet.UseCustomWages;
+        PJMain.Settings.CoachLights = packet.CoachLights;
+        PJMain.Settings.UseCustomCoachLightColour = packet.UseCustomCoachLightColour;
+        PJMain.Settings.CustomCoachLightColour = packet.CustomCoachLightColour;
+        PJMain.Settings.CoachLightsRequirePower = packet.CoachLightsRequirePower;
+
+        // Notify listeners that settings have changed
+        PJMain.Settings.OnSettingsSaved?.Invoke(PJMain.Settings);
     }
 
     private static void OnClientBoundPJStationDataPacket(ClientBoundPJStationDataPacket packet)

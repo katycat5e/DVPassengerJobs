@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using UnityEngine;
 using UnityModManagerNet;
 
 namespace PassengerJobs
@@ -48,7 +49,7 @@ namespace PassengerJobs
             //PlatformManager.TryLoadSignLocations();
 
             // Initialize settings
-            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+            ReloadSettings();
             //Settings.DoPurge = false;
 
             ModEntry.OnGUI = DrawGUI;
@@ -89,9 +90,19 @@ namespace PassengerJobs
 
         #region Settings
 
+        public static void ReloadSettings()
+        {
+            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+        }
+
         static void DrawGUI( UnityModManager.ModEntry entry )
         {
             Settings.Draw(entry);
+
+            if (Settings.MPActive)
+            {
+                GUILayout.Label("<color=\"red\">Settings are locked while a multiplayer session is active.</color>");
+            }
         }
 
         static void SaveGUI( UnityModManager.ModEntry entry )
