@@ -1,4 +1,5 @@
-﻿using DVLangHelper.Data;
+﻿using DV.Logic.Job;
+using DVLangHelper.Data;
 using MPAPI;
 using MPAPI.Interfaces;
 using MPAPI.Types;
@@ -7,9 +8,11 @@ using PassengerJobs.Multiplayer.Packets;
 using PassengerJobs.Multiplayer.Serializers;
 using PassengerJobs.Platforms;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace PassengerJobs.Multiplayer;
 
@@ -18,6 +21,7 @@ public static class MultiplayerManager
     private static IServer? _server;
     private static IClient? _client;
 
+    private static readonly Dictionary<StationController, Action> _trackedStations = new();
     public static void Init()
     {
         if (!MultiplayerAPI.IsMultiplayerLoaded)
@@ -25,7 +29,7 @@ public static class MultiplayerManager
 
         // Loaded API Version is the version of MultiplayerAPI.dll loaded in memory.
         // Supported API Version is the version of MultiplayerAPI.dll that Multiplayer mod was built against.
-        // Supported API version must be equal to or greater than Loaded API Version.
+        // Supported API version must be equal to the Loaded API Version.
         PJMain.Log($"Multiplayer Mod is loaded. Loaded Multiplayer API Version: {MultiplayerAPI.LoadedApiVersion}, Multiplayer's API Version: {MultiplayerAPI.SupportedApiVersion}");
 
         // All players are required to have Passenger Jobs mod installed.
@@ -135,6 +139,11 @@ public static class MultiplayerManager
     private static void OnClientCreated(IClient client)
     {
         PJMain.Log("Client created");
+
+        // Only register client if client is standalone (not host)
+        if (MultiplayerAPI.Instance.IsHost)
+            return;
+
         _client = client;
 
         // Register for incoming packets
@@ -151,6 +160,60 @@ public static class MultiplayerManager
             PJMain.Translations.Reload();
 
         SignManager.TryLoadSignLocations();
+    }
+
+    public static void RegisterForJobAddedEvents(StationController controller)
+    {
+        if (controller == null)
+        {
+            PJMain.Error($"RegisterForJobAddedEvents() Station Controller is null!\r\n{Environment.StackTrace}");
+            return;
+        }
+
+        CoroutineManager.Instance.StartCoroutine(RegisterForJobAddedEvents_internal(controller));
+    }
+
+    private static IEnumerator RegisterForJobAddedEvents_internal(StationController controller)
+    {
+        yield return new WaitUntil(() => controller.logicStation != null);
+
+        if (_trackedStations.ContainsKey(controller))
+        {
+            PJMain.Warning($"RegisterForJobAddedEvents({controller.stationInfo.Name}) Delegate event already registered!");
+            yield break;
+        }
+
+#if DEBUG
+        PJMain.Log($"RegisterForJobAddedEvents({controller.stationInfo.Name}) Registering delegate event");
+#endif
+
+        void JobAddedHandler() => UpdateRouteSigns(controller);
+        controller.logicStation.JobAddedToStation += JobAddedHandler;
+        _trackedStations[controller] = JobAddedHandler;
+    }
+
+    public static void UnregisterForJobAddedEvents(StationController controller)
+    {
+        if (controller == null)
+        {
+            PJMain.Error($"UnregisterForJobAddedEvents() Station Controller is null!\r\n{Environment.StackTrace}");
+            return;
+        }
+
+        if (controller.logicStation == null)
+        {
+            PJMain.Error($"UnregisterForJobAddedEvents({controller.stationInfo.Name}) Logic Station is null!");
+            return;
+        }
+
+        if (!_trackedStations.TryGetValue(controller, out Action JobAddedHandler))
+        {
+            PJMain.Error($"UnregisterForJobAddedEvents({controller.stationInfo.Name}) Delegate event not found!");
+            return;
+        }
+
+        controller.logicStation.JobAddedToStation -= JobAddedHandler;
+        _trackedStations.Remove(controller);
     }
 
     private static void OnClientBoundPJSettingsPacket(ClientBoundPJSettingsPacket packet)
@@ -182,12 +245,172 @@ public static class MultiplayerManager
         PJMain.Log(sb.ToString());
 #endif
         SetStationTranslations(packet.RuralStationTranslations);
-        
+
         SignManager.SetSigns(packet.SignLocations);
 
         RouteManager.SetStations(packet.CityStations, packet.RuralStations);
+    }
 
+    private static void UpdateRouteSigns(StationController controller)
+    {
+        if (controller == null)
+        {
+            PJMain.Error($"UpdateRouteSigns failed, Station Controller is null!\r\n{Environment.StackTrace}");
+            return;
+        }
 
+        if (controller.logicStation == null)
+        {
+            PJMain.Error($"UpdateRouteSigns({controller.stationInfo.Name}) failed, Logic Station is null!");
+            return;
+        }
+
+        var job = controller.logicStation.availableJobs.Last();
+        if (job == null || !PassJobType.IsPJType(job.jobType))
+            return;
+
+        var taskData = job.tasks.FirstOrDefault().GetTaskData();
+        if (taskData == null)
+        {
+            PJMain.Error($"UpdateRouteSigns({controller.stationInfo.Name}) failed, first task data is null!");
+            return;
+        }
+
+        PJMain.Log($"UpdateRouteSigns({controller.stationInfo.Name}) Job {job.ID}, Type: {job.jobType}");
+
+        var startPlatformId = FindStartPlatform(job);
+        var destinationPlatformIds = GetDestinationPlatformIds(job);
+
+        if (string.IsNullOrEmpty(startPlatformId) || destinationPlatformIds.Length == 0)
+        {
+            PJMain.Error($"UpdateRouteSigns({controller.stationInfo.Name}) failed, couldn't determine start or destination platform IDs");
+            return;
+        }
+
+        PlatformController.GetControllerForTrack(startPlatformId).RegisterOutgoingJob(job);
+        for (int i = 0; i < destinationPlatformIds.Length - 1; i++)
+        {
+            job.JobTaken += PlatformController.GetControllerForTrack(destinationPlatformIds[i]).RegisterOutgoingJob;
+        }
+        job.JobTaken += PlatformController.GetControllerForTrack(destinationPlatformIds.Last()).RegisterIncomingJob;
+    }
+
+    private static string FindStartPlatform(Job job)
+    {
+        if (job == null)
+            return string.Empty;
+
+        var task = job.tasks.Where(t => t.state != TaskState.Done).FirstOrDefault();
+        if (task == null)
+        {
+            PJMain.Warning($"FindStartPlatform() Job {job.ID} has no pending tasks");
+            return string.Empty;
+        }
+
+        if (task.InstanceTaskType == TaskType.Sequential)
+        {
+            task = ((SequentialTasks)task).currentTask.Value;
+            if (task == null)
+            {
+                PJMain.Warning($"FindStartPlatform() Job {job.ID} SequentialTask has no pending tasks");
+                return string.Empty;
+            }
+        }
+        else
+        {
+            PJMain.Warning($"FindStartPlatform() Job {job.ID}, InstanceTaskType: {task.InstanceTaskType}, taskType: {task.GetType()}");
+        }
+
+        var taskData = task.GetTaskData();
+        if (taskData == null)
+        {
+            PJMain.Warning($"FindStartPlatform() Job {job.ID} first pending task data is null");
+            return string.Empty;
+        }
+
+        var track = taskData.startTrack?.ID?.FullDisplayID;
+        var trackEnd = taskData.destinationTrack?.ID?.FullDisplayID;
+
+        if (track == null && trackEnd == null)
+        {
+            PJMain.Warning($"FindStartPlatform() Job {job.ID} first pending task start track is null");
+            return string.Empty;
+        }
+        else if (track == null)
+        {
+            PJMain.Log($"FindStartPlatform() Job {job.ID} first pending task start track is null, using destination track {trackEnd}");
+            track = trackEnd;
+        }
+
+        var routeTrack = RouteManager.GetRouteTrackById(track!);
+        if (routeTrack == null || !routeTrack.HasValue)
+        {
+            PJMain.Warning($"FindStartPlatform() Job {job.ID} couldn't find RouteTrack for start track {track}");
+            return string.Empty;
+        }
+
+        PJMain.Log($"FindStartPlatform() Job {job.ID}, StartTrack: {track}, PlatformID: {routeTrack.Value.PlatformID}");
+
+        return routeTrack.Value.PlatformID;
+    }
+
+    private static string[] GetDestinationPlatformIds(Job job)
+    {
+        if (job == null)
+            return Array.Empty<string>();
+
+        var tasks = job.tasks.Where(t => t.state != TaskState.Done);
+
+        if (!tasks.Any())
+            return Array.Empty<string>();
+
+        List<string> destinationPlatformIds = new();
+        foreach (var task in tasks)
+        {
+            var destinations = GetDestinationPlatformIds(task);
+            destinationPlatformIds.AddRange(destinations);
+        }
+
+        PJMain.Log($"GetDestinationPlatformIds() Job {job.ID}, DestinationPlatformIDs: {string.Join(", ", destinationPlatformIds)}");
+        return destinationPlatformIds.ToArray();
+    }
+
+    private static string[] GetDestinationPlatformIds(Task task)
+    {
+        if (task == null)
+            return Array.Empty<string>();
+
+        var taskData = task.GetTaskData();
+        if (taskData == null)
+            return Array.Empty<string>();
+
+        List<string> destinationPlatformIds = new();
+
+        var track = taskData.destinationTrack?.ID?.FullDisplayID;
+
+        if (track != null)
+        {
+            var destinationTrack = RouteManager.GetRouteTrackById(track);
+            if (destinationTrack.HasValue)
+            {
+                var destination = destinationTrack.Value.PlatformID;
+                if (!string.IsNullOrEmpty(destination))
+                    destinationPlatformIds.Add(destination);
+            }
+        }
+
+        if (taskData.nestedTasks == null || taskData.nestedTasks.Count == 0)
+            return destinationPlatformIds.ToArray();
+
+        foreach (var subTask in taskData.nestedTasks)
+        {
+            var destinations = GetDestinationPlatformIds(subTask);
+            destinationPlatformIds.AddRange(destinations);
+        }
+
+        PJMain.Log($"GetDestinationPlatformIds() Task {task.Job.ID}-{task.InstanceTaskType}, DestinationPlatformIDs: {string.Join(", ", destinationPlatformIds)}");
+
+        return destinationPlatformIds.ToArray();
     }
     #endregion
 
@@ -229,15 +452,15 @@ public static class MultiplayerManager
             return;
         }
 
-        foreach (var kvp in translations) 
+        foreach (var kvp in translations)
         {
             var key = $"{LocalizationKeyExtensions.STATION_NAME_KEY}{kvp.Key.ToLower()}";
 
-            for (int i = 0; i < kvp.Value.Length; i++) 
+            for (int i = 0; i < kvp.Value.Length; i++)
             {
                 var translation = kvp.Value[i];
 
-                if(!Enum.IsDefined(typeof(DVLanguage), i))
+                if (!Enum.IsDefined(typeof(DVLanguage), i))
                 {
                     PJMain.Error($"Failed to add translation \"{translation}\" for station {kvp.Key}, {i} is not a valid DVLanguage enum value");
                     break;
@@ -250,7 +473,6 @@ public static class MultiplayerManager
 #endif
                 PJMain.Translations.AddTranslation(key, dvLang, translation, true);
 
-                _resetTranslations = true;
             }
         }
     }
