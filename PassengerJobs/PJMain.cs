@@ -1,16 +1,12 @@
-﻿using DV.Common;
-using DVLangHelper.Runtime;
+﻿using DVLangHelper.Runtime;
 using HarmonyLib;
 using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
+using UnityEngine;
 using UnityModManagerNet;
 
 namespace PassengerJobs
@@ -46,7 +42,7 @@ namespace PassengerJobs
             //PlatformManager.TryLoadSignLocations();
 
             // Initialize settings
-            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+            ReloadSettings();
             //Settings.DoPurge = false;
 
             ModEntry.OnGUI = DrawGUI;
@@ -54,6 +50,7 @@ namespace PassengerJobs
 
             // Find companion mods
             //SkinManager_Patch.Initialize();
+            MultiplayerShim.TryInitialise(modEntry);
 
             DV.Globals.G.Types.RecalculateCaches();
 
@@ -85,9 +82,19 @@ namespace PassengerJobs
 
         #region Settings
 
+        public static void ReloadSettings()
+        {
+            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+        }
+
         static void DrawGUI( UnityModManager.ModEntry entry )
         {
             Settings.Draw(entry);
+
+            if (Settings.MPActive)
+            {
+                GUILayout.Label("<color=\"red\">Settings are locked while a multiplayer session is active.</color>");
+            }
         }
 
         static void SaveGUI( UnityModManager.ModEntry entry )

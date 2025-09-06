@@ -34,9 +34,13 @@ namespace PassengerJobs.Platforms
     public static class SignManager
     {
         private static readonly Dictionary<string, List<SignDefinition>> _signLocations = new();
+        public static Dictionary<string, List<SignDefinition>> SignLocations => _signLocations.ToDictionary(kvp=> kvp.Key, kvp => kvp.Value);
 
         public static void TryLoadSignLocations()
         {
+            if (_signLocations.Count > 0) 
+                _signLocations.Clear();
+
             string configFilePath = Path.Combine(PJMain.ModEntry.Path, "platform_signs.csv");
             if (!File.Exists(configFilePath))
             {
@@ -101,6 +105,20 @@ namespace PassengerJobs.Platforms
             {
                 PJMain.Error("Failed to open sign locations file platform_signs.csv", ex);
             }
+        }
+
+        public static void SetSigns(Dictionary<string, List<SignDefinition>>? newSigns)
+        {
+            if (newSigns == null)
+            {
+                PJMain.Warning($"Tried to set sign data, but new sign data isnull");
+                return;
+            }
+
+            _signLocations.Clear();
+
+            foreach (var kvp in newSigns)
+                _signLocations.Add(kvp.Key, kvp.Value);
         }
 
         public static IEnumerable<SignPrinter> CreatePlatformSigns(string trackId)

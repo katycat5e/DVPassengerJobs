@@ -57,7 +57,7 @@ namespace PassengerJobs.Platforms
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
             WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-            return new WarehouseTask(cars, taskType, Warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
+            return new CityLoadingTask(cars, taskType, Warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
         }
 
         public List<PlatformTask> GetLoadableTasks(bool loading)
@@ -74,7 +74,7 @@ namespace PassengerJobs.Platforms
                     {
                         if (AreCarsStoppedAtPlatform(task.cars))
                         {
-                            result.Add(new WarehouseTaskWrapper(task));
+                            result.Add(new CityLoadTaskWrapper((CityLoadingTask)task));
                         }
                     }
                 }
@@ -85,7 +85,7 @@ namespace PassengerJobs.Platforms
 
         public void RemoveTask(PlatformTask task)
         {
-            if (task is WarehouseTaskWrapper wrapper)
+            if (task is CityLoadTaskWrapper wrapper)
             {
                 Warehouse.RemoveWarehouseTask(wrapper.TypedTask);
             }
@@ -97,7 +97,7 @@ namespace PassengerJobs.Platforms
 
         public Car? TransferOneCarOfTask(PlatformTask task, bool loading)
         {
-            if (task is WarehouseTaskWrapper wrapper)
+            if (task is CityLoadTaskWrapper wrapper)
             {
                 return loading ?
                     Warehouse.LoadOneCarOfTask(wrapper.TypedTask) :
