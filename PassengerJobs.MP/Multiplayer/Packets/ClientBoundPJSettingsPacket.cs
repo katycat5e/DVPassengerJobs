@@ -2,7 +2,7 @@
 using UnityEngine;
 using static PassengerJobs.PJModSettings;
 
-namespace PassengerJobs.Multiplayer.Packets;
+namespace PassengerJobs.MP.Multiplayer.Packets;
 
 public class ClientBoundPJSettingsPacket : IPacket
 {

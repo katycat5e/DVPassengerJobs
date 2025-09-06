@@ -4,7 +4,8 @@ using MPAPI;
 using MPAPI.Interfaces;
 using MPAPI.Types;
 using PassengerJobs.Generation;
-using PassengerJobs.Multiplayer.Packets;
+using PassengerJobs.MP.Multiplayer.Packets;
+using PassengerJobs.MP.Multiplayer.Serializers;
 using PassengerJobs.Multiplayer.Serializers;
 using PassengerJobs.Platforms;
 using System;
@@ -14,7 +15,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace PassengerJobs.Multiplayer;
+namespace PassengerJobs.MP.Multiplayer;
 
 public static class MultiplayerManager
 {
@@ -24,17 +25,6 @@ public static class MultiplayerManager
     private static readonly Dictionary<StationController, Action> _trackedStations = new();
     public static void Init()
     {
-        if (!MultiplayerAPI.IsMultiplayerLoaded)
-            return;
-
-        // Loaded API Version is the version of MultiplayerAPI.dll loaded in memory.
-        // Supported API Version is the version of MultiplayerAPI.dll that Multiplayer mod was built against.
-        // Supported API version must be equal to the Loaded API Version.
-        PJMain.Log($"Multiplayer Mod is loaded. Loaded Multiplayer API Version: {MultiplayerAPI.LoadedApiVersion}, Multiplayer's API Version: {MultiplayerAPI.SupportedApiVersion}");
-
-        // All players are required to have Passenger Jobs mod installed.
-        MultiplayerAPI.Instance.SetModCompatibility(PJMain.ModEntry.Info.Id, MultiplayerCompatibility.All);
-
         // Register custom task types for Multiplayer serialisation and deserialisation.
         MultiplayerAPI.Instance.RegisterTaskType<RuralLoadingTask>
         (

@@ -1,18 +1,11 @@
-﻿using DV.Common;
-using DVLangHelper.Runtime;
+﻿using DVLangHelper.Runtime;
 using HarmonyLib;
-using MPAPI;
 using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
-using PassengerJobs.Multiplayer;
 using PassengerJobs.Platforms;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using UnityEngine;
 using UnityModManagerNet;
 
@@ -57,8 +50,7 @@ namespace PassengerJobs
 
             // Find companion mods
             //SkinManager_Patch.Initialize();
-
-            MultiplayerManager.Init();
+            MultiplayerShim.TryInitialise(modEntry);
 
             DV.Globals.G.Types.RecalculateCaches();
 

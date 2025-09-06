@@ -1,6 +1,5 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
-using MPAPI;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
 using System;
@@ -65,9 +64,9 @@ namespace PassengerJobs.Generation
         {
             get
             {
-                if (MultiplayerAPI.IsMultiplayerLoaded && !MultiplayerAPI.Instance.IsHost)
+                if (MultiplayerShim.IsInitialized && !MultiplayerShim.IsHost)
                     return false;
-                
+
                 float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
 
                 return _stationRange.IsPlayerInJobGenerationZone(playerDist);
@@ -200,7 +199,7 @@ namespace PassengerJobs.Generation
         {
             int nTotalCars;
             List<TrainCarLivery> jobCarTypes;
-            
+
             RouteTrack startPlatform;
             RouteResult? destinations;
 
@@ -355,9 +354,9 @@ namespace PassengerJobs.Generation
         {
             // Spawn the cars
             RailTrack startRT = startTrack.Track.RailTrack();
-            
-            var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true, 
-                true,0, false, false);
+
+            var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true,
+                true, 0, false, false);
 
             if (spawnedCars == null) return null;
 

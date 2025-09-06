@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyName>PassengerJobs.MP</AssemblyName>
+		<TargetFramework>netframework4.8</TargetFramework>
+		<LangVersion>10</LangVersion>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Krafs.Publicizer" Version="2.2.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\PassengerJobs\PassengerJobs.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Publicize Include="Assembly-CSharp" IncludeCompilerGeneratedMembers="false" />
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="0Harmony" />
+		<Reference Include="Assembly-CSharp" />
+		<Reference Include="DVLangHelper.Data" />
+		<Reference Include="DVLangHelper.Runtime" />
+		<Reference Include="DV.RailTrack" />
+		<Reference Include="DV.ThingTypes" />
+		<Reference Include="DV.Utils" />
+		<Reference Include="I2.Localization" />
+		<Reference Include="MultiplayerAPI" />
+		<Reference Include="UnityEngine" />
+		<Reference Include="UnityEngine.AudioModule" />
+		<Reference Include="UnityEngine.CoreModule" />
+		<Reference Include="UnityEngine.ImageConversionModule" />
+		<Reference Include="UnityEngine.IMGUIModule" />
+		<Reference Include="UnityEngine.PhysicsModule" />
+		<Reference Include="UnityEngine.UI" />
+		<Reference Include="UnityModManager" />
+	</ItemGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(DvInstallDir)\Mods\PassengerJobs\" />
+	</Target>
+</Project>

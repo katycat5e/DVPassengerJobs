@@ -3,6 +3,7 @@ using DV.ThingTypes;
 using MPAPI;
 using MPAPI.Types;
 using MPAPI.Util;
+using PassengerJobs.MP.Multiplayer;
 using PassengerJobs.Platforms;
 using System;
 using System.Collections.Generic;

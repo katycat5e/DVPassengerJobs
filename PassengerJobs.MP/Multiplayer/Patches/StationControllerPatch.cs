@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using MPAPI;
 
-namespace PassengerJobs.Multiplayer.Patches;
+namespace PassengerJobs.MP.Multiplayer.Patches;
 
 [HarmonyPatch(typeof(StationController))]
 public static class StationControllerPatch

@@ -34,7 +34,6 @@
 		<Reference Include="DV.Localization" />
 		<Reference Include="DV.UIFramework" />
 		<Reference Include="I2.Localization" />
-		<Reference Include="MultiplayerAPI" />
 		<Reference Include="net.smkd.vector3d" />
 		<Reference Include="Newtonsoft.Json" />
 		<Reference Include="System" />

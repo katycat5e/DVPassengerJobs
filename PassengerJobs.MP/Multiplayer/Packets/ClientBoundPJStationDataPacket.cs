@@ -1,18 +1,17 @@
 ﻿using MPAPI.Interfaces.Packets;
 using MPAPI.Util;
-using PassengerJobs.Config;
 using PassengerJobs.Platforms;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using static PassengerJobs.Config.StationConfig;
 
-namespace PassengerJobs.Multiplayer.Packets;
+namespace PassengerJobs.MP.Multiplayer.Packets;
 
 public class ClientBoundPJStationDataPacket : ISerializablePacket
 {
-    public StationConfig.CityStation[]? CityStations { get; set; }
-    public StationConfig.RuralStation[]? RuralStations { get; set; }
+    public CityStation[]? CityStations { get; set; }
+    public RuralStation[]? RuralStations { get; set; }
     public Dictionary<string, string[]>? RuralStationTranslations { get; set; }
     public Dictionary<string, List<SignDefinition>>? SignLocations { get; set; }
 
