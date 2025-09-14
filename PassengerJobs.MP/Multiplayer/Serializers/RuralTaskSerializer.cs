@@ -1,12 +1,12 @@
 ﻿using DV.Logic.Job;
-using MPAPI;
 using MPAPI.Types;
 using MPAPI.Util;
+using MPAPI;
 using PassengerJobs.Platforms;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace PassengerJobs.MP.Multiplayer.Serializers;
 
@@ -45,6 +45,8 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
         if (task is not RuralLoadingTask ruralLoadingTask)
             throw new ArgumentException("Task is not a RuralLoadingTask");
 
+        FromTaskCommon(task);
+
         CarNetIDs = ruralLoadingTask.Cars.Select(
             car =>
                 {
@@ -65,7 +67,7 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
         return this;
     }
 
-    public override Task ToTask()
+    public override Task ToTask(ref Dictionary<ushort, Task> netIdToTask)
     {
         List<Car> cars = CarNetIDs
             .Select(netId => MultiplayerAPI.Instance.TryGetObjectFromNetId(netId, out TrainCar trainCar) ? trainCar : null)
@@ -77,7 +79,7 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
         if (!RuralLoadingMachine.TryGetById(RuralLoadingMachineId, out var ruralLoadingMachine))
             throw new ArgumentException($"Invalid RuralLoadingMachineId: {RuralLoadingMachineId}");
 
-        RuralLoadingTask newTask = new
+        RuralLoadingTask newRuralLoadingTask = new
             (
                cars,
                ruralLoadingMachine!,
@@ -86,9 +88,13 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
                IsLastTask
             );
 
-        newTask.readyForMachine = ReadyForMachine;
+        ToTaskCommon(newRuralLoadingTask);
 
-        return newTask;
+        newRuralLoadingTask.readyForMachine = ReadyForMachine;
+
+        netIdToTask.Add(TaskNetId, newRuralLoadingTask);
+
+        return newRuralLoadingTask;
     }
 
     public override List<ushort> GetCars()

@@ -1,16 +1,15 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
-using MPAPI;
 using MPAPI.Types;
 using MPAPI.Util;
-using PassengerJobs.MP.Multiplayer;
+using MPAPI;
 using PassengerJobs.Platforms;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
-namespace PassengerJobs.Multiplayer.Serializers;
+namespace PassengerJobs.MP.Multiplayer.Serializers;
 
 public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 {
@@ -76,7 +75,10 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         if (task is not CityLoadingTask cityLoadingTask)
             throw new ArgumentException("Task is not a CityLoadingTask");
 
-        CarNetIDs = cityLoadingTask.Cars.Select(
+        FromTaskCommon(task);
+
+        CarNetIDs = cityLoadingTask.Cars.Select
+        (
             car =>
                 {
                     var trainCar = MultiplayerManager.GetTrainCarFromID(car.ID);
@@ -85,8 +87,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 
                     return netId;
                 }
-            )
-            .ToArray();
+        ).ToArray();
 
         //PJMain.Log($"CityLoadingTaskData.FromTask({task.Job.ID}) WarehouseMachine.WarehouseTrack: {cityLoadingTask.warehouseMachine.WarehouseTrack.ID}, WarehouseMachine.ID: {cityLoadingTask.warehouseMachine.ID}");
 
@@ -99,7 +100,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         return this;
     }
 
-    public override Task ToTask()
+    public override Task ToTask(ref Dictionary<ushort, Task> netIdToTask)
     {
         List<Car> cars = CarNetIDs
             .Select(netId => MultiplayerAPI.Instance.TryGetObjectFromNetId(netId, out TrainCar trainCar) ? trainCar : null)
@@ -110,19 +111,22 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         if (WarehouseMachine == null)
             throw new Exception($"Failed to convert CityLoadingTaskData to Task, WarehouseMachine is null!");
 
-        CityLoadingTask newTask = new
+        CityLoadingTask newCityLoadingTask = new
         (
            cars,
            WarehouseTaskType,
            WarehouseMachine,
            CargoType,
            CargoAmount
-        )
-        {
-            readyForMachine = ReadyForMachine
-        };
+        );
+        
+        newCityLoadingTask.readyForMachine = ReadyForMachine;
 
-        return newTask;
+        ToTaskCommon(newCityLoadingTask);
+
+        netIdToTask.Add(TaskNetId, newCityLoadingTask);
+
+        return newCityLoadingTask;
     }
 
     public override List<ushort> GetCars()
