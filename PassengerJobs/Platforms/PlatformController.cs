@@ -1,22 +1,21 @@
 ﻿using DV.Logic.Job;
 using DV.WeatherSystem;
 using PassengerJobs.Generation;
-using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
+using System;
 using UnityEngine;
 
 namespace PassengerJobs.Platforms
 {
     public class PlatformController : MonoBehaviour
     {
+        private const float BELL_AUDIBLE_DISTANCE_SQ = 250000f;
+        private const float ANCHOR_SEARCH_TIMEOUT = 10f;
+
         private static readonly AudioClip? _loadCompletedSound = null;
         private static readonly Dictionary<string, PlatformController> _trackToControllerMap = new();
-
-        public static void PlayBellSound()
-        {
-            _loadCompletedSound.Play2D();
-        }
 
         public static PlatformController GetControllerForTrack(string id)
         {
@@ -66,6 +65,9 @@ namespace PassengerJobs.Platforms
             }
         }
 
+        private Transform? _anchor = null;
+        private float _bell_max_distance_sq = BELL_AUDIBLE_DISTANCE_SQ;
+
         public event EventHandler<JobAddedArgs>? JobAdded;
         public event EventHandler<JobRemovedArgs>? JobRemoved;
         public event EventHandler<CarTransferredArgs>? CarTransferred;
@@ -85,15 +87,44 @@ namespace PassengerJobs.Platforms
             }
         }
 
-        public void Start()
+        protected IEnumerator Start()
         {
             _trackToControllerMap[Platform.TrackId] = this;
             Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
 
             _stateMachine = new PlatformControllerStateMachine(this);
+
+            yield return new WaitUntil(()=> Platform != null);
+
+            float timeOut = Time.time;
+            while (_anchor == null && (Time.time - timeOut) <= ANCHOR_SEARCH_TIMEOUT)
+            {
+                var _stationGenerationRange = transform?.parent?.GetComponentInChildren<StationJobGenerationRange>(true);
+                var _ruralFastTravelDestination = transform?.GetComponentsInChildren<Transform>(true)
+                    .Where(t=>t.name == RuralStationBuilder.TELEPORT_ANCHOR)
+                    .FirstOrDefault();
+
+                if (_stationGenerationRange != null)
+                {
+                    _anchor = _stationGenerationRange.transform;
+                    _bell_max_distance_sq = _stationGenerationRange.generateJobsSqrDistance;
+
+                    yield break;
+                }
+                else if(_ruralFastTravelDestination != null)
+                {
+                    _anchor = _ruralFastTravelDestination?.transform;
+
+                    yield break;
+                }
+
+                yield return null;
+            }
+                    
+            PJMain.Log($"Failed to find anchor for platform {Platform.Id}, max distance sq: {_bell_max_distance_sq}");
         }
 
-        private void Update()
+        protected void Update()
         {
             if (_loadUnloadRoutine is null)
             {
@@ -102,9 +133,22 @@ namespace PassengerJobs.Platforms
             }
         }
 
-        private void OnDisable()
+        protected void OnDisable()
         {
             StopAllCoroutines();
+        }
+
+        public void PlayBellSound()
+        {
+            if (_anchor is not null)
+            {
+                var distanceSq = (PlayerManager.PlayerTransform.position - _anchor.position).sqrMagnitude;
+
+                if (distanceSq > _bell_max_distance_sq)
+                    return;
+            }
+
+            _loadCompletedSound.Play2D();
         }
 
         #region Sign Handling

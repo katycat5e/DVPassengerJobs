@@ -27,6 +27,7 @@ namespace PassengerJobs.Platforms
 
         private const string LAMPS_ANCHOR = "[lamps]";
         private const string TELEPORT_ANCHOR = "[teleport]";
+        public const string TELEPORT_ANCHOR = "[teleport]";
 
         public static RuralStationData? CreateStation(StationConfig.RuralStation station, RuralStationData? existing = null)
         {

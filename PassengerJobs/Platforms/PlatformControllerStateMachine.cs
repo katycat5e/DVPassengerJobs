@@ -62,7 +62,7 @@ namespace PassengerJobs.Platforms
                 boardingFinished &= !((newState == PlatformState.Loading) || (newState == PlatformState.Unloading));
                 if (boardingFinished)
                 {
-                    PlatformController.PlayBellSound();
+                    _controller.PlayBellSound();
                 }
 
                 _platformState = newState;
