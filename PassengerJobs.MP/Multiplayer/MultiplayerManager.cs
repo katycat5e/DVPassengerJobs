@@ -119,7 +119,9 @@ public static class MultiplayerManager
             return;
         }
 
-        PJMain.Log($"Preparing station data packet. CityStations: {RouteManager.CityStations?.Length ?? 0}, RuralStations: {RouteManager.RuralStations?.Length ?? 0}, SignLocations: {SignManager.SignLocations?.Count ?? 0}, ");
+#if DEBUG
+        PJMain.Log($"Preparing station data packet. CityStations: {RouteManager.CityStations?.Length ?? 0}, RuralStations: {RouteManager.RuralStations?.Length ?? 0}, SignLocations: {SignManager.SignLocations?.Count ?? 0}");
+#endif
 
         var packet = new ClientBoundPJStationDataPacket
         {
@@ -178,7 +180,7 @@ public static class MultiplayerManager
     {
         if (controller == null)
         {
-            PJMain.Error($"RegisterForJobAddedEvents() Station Controller is null!\r\n{Environment.StackTrace}");
+            PJMain.Error($"RegisterForJobAddedEvents() Station Controller is null!");
             return;
         }
 
@@ -208,7 +210,7 @@ public static class MultiplayerManager
     {
         if (controller == null)
         {
-            PJMain.Error($"UnregisterForJobAddedEvents() Station Controller is null!\r\n{Environment.StackTrace}");
+            PJMain.Error($"UnregisterForJobAddedEvents() Station Controller is null!");
             return;
         }
 
@@ -277,7 +279,7 @@ public static class MultiplayerManager
     {
         if (controller == null)
         {
-            PJMain.Error($"UpdateRouteSigns failed, Station Controller is null!\r\n{Environment.StackTrace}");
+            PJMain.Error($"UpdateRouteSigns failed, Station Controller is null!");
             return;
         }
 
@@ -298,7 +300,6 @@ public static class MultiplayerManager
             return;
         }
 
-        PJMain.Log($"UpdateRouteSigns({controller.stationInfo.Name}) Job {job.ID}, Type: {job.jobType}");
 
         var startPlatformId = FindStartPlatform(job);
         var destinationPlatformIds = GetDestinationPlatformIds(job);
