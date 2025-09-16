@@ -1,18 +1,16 @@
 ﻿using DV.Logic.Job;
 using DVLangHelper.Data;
-using MPAPI;
 using MPAPI.Interfaces;
-using MPAPI.Types;
+using MPAPI;
 using PassengerJobs.Generation;
 using PassengerJobs.MP.Multiplayer.Packets;
 using PassengerJobs.MP.Multiplayer.Serializers;
-using PassengerJobs.Multiplayer.Serializers;
 using PassengerJobs.Platforms;
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
+using System;
 using UnityEngine;
 
 namespace PassengerJobs.MP.Multiplayer;
@@ -57,7 +55,7 @@ public static class MultiplayerManager
         _server.OnPlayerConnected += OnPlayerConnected;
 
         // Listen for settings changes
-        PJMain.Settings.OnSettingsChanged += OnSettingsChanged;
+        PJMain.Settings.OnSettingsSaved += OnSettingsChanged;
     }
 
     private static void OnServerStopped()
@@ -65,7 +63,7 @@ public static class MultiplayerManager
         PJMain.Log("Server stopped");
         _server = null;
 
-        PJMain.Settings.OnSettingsChanged -= OnSettingsChanged;
+        PJMain.Settings.OnSettingsSaved -= OnSettingsChanged;
     }
 
     private static void OnPlayerConnected(IPlayer player)
@@ -82,13 +80,14 @@ public static class MultiplayerManager
         SendPJStationData(player);
     }
 
-    public static void OnSettingsChanged()
+    public static void OnSettingsChanged(PJModSettings _)
     {
         if (_server == null)
             return;
 
         SendPJSettings();
     }
+
     public static void SendPJSettings(IPlayer? player = null)
     {
         if (_server == null)
@@ -231,7 +230,7 @@ public static class MultiplayerManager
 
     private static void OnClientBoundPJSettingsPacket(ClientBoundPJSettingsPacket packet)
     {
-        PJMain.Log($"OnClientBoundPJSettingsPacket() UseCustomWages: {packet.UseCustomWages}, CoachLightMode: {packet.CoachLights}, UseCustomCoachLightColour: {packet.UseCustomCoachLightColour}, CustomCoachLightColour: {packet.CustomCoachLightColour}, CoachLightsRequirePower: {packet.CoachLightsRequirePower}");
+        //PJMain.Log($"OnClientBoundPJSettingsPacket() UseCustomWages: {packet.UseCustomWages}, CoachLightMode: {packet.CoachLights}, UseCustomCoachLightColour: {packet.UseCustomCoachLightColour}, CustomCoachLightColour: {packet.CustomCoachLightColour}, CoachLightsRequirePower: {packet.CoachLightsRequirePower}");
 
         // Load settings from packet
         PJMain.Settings.UseCustomWages = packet.UseCustomWages;
