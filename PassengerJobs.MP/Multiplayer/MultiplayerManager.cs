@@ -300,101 +300,48 @@ public static class MultiplayerManager
             return;
         }
 
-
-        var startPlatformId = FindStartPlatform(job);
         var destinationPlatformIds = GetDestinationPlatformIds(job);
 
-        if (string.IsNullOrEmpty(startPlatformId) || destinationPlatformIds.Length == 0)
+        if (destinationPlatformIds.Length == 0)
         {
             PJMain.Error($"UpdateRouteSigns({controller.stationInfo.Name}) failed, couldn't determine start or destination platform IDs");
             return;
         }
-
-        PlatformController.GetControllerForTrack(startPlatformId).RegisterOutgoingJob(job);
-        for (int i = 0; i < destinationPlatformIds.Length - 1; i++)
+        else if (destinationPlatformIds.Length > 1)
         {
-            job.JobTaken += PlatformController.GetControllerForTrack(destinationPlatformIds[i]).RegisterOutgoingJob;
-        }
-        job.JobTaken += PlatformController.GetControllerForTrack(destinationPlatformIds.Last()).RegisterIncomingJob;
-    }
+            PlatformController.GetControllerForTrack(destinationPlatformIds.First()).RegisterOutgoingJob(job);
 
-    private static string FindStartPlatform(Job job)
-    {
-        if (job == null)
-            return string.Empty;
-
-        var task = job.tasks.Where(t => t.state != TaskState.Done).FirstOrDefault();
-        if (task == null)
-        {
-            PJMain.Warning($"FindStartPlatform() Job {job.ID} has no pending tasks");
-            return string.Empty;
-        }
-
-        if (task.InstanceTaskType == TaskType.Sequential)
-        {
-            task = ((SequentialTasks)task).currentTask.Value;
-            if (task == null)
+            for (int i = 1; i < destinationPlatformIds.Length - 1; i++)
             {
-                PJMain.Warning($"FindStartPlatform() Job {job.ID} SequentialTask has no pending tasks");
-                return string.Empty;
+                job.JobTaken += PlatformController.GetControllerForTrack(destinationPlatformIds[i]).RegisterOutgoingJob;
             }
         }
-        else
-        {
-            PJMain.Warning($"FindStartPlatform() Job {job.ID}, InstanceTaskType: {task.InstanceTaskType}, taskType: {task.GetType()}");
-        }
 
-        var taskData = task.GetTaskData();
-        if (taskData == null)
-        {
-            PJMain.Warning($"FindStartPlatform() Job {job.ID} first pending task data is null");
-            return string.Empty;
-        }
-
-        var track = taskData.startTrack?.ID?.FullDisplayID;
-        var trackEnd = taskData.destinationTrack?.ID?.FullDisplayID;
-
-        if (track == null && trackEnd == null)
-        {
-            PJMain.Warning($"FindStartPlatform() Job {job.ID} first pending task start track is null");
-            return string.Empty;
-        }
-        else if (track == null)
-        {
-            PJMain.Log($"FindStartPlatform() Job {job.ID} first pending task start track is null, using destination track {trackEnd}");
-            track = trackEnd;
-        }
-
-        var routeTrack = RouteManager.GetRouteTrackById(track!);
-        if (routeTrack == null || !routeTrack.HasValue)
-        {
-            PJMain.Warning($"FindStartPlatform() Job {job.ID} couldn't find RouteTrack for start track {track}");
-            return string.Empty;
-        }
-
-        PJMain.Log($"FindStartPlatform() Job {job.ID}, StartTrack: {track}, PlatformID: {routeTrack.Value.PlatformID}");
-
-        return routeTrack.Value.PlatformID;
+        job.JobTaken += PlatformController.GetControllerForTrack(destinationPlatformIds.Last()).RegisterIncomingJob;
     }
 
     private static string[] GetDestinationPlatformIds(Job job)
     {
-        if (job == null)
-            return Array.Empty<string>();
-
-        var tasks = job.tasks.Where(t => t.state != TaskState.Done);
-
-        if (!tasks.Any())
+        if (job == null || !job.tasks.Any())
             return Array.Empty<string>();
 
         List<string> destinationPlatformIds = new();
-        foreach (var task in tasks)
+
+        foreach (var task in job.tasks)
         {
-            var destinations = GetDestinationPlatformIds(task);
-            destinationPlatformIds.AddRange(destinations);
+            if (task.state == TaskState.Done)
+                continue;
+
+            var result = GetDestinationPlatformIds(task);
+
+            if (result != null && result.Length > 0)
+                destinationPlatformIds.AddRange(result);
         }
 
+#if DEBUG
         PJMain.Log($"GetDestinationPlatformIds() Job {job.ID}, DestinationPlatformIDs: {string.Join(", ", destinationPlatformIds)}");
+#endif
+
         return destinationPlatformIds.ToArray();
     }
 
@@ -403,37 +350,95 @@ public static class MultiplayerManager
         if (task == null)
             return Array.Empty<string>();
 
-        var taskData = task.GetTaskData();
-        if (taskData == null)
+        List<string> destinationPlatformIds = new();
+
+        var result = task.GetType().Name switch
+        {
+            nameof(SequentialTasks) => GetDestinationPlatformIds(((SequentialTasks)task).currentTask),
+            nameof(ParallelTasks) => GetDestinationPlatformIds(((ParallelTasks)task).tasks),
+            _ => GetDestinationPlatformId(task),
+        };
+
+        if (result != null && result.Length > 0)
+            destinationPlatformIds.AddRange(result);
+
+        return result.ToArray();
+    }
+
+    private static string[] GetDestinationPlatformIds(LinkedListNode<Task> task)
+    {
+        if (task == null || task.Value == null)
             return Array.Empty<string>();
 
         List<string> destinationPlatformIds = new();
 
-        var track = taskData.destinationTrack?.ID?.FullDisplayID;
+        string? previousDestination = null;
 
-        if (track != null)
+        while (task != null)
         {
-            var destinationTrack = RouteManager.GetRouteTrackById(track);
-            if (destinationTrack.HasValue)
+            if (task.Value.state != TaskState.Done)
             {
-                var destination = destinationTrack.Value.PlatformID;
-                if (!string.IsNullOrEmpty(destination))
-                    destinationPlatformIds.Add(destination);
+                var result = GetDestinationPlatformIds(task.Value);
+
+                if (result != null && result.Length > 0 && previousDestination != result.FirstOrDefault())
+                {
+                    destinationPlatformIds.AddRange(result);
+                    previousDestination = result.FirstOrDefault();
+                }
             }
+
+            task = task.Next;
         }
-
-        if (taskData.nestedTasks == null || taskData.nestedTasks.Count == 0)
-            return destinationPlatformIds.ToArray();
-
-        foreach (var subTask in taskData.nestedTasks)
-        {
-            var destinations = GetDestinationPlatformIds(subTask);
-            destinationPlatformIds.AddRange(destinations);
-        }
-
-        PJMain.Log($"GetDestinationPlatformIds() Task {task.Job.ID}-{task.InstanceTaskType}, DestinationPlatformIDs: {string.Join(", ", destinationPlatformIds)}");
 
         return destinationPlatformIds.ToArray();
+    }
+
+    private static string[] GetDestinationPlatformIds(List<Task> tasks)
+    {
+        if (tasks == null || tasks.Count == 0)
+            return Array.Empty<string>();
+
+        List<string> destinationPlatformIds = new();
+
+        foreach (var task in tasks)
+        {
+            if (task == null)
+                continue;
+
+            var destination = GetDestinationPlatformId(task);
+
+            if (destination != null && destination.Length > 0)
+                destinationPlatformIds.AddRange(destination);
+            else
+                PJMain.Warning($"GetDestinationPlatformIds() List<Task> Job {task.Job.ID}, Task {task.GetType().Name}, State: {task.state} has no destination platforms");
+        }
+
+        return destinationPlatformIds.ToArray();
+    }
+
+    private static string[] GetDestinationPlatformId(Task task)
+    {
+        if (task == null)
+            return Array.Empty<string>();
+
+        var taskData = task.GetTaskData();
+        if (taskData == null)
+            return Array.Empty<string>();
+
+        var track = taskData.destinationTrack?.ID?.FullDisplayID;
+        if (track == null)
+            return Array.Empty<string>();
+
+        var destinationTrack = RouteManager.GetRouteTrackById(track);
+
+        if (destinationTrack.HasValue)
+        {
+            var destination = destinationTrack.Value.PlatformID;
+            if (!string.IsNullOrEmpty(destination))
+                return new string[] { destination };
+        }
+
+        return Array.Empty<string>();
     }
     #endregion
 
