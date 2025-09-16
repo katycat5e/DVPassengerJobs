@@ -26,7 +26,6 @@ namespace PassengerJobs.Platforms
         private const float LOADING_ZONE_HALF_LENGTH = LOADING_ZONE_LENGTH / 2;
 
         private const string LAMPS_ANCHOR = "[lamps]";
-        private const string TELEPORT_ANCHOR = "[teleport]";
         public const string TELEPORT_ANCHOR = "[teleport]";
 
         public static RuralStationData? CreateStation(StationConfig.RuralStation station, RuralStationData? existing = null)
