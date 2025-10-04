@@ -22,17 +22,16 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 
     public override void Serialize(BinaryWriter writer)
     {
-        //PJMain.Log($"Serializing CityLoadingTaskData.\r\n\tCarNetIds: [{string.Join(", ", CarNetIDs)}]\r\n\tWarehouseTaskType: {WarehouseTaskType}\r\n\tWarehouseMachineTrack: {WarehouseMachine?.WarehouseTrack?.ID}\r\n\tCargoType: {CargoType}\r\n\tCargoAmount: {CargoAmount}\r\n\tReadyForMachine: {ReadyForMachine}");
-
         SerializeCommon(writer);
 
         writer.WriteUShortArray(CarNetIDs);
         writer.Write((byte)WarehouseTaskType);
 
-        var track = WarehouseMachine?.WarehouseTrack?.RailTrack() ?? null;
-        MultiplayerAPI.Instance.TryGetNetId(track, out ushort trackNetId);
+        ushort warehouseMachineNetId = 0;
+        if (WarehouseMachine != null)
+            MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(WarehouseMachine, out warehouseMachineNetId);
 
-        writer.Write(trackNetId);
+        writer.Write(warehouseMachineNetId);
         writer.Write((int)CargoType);
         writer.Write(CargoAmount);
         writer.Write(ReadyForMachine);
@@ -45,33 +44,20 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         CarNetIDs = reader.ReadUShortArray();
         WarehouseTaskType = (WarehouseTaskType)reader.ReadByte();
 
-        ushort trackNetId = reader.ReadUInt16();
-        if (!MultiplayerAPI.Instance.TryGetObjectFromNetId(trackNetId, out RailTrack? WarehouseMachineTrack) || !WarehouseMachineTrack)
-            throw new Exception($"Failed to deserialise CityLoadingTaskData for trackNetId {trackNetId}, RailTrack was not found");
+        ushort warehouseMachineNetId = reader.ReadUInt16();
 
-        var track = WarehouseMachineTrack.LogicTrack()?.ID?.FullDisplayID;
-        if (string.IsNullOrEmpty(track))
-            throw new Exception($"Failed to deserialise CityLoadingTaskData for trackNetId {trackNetId}, LogicTrack was not found");
+        if (!MultiplayerAPI.Instance.TryGetObjectFromNetId<WarehouseMachine>(warehouseMachineNetId, out var warehouseMachine) || warehouseMachine == null)
+            throw new Exception($"Failed to deserialise CityLoadingTaskData for warehouseMachineNetId {warehouseMachineNetId}, WarehouseMachine was not found");
 
-        if (!PlatformController.TryGetControllerForTrack(track, out var controller) || !controller)
-            throw new Exception($"Failed to deserialise CityLoadingTaskData for trackNetId {trackNetId}, PlatformController was not found");
+        WarehouseMachine = warehouseMachine;
 
-        if (controller!.Platform is not StationPlatformWrapper stationPlatform)
-            throw new Exception($"Failed to deserialise CityLoadingTaskData for trackNetId {trackNetId}, Platform is not a StationPlatform");
-
-        WarehouseMachine = stationPlatform.Warehouse;
-        
         CargoType = (CargoType)reader.ReadInt32();
         CargoAmount = reader.ReadSingle();
         ReadyForMachine = reader.ReadBoolean();
-
-        //PJMain.Log($"Deserializing CityLoadingTaskData.\r\n\tCarNetIds: [{string.Join(", ", CarNetIDs)}]\r\n\tWarehouseTaskType: {WarehouseTaskType}\r\n\tWarehouseMachineTrack: {WarehouseMachineTrack?.name}\r\n\tCargoType: {CargoType}\r\n\tCargoAmount: {CargoAmount}\r\n\tReadyForMachine: {ReadyForMachine}");
     }
 
     public override CityLoadingTaskData FromTask(Task task)
     {
-        //PJMain.Log($"CityLoadingTaskData.FromTask({task.Job.ID})");
-
         if (task is not CityLoadingTask cityLoadingTask)
             throw new ArgumentException("Task is not a CityLoadingTask");
 
@@ -80,16 +66,14 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         CarNetIDs = cityLoadingTask.Cars.Select
         (
             car =>
-                {
-                    var trainCar = MultiplayerManager.GetTrainCarFromID(car.ID);
-                    if (trainCar == null || !MultiplayerAPI.Instance.TryGetNetId(trainCar, out var netId))
-                        return (ushort)0;
+            {
+                var trainCar = MultiplayerManager.GetTrainCarFromID(car.ID);
+                if (trainCar == null || !MultiplayerAPI.Instance.TryGetNetId(trainCar, out var netId))
+                    return (ushort)0;
 
-                    return netId;
-                }
+                return netId;
+            }
         ).ToArray();
-
-        //PJMain.Log($"CityLoadingTaskData.FromTask({task.Job.ID}) WarehouseMachine.WarehouseTrack: {cityLoadingTask.warehouseMachine.WarehouseTrack.ID}, WarehouseMachine.ID: {cityLoadingTask.warehouseMachine.ID}");
 
         WarehouseTaskType = cityLoadingTask.warehouseTaskType;
         WarehouseMachine = cityLoadingTask.warehouseMachine;
@@ -109,7 +93,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
             .ToList();
 
         if (WarehouseMachine == null)
-            throw new Exception($"Failed to convert CityLoadingTaskData to Task, WarehouseMachine is null!");
+            throw new Exception($"Failed to convert CityLoadingTaskData to Task, WarehouseMachine is null! taskNetId: {TaskNetId}");
 
         CityLoadingTask newCityLoadingTask = new
         (
@@ -131,6 +115,6 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 
     public override List<ushort> GetCars()
     {
-        return CarNetIDs.ToList();
+        return CarNetIDs.ToList() ?? new List<ushort>();
     }
 }

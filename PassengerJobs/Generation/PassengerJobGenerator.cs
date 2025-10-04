@@ -99,7 +99,7 @@ namespace PassengerJobs.Generation
                 holder.transform.SetParent(Controller.transform, false);
 
                 var platformController = holder.AddComponent<PlatformController>();
-                platformController.Platform = new StationPlatformWrapper(platform.Track);
+                platformController.Platform = new StationPlatformWrapper(platform.Track, platformController);
                 platformController.PlatformData = platform;
                 platformController.SetDecorationsEnabled(_playerWasInRange);
                 PlatformControllers.Add(platformController);

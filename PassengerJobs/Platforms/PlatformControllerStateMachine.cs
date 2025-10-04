@@ -24,8 +24,8 @@ namespace PassengerJobs.Platforms
 
         public object? Current => new WaitForSecondsRealtime(LOAD_DELAY);
 
-        private PlatformController _controller;
-        private IPlatformWrapper _platform;
+        private readonly PlatformController _controller;
+        private readonly IPlatformWrapper _platform;
 
         public PlatformControllerStateMachine(PlatformController controller)
         {

@@ -343,11 +343,11 @@ namespace PassengerJobs.Generation
 
                 if (newStation.Platform.IsYardTrack)
                 {
-                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID}");
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.WarehouseTrack.ID}");
                 }
                 else
                 {
-                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.WarehouseTrack.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
                 }
             }
         }

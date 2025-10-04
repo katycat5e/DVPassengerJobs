@@ -1,10 +1,10 @@
 ﻿using DV.Logic.Job;
 using DV.WeatherSystem;
 using PassengerJobs.Generation;
-using System.Collections.Generic;
-using System.Collections;
-using System.Linq;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace PassengerJobs.Platforms
@@ -16,6 +16,7 @@ namespace PassengerJobs.Platforms
 
         private static readonly AudioClip? _loadCompletedSound = null;
         private static readonly Dictionary<string, PlatformController> _trackToControllerMap = new();
+        public static IReadOnlyList<PlatformController> AllPlatformControllers => _trackToControllerMap.Values.ToList();
 
         public static PlatformController GetControllerForTrack(string id)
         {
@@ -44,11 +45,23 @@ namespace PassengerJobs.Platforms
         }
 
         public PassStationData.PlatformData PlatformData = null!;
-        public IPlatformWrapper Platform = null!;
-        public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
+        private IPlatformWrapper _platform = null!;
+        public IPlatformWrapper Platform
+        {
+            get => _platform;
+            set
+            {
+                if (value != null)
+                {
+                    if (_platform != null)
+                        _trackToControllerMap.Remove(_platform.TrackId);
 
-        public bool IsLoading { get; private set; } = false;
-        public bool IsUnloading { get; private set; } = false;
+                    _platform = value;
+                    _trackToControllerMap[_platform.TrackId] = this;
+                }
+        }
+
+        public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
 
         private string CurrentTimeString => WeatherDriver.Instance.manager.DateTime.ToString("HH:mm");
         private string _lastTimeString = string.Empty;
@@ -89,19 +102,18 @@ namespace PassengerJobs.Platforms
 
         protected IEnumerator Start()
         {
-            _trackToControllerMap[Platform.TrackId] = this;
             Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
 
             _stateMachine = new PlatformControllerStateMachine(this);
 
-            yield return new WaitUntil(()=> Platform != null);
+            yield return new WaitUntil(() => Platform != null);
 
             float timeOut = Time.time;
             while (_anchor == null && (Time.time - timeOut) <= ANCHOR_SEARCH_TIMEOUT)
             {
                 var _stationGenerationRange = transform?.parent?.GetComponentInChildren<StationJobGenerationRange>(true);
                 var _ruralFastTravelDestination = transform?.GetComponentsInChildren<Transform>(true)
-                    .Where(t=>t.name == RuralStationBuilder.TELEPORT_ANCHOR)
+                    .Where(t => t.name == RuralStationBuilder.TELEPORT_ANCHOR)
                     .FirstOrDefault();
 
                 if (_stationGenerationRange != null)
@@ -111,7 +123,7 @@ namespace PassengerJobs.Platforms
 
                     yield break;
                 }
-                else if(_ruralFastTravelDestination != null)
+                else if (_ruralFastTravelDestination != null)
                 {
                     _anchor = _ruralFastTravelDestination?.transform;
 
@@ -120,7 +132,7 @@ namespace PassengerJobs.Platforms
 
                 yield return null;
             }
-                    
+
             PJMain.Log($"Failed to find anchor for platform {Platform.Id}, max distance sq: {_bell_max_distance_sq}");
         }
 
@@ -136,6 +148,14 @@ namespace PassengerJobs.Platforms
         protected void OnDisable()
         {
             StopAllCoroutines();
+        }
+
+        protected void OnDestroy()
+        {
+            if (Platform != null)
+            {
+                _trackToControllerMap.Remove(Platform.TrackId);
+            }
         }
 
         public void PlayBellSound()

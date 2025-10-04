@@ -49,6 +49,6 @@ namespace PassengerJobs.Platforms
         public RuralLoadTaskWrapper(RuralLoadingTask task) : base(task) { }
 
         public override List<Car> Cars => TypedTask.Cars;
-        public override bool IsLoadTask => TypedTask.IsLoading;
+        public override bool IsLoadTask => TypedTask.warehouseTaskType == WarehouseTaskType.Loading;
     }
 }

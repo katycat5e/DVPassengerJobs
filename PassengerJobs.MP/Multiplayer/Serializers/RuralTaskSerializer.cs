@@ -1,4 +1,5 @@
 ﻿using DV.Logic.Job;
+using DV.ThingTypes;
 using MPAPI.Types;
 using MPAPI.Util;
 using MPAPI;
@@ -13,9 +14,10 @@ namespace PassengerJobs.MP.Multiplayer.Serializers;
 public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
 {
     public ushort[]? CarNetIDs { get; set; }
-    public string RuralLoadingMachineId { get; set; } = string.Empty;
+    public WarehouseTaskType WarehouseTaskType { get; set; }
+    public RuralLoadingMachine? WarehouseMachine { get; set; }
+    public CargoType CargoType { get; set; }
     public float CargoAmount { get; set; }
-    public bool IsLoading { get; set; }
     public bool ReadyForMachine { get; set; }
 
     public override void Serialize(BinaryWriter writer)
@@ -23,22 +25,38 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
         SerializeCommon(writer);
 
         writer.WriteUShortArray(CarNetIDs);
-        writer.Write(RuralLoadingMachineId ?? string.Empty);
+        writer.Write((byte)WarehouseTaskType);
+
+        ushort warehouseMachineNetId = 0;
+        if (WarehouseMachine != null)
+            MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(WarehouseMachine, out warehouseMachineNetId);
+
+        writer.Write(warehouseMachineNetId);
+        writer.Write((int)CargoType);
         writer.Write(CargoAmount);
-        writer.Write(IsLoading);
         writer.Write(ReadyForMachine);
     }
 
     public override void Deserialize(BinaryReader reader)
     {
         DeserializeCommon(reader);
-        
+
         CarNetIDs = reader.ReadUShortArray();
-        RuralLoadingMachineId = reader.ReadString();
+        WarehouseTaskType = (WarehouseTaskType)reader.ReadByte();
+
+        ushort warehouseMachineNetId = reader.ReadUInt16();
+        if (!MultiplayerAPI.Instance.TryGetObjectFromNetId<WarehouseMachine>(warehouseMachineNetId, out var warehouseMachine) || warehouseMachine == null)
+            throw new Exception($"Failed to deserialise RuralLoadingTaskData for warehouseMachineNetId {warehouseMachineNetId}, WarehouseMachine was not found");
+
+        if (warehouseMachine is not RuralLoadingMachine ruralLoadingMachine)
+            throw new Exception($"Failed to deserialise RuralLoadingTaskData for warehouseMachineNetId {warehouseMachineNetId}, WarehouseMachine is not a RuralLoadingMachine");
+        
+        WarehouseMachine = ruralLoadingMachine;
+
+        CargoType = (CargoType)reader.ReadInt32();
         CargoAmount = reader.ReadSingle();
-        IsLoading = reader.ReadBoolean();
         ReadyForMachine = reader.ReadBoolean();
-    }
+    } 
 
     public override RuralLoadingTaskData FromTask(Task task)
     {
@@ -47,21 +65,22 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
 
         FromTaskCommon(task);
 
-        CarNetIDs = ruralLoadingTask.Cars.Select(
+        CarNetIDs = ruralLoadingTask.Cars.Select
+        (
             car =>
-                {
-                    var trainCar = MultiplayerManager.GetTrainCarFromID(car.ID);
-                    if (trainCar == null || !MultiplayerAPI.Instance.TryGetNetId(trainCar, out var netId))
-                        return (ushort)0;
+            {
+                var trainCar = MultiplayerManager.GetTrainCarFromID(car.ID);
+                if (trainCar == null || !MultiplayerAPI.Instance.TryGetNetId(trainCar, out var netId))
+                    return (ushort)0;
 
-                    return netId;
-                }
-            )
-            .ToArray();
+                return netId;
+            }
+        ).ToArray();
 
-        RuralLoadingMachineId = ruralLoadingTask.LoadingMachine.Id;
-        CargoAmount = ruralLoadingTask.CargoAmount;
-        IsLoading = ruralLoadingTask.IsLoading;
+        WarehouseTaskType = ruralLoadingTask.warehouseTaskType;
+        WarehouseMachine = (RuralLoadingMachine)ruralLoadingTask.warehouseMachine;
+        CargoType = ruralLoadingTask.cargoType;
+        CargoAmount = ruralLoadingTask.cargoAmount;
         ReadyForMachine = ruralLoadingTask.readyForMachine;
 
         return this;
@@ -76,17 +95,17 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
             .ToList();
 
 
-        if (!RuralLoadingMachine.TryGetById(RuralLoadingMachineId, out var ruralLoadingMachine))
-            throw new ArgumentException($"Invalid RuralLoadingMachineId: {RuralLoadingMachineId}");
+        if (WarehouseMachine == null)
+            throw new Exception($"Failed to convert RuralLoadingTaskData to Task, WarehouseMachine is null! taskNetId: {TaskNetId}");
 
         RuralLoadingTask newRuralLoadingTask = new
-            (
-               cars,
-               ruralLoadingMachine!,
-               CargoAmount,
-               IsLoading,
-               IsLastTask
-            );
+        (
+            cars,
+            WarehouseTaskType,
+            WarehouseMachine!,
+            CargoType,
+            CargoAmount
+        );
 
         ToTaskCommon(newRuralLoadingTask);
 
@@ -99,6 +118,6 @@ public class RuralLoadingTaskData : TaskNetworkData<RuralLoadingTaskData>
 
     public override List<ushort> GetCars()
     {
-        return CarNetIDs.ToList();
+        return CarNetIDs.ToList() ?? new List<ushort>();
     }
 }
