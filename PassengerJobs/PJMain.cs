@@ -114,7 +114,13 @@ namespace PassengerJobs
             ModEntry.Logger.LogException(ex);
             ModEntry.Logger.Error(msg);
         }
+        public static void LogDebug(string msg)
+        {
+#if DEBUG
+            ModEntry.Logger.Log($"[DEBUG] {msg}");
+#endif
+        }
 
-        #endregion
+         #endregion
     }
 }

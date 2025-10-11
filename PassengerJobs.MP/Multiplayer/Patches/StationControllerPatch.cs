@@ -13,7 +13,7 @@ public static class StationControllerPatch
         if (MultiplayerAPI.Instance.IsHost)
             return;
 
-        MultiplayerManager.RegisterForJobAddedEvents(__instance);
+        MultiplayerManager.Client?.RegisterForJobAddedEvents(__instance);
     }
 
     [HarmonyPrefix]
@@ -24,6 +24,6 @@ public static class StationControllerPatch
             return;
 
         foreach (var controller in StationController.allStations)
-            MultiplayerManager.UnregisterForJobAddedEvents(controller);
+            MultiplayerManager.Client?.UnregisterForJobAddedEvents(controller);
     }
 }
