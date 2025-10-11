@@ -52,6 +52,7 @@ namespace PassengerJobs.Platforms
                 {
                     boardingFinished = true;
                     _controller.OverrideText = LocalizationKey.SIGN_EMPTY.L();
+                    _controller.OnPlatformStateChange(null, LocalizationKey.SIGN_EMPTY);
                 }
                 else if (_platformState == PlatformState.Loading)
                 {
@@ -62,6 +63,7 @@ namespace PassengerJobs.Platforms
                 boardingFinished &= !((newState == PlatformState.Loading) || (newState == PlatformState.Unloading));
                 if (boardingFinished)
                 {
+                    _controller.OnPlatformStateChange(null, LocalizationKey.SIGN_DEPARTING);
                     _controller.PlayBellSound();
                 }
 
@@ -119,6 +121,7 @@ namespace PassengerJobs.Platforms
             message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
 
             _controller.OverrideText = message;
+            _controller.OnPlatformStateChange(task.Job, LocalizationKey.SIGN_INCOMING_TRAIN);
 
             // perform transfer
             var transferredCar = _platform.TransferOneCarOfTask(task, false);
@@ -153,6 +156,7 @@ namespace PassengerJobs.Platforms
             message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
 
             _controller.OverrideText = message;
+            _controller.OnPlatformStateChange(task.Job, LocalizationKey.SIGN_OUTGOING_TRAIN);
 
             // perform transfer
             var transferredCar = _platform.TransferOneCarOfTask(task, true);
@@ -193,7 +197,7 @@ namespace PassengerJobs.Platforms
         private void DebugLog(string message)
         {
 #if DEBUG
-            PJMain.Log($"Platform {_platform?.Id}: {message}");
+            PJMain.LogDebug($"Platform {_platform?.Id}: {message}");
 #endif
         }
     }

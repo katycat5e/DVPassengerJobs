@@ -59,6 +59,7 @@ namespace PassengerJobs.Platforms
                     _platform = value;
                     _trackToControllerMap[_platform.TrackId] = this;
                 }
+            }
         }
 
         public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
@@ -84,6 +85,8 @@ namespace PassengerJobs.Platforms
         public event EventHandler<JobAddedArgs>? JobAdded;
         public event EventHandler<JobRemovedArgs>? JobRemoved;
         public event EventHandler<CarTransferredArgs>? CarTransferred;
+        public event EventHandler<TaskCompleteArgs>? TaskComplete;
+        public event EventHandler<PlatformStateChangeArgs>? PlatformStateChange;
 
         static PlatformController()
         {
@@ -138,6 +141,12 @@ namespace PassengerJobs.Platforms
 
         protected void Update()
         {
+            if (MultiplayerShim.IsInitialized && !MultiplayerShim.IsHost)
+            {
+                RefreshDisplays();
+                return;
+            }
+
             if (_loadUnloadRoutine is null)
             {
                 _stateMachine.Reset();
@@ -247,6 +256,16 @@ namespace PassengerJobs.Platforms
         public void OnCarTransferred(Car car, int totalCarsInTrain, bool isLoading)
         {
             CarTransferred?.Invoke(this, new(car, totalCarsInTrain, isLoading));
+        }
+
+        public void OnTaskComplete(PlatformTask task)
+        {
+            TaskComplete?.Invoke(this, new(task.Task));
+        }
+
+        public void OnPlatformStateChange(Job? job, LocalizationKey newDisplay)
+        {
+            PlatformStateChange?.Invoke(this, new(job, newDisplay));
         }
 
         #endregion

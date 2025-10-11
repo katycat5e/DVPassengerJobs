@@ -22,6 +22,9 @@ internal class PJServer : IDisposable
 
         // Listen for settings changes
         PJMain.Settings.OnSettingsSaved += OnSettingsChanged;
+
+        // Wait for stations to be created before subscribing to platform events
+        RouteManager.RuralStationsCreated += Server_OnStationsCreated;
     }
 
     public void Dispose()
@@ -55,6 +58,64 @@ internal class PJServer : IDisposable
         SendPJSettings();
     }
 
+    private void Server_OnStationsCreated()
+    {
+        RouteManager.RuralStationsCreated -= Server_OnStationsCreated;
+
+        PJMain.LogDebug("Server_OnStationsCreated()");
+        foreach ( var platformController in PlatformController.AllPlatformControllers)
+        {
+            if (platformController.Platform != null && platformController.Platform.Warehouse != null)
+            {
+                platformController.TaskComplete += OnTaskComplete;
+                platformController.PlatformStateChange += OnPlatformStateChanged;
+            }
+            else
+            {
+                PJMain.LogDebug($"Server_OnStationsCreated() - Subscribing to platform {platformController?.Platform?.DisplayId} events, platform or warehouse null");
+            }
+        }
+    }
+
+    private void OnTaskComplete(object sender, TaskCompleteArgs args)
+    {
+        if (sender is PlatformController platformController && platformController.Platform != null && platformController.Platform.Warehouse != null)
+        {
+            if (!MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(platformController.Platform.Warehouse, out var warehouseMachineNetId))
+            {
+                PJMain.Warning($"OnTaskComplete() Could not get netId for warehouse {platformController.Platform.Warehouse.ID}");
+                return;
+            }             
+
+            if (!MultiplayerAPI.Instance.TryGetNetId<Task>(args.Task, out var taskNetId))
+            {
+                PJMain.Warning($"OnTaskComplete() Could not get netId for task belonging to {args?.Task?.Job?.ID}, Warehouse {platformController.Platform.Warehouse.ID}");
+                return;
+            }
+
+            SendTransferCompletePacket(warehouseMachineNetId, taskNetId);
+        }
+    }
+
+    private void OnPlatformStateChanged(object sender, PlatformStateChangeArgs args)
+    {
+        if (sender is PlatformController platformController && platformController.Platform != null && platformController.Platform.Warehouse != null)
+        {
+            PJMain.LogDebug($"Platform {platformController.Platform.Id} state changed. Job: {args.Job?.ID}, State: {args.NewDisplay}");
+
+            if (!MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(platformController.Platform.Warehouse, out var warehouseMachineNetId))
+                return;
+            
+            ushort jobNetId = 0;
+            if (args.Job != null)
+            {
+                if (!MultiplayerAPI.Instance.TryGetNetId<Job>(args.Job, out jobNetId))
+                    return;
+            }
+
+            SendPlatformStateChangePacket(warehouseMachineNetId, jobNetId, args.NewDisplay);
+        }
+    }
     #endregion 
 
     #region Packet Senders
@@ -104,6 +165,42 @@ internal class PJServer : IDisposable
         else
             _server.SendSerializablePacketToPlayer(packet, player);
     }
+
+    private void SendTransferCompletePacket(ushort warehouseMachineNetId, ushort taskNetId)
+    {
+        if (_server == null)
+        {
+            PJMain.Error("Tried to send transfer completion to player but server is null");
+            return;
+        }
+
+        ClientBoundPJTransferCompletePacket packet = new()
+        {
+            WarehouseMachineNetId = warehouseMachineNetId,
+            TaskNetId = taskNetId,
+        };
+
+        _server.SendPacketToAll(packet);
+    }
+
+    private void SendPlatformStateChangePacket(ushort warehouseMachineNetId, ushort jobNetId, LocalizationKey state)
+    {
+        if (_server == null)
+        {
+            PJMain.Error("Tried to send platform state change but server is null");
+            return;
+        }
+
+        ClientBoundPJPlatformStatePacket packet = new()
+        {
+            WarehouseMachineNetId = warehouseMachineNetId,
+            JobNetId = jobNetId,
+            State = state
+        };
+
+        _server.SendPacketToAll(packet);
+    }
+
     #endregion
 
     #region Packet Receivers

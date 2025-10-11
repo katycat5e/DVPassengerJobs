@@ -19,10 +19,12 @@ namespace PassengerJobs.Generation
         private const string ROUTE_CONFIG_FILE = "routes.json";
         private const string DEFAULT_ROUTE_CONFIG_FILE = "default_routes.json";
 
+        public static event Action? RuralStationsCreated;
+
         private static StationConfig? _stationConfig = null;
         private static RouteConfig? _routeConfig = null;
 
-        private static RouteGraph _localRoutes = new(RouteType.Local);
+        private readonly static RouteGraph _localRoutes = new(RouteType.Local);
 
         private static readonly Dictionary<string, IPassDestination> _stations = new();
 
@@ -104,7 +106,7 @@ namespace PassengerJobs.Generation
             return config;
         }
 
-        private static JsonSerializerSettings _jsonSettings = new()
+        private static readonly JsonSerializerSettings _jsonSettings = new()
         {
             NullValueHandling = NullValueHandling.Ignore,
             DefaultValueHandling = DefaultValueHandling.Ignore,
@@ -350,6 +352,8 @@ namespace PassengerJobs.Generation
                     PJMain.Log($"Created rural station {station.id} on {newStation.Platform.WarehouseTrack.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
                 }
             }
+
+            RuralStationsCreated?.Invoke();
         }
 
         private static bool _routesInitialized = false;

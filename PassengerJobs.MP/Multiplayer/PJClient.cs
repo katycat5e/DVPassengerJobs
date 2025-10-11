@@ -40,6 +40,8 @@ public class PJClient : IDisposable
 
         // Block local changes to settings
         PJMain.Settings.MPActive = true;
+
+        RouteManager.RuralStationsCreated += OnStationsCreated;
     }
 
     public void Dispose()
