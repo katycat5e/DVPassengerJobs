@@ -127,7 +127,11 @@ public class PJClient : IDisposable
             return;
         }
 
-        if (!PlatformController.TryGetControllerForTrack(warehouseMachine.ID, out var platformController) || platformController == null)
+        string id = warehouseMachine.ID;
+        if (warehouseMachine is RuralLoadingMachine ruralLoadingMachine && ruralLoadingMachine.IsYardTrack)
+            id = ruralLoadingMachine.WarehouseTrack.ID.FullDisplayID;
+
+        if (!PlatformController.TryGetControllerForTrack(id, out var platformController) || platformController == null)
         {
             PJMain.Error($"OnClientBoundPJPlatformStatePacket() Failed to get PlatformController for WarehouseMachine {warehouseMachine.ID}");
             return;
@@ -139,6 +143,7 @@ public class PJClient : IDisposable
         {
             case LocalizationKey.SIGN_EMPTY:
                 message = LocalizationKey.SIGN_EMPTY.L();
+                platformController.PlayBellSound();
 
                 break;
 
@@ -158,13 +163,11 @@ public class PJClient : IDisposable
 
             case LocalizationKey.SIGN_DEPARTING:
                 message = LocalizationKey.SIGN_DEPARTING.L();
-
                 platformController.PlayBellSound();
-
                 break;
 
             default:
-                PJMain.Error($"OnClientBoundPJPlatformStatePacket() Unknown state {packet.State} for Job [{packet.JobNetId}, {job?.ID}] on WarehouseMachine {warehouseMachine.ID}");
+                PJMain.Warning($"OnClientBoundPJPlatformStatePacket() Unknown state {packet.State} for Job [{packet.JobNetId}, {job?.ID}] on WarehouseMachine {warehouseMachine.ID}");
                 return;
         }
         

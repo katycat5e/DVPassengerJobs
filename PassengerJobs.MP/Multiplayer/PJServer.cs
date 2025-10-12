@@ -137,7 +137,7 @@ internal class PJServer : IDisposable
         };
 
         if (player == null)
-            _server.SendPacketToAll(packet);
+            _server.SendPacketToAll(packet, excludeSelf: true);
         else
             _server.SendPacketToPlayer(packet, player);
     }
@@ -161,7 +161,7 @@ internal class PJServer : IDisposable
         };
 
         if (player == null)
-            _server.SendSerializablePacketToAll(packet);
+            _server.SendSerializablePacketToAll(packet, excludeSelf: true);
         else
             _server.SendSerializablePacketToPlayer(packet, player);
     }
@@ -180,7 +180,7 @@ internal class PJServer : IDisposable
             TaskNetId = taskNetId,
         };
 
-        _server.SendPacketToAll(packet);
+        _server.SendPacketToAll(packet, excludeSelf: true);
     }
 
     private void SendPlatformStateChangePacket(ushort warehouseMachineNetId, ushort jobNetId, LocalizationKey state)
@@ -198,7 +198,7 @@ internal class PJServer : IDisposable
             State = state
         };
 
-        _server.SendPacketToAll(packet);
+        _server.SendPacketToAll(packet, excludeSelf: true);
     }
 
     #endregion

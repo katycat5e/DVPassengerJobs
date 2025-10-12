@@ -52,7 +52,6 @@ namespace PassengerJobs.Platforms
                 {
                     boardingFinished = true;
                     _controller.OverrideText = LocalizationKey.SIGN_EMPTY.L();
-                    _controller.OnPlatformStateChange(null, LocalizationKey.SIGN_EMPTY);
                 }
                 else if (_platformState == PlatformState.Loading)
                 {
@@ -63,7 +62,13 @@ namespace PassengerJobs.Platforms
                 boardingFinished &= !((newState == PlatformState.Loading) || (newState == PlatformState.Unloading));
                 if (boardingFinished)
                 {
-                    _controller.OnPlatformStateChange(null, LocalizationKey.SIGN_DEPARTING);
+                    // Only send SIGN_EMPTY if we came from Unloading (final stop)
+                    // If we came from Loading, send SIGN_DEPARTING (intermediate stop)
+                    LocalizationKey finalState = (_platformState == PlatformState.Unloading)
+                        ? LocalizationKey.SIGN_EMPTY
+                        : LocalizationKey.SIGN_DEPARTING;
+
+                    _controller.OnPlatformStateChange(null, finalState);
                     _controller.PlayBellSound();
                 }
 

@@ -117,7 +117,7 @@ namespace PassengerJobs
         public static void LogDebug(string msg)
         {
 #if DEBUG
-            ModEntry.Logger.Log($"[DEBUG] {msg}");
+            ModEntry.Logger.Log($"[Debug] {msg}");
 #endif
         }
 
