@@ -14,20 +14,9 @@ public static class MultiplayerManager
     public static void Init()
     {
         // Register custom task types for Multiplayer serialisation and deserialisation.
-        MultiplayerAPI.Instance.RegisterTaskType<RuralLoadingTask>
-        (
-            RuralLoadingTask.TaskType,
-            task => new RuralLoadingTaskData { TaskType = RuralLoadingTask.TaskType }.FromTask(task),
-            type => new RuralLoadingTaskData { TaskType = type }
-        );
-
-        MultiplayerAPI.Instance.RegisterTaskType<CityLoadingTask>
-        (
-            CityLoadingTask.TaskType,
-            task => new CityLoadingTaskData { TaskType = CityLoadingTask.TaskType }.FromTask(task),
-            type => new CityLoadingTaskData { TaskType = type }
-        );
-
+        MultiplayerAPI.Instance.RegisterTaskType<RuralLoadingTask, RuralLoadingTaskData>(RuralLoadingTask.TaskType);
+        MultiplayerAPI.Instance.RegisterTaskType<CityLoadingTask, CityLoadingTaskData>(CityLoadingTask.TaskType);
+    
         // Listen for server creation
         MultiplayerAPI.ServerStarted += OnServerCreated;
         MultiplayerAPI.ServerStopped += OnServerStopped;
@@ -64,9 +53,5 @@ public static class MultiplayerManager
     #endregion
 
     #region Utilities
-    public static TrainCar GetTrainCarFromID(string carId)
-    {
-        return TrainCarRegistry.Instance.logicCarToTrainCar.FirstOrDefault(kvp => kvp.Value.ID == carId).Value;
-    }
     #endregion
 }

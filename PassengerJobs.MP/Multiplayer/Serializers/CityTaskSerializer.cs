@@ -67,8 +67,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         (
             car =>
             {
-                var trainCar = MultiplayerManager.GetTrainCarFromID(car.ID);
-                if (trainCar == null || !MultiplayerAPI.Instance.TryGetNetId(trainCar, out var netId))
+                if (car == null || !MultiplayerAPI.Instance.TryGetNetId(car, out var netId))
                     return (ushort)0;
 
                 return netId;
@@ -87,9 +86,8 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
     public override Task ToTask(ref Dictionary<ushort, Task> netIdToTask)
     {
         List<Car> cars = CarNetIDs
-            .Select(netId => MultiplayerAPI.Instance.TryGetObjectFromNetId(netId, out TrainCar trainCar) ? trainCar : null)
-            .Where(car => car != null)
-            .Select(car => car!.logicCar)
+            .Select(netId => MultiplayerAPI.Instance.TryGetObjectFromNetId(netId, out Car car) ? car : null)
+            .OfType<Car>()
             .ToList();
 
         if (WarehouseMachine == null)
