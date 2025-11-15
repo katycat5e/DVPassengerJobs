@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System;
+using DV.ThingTypes.TransitionHelpers;
 
 namespace PassengerJobs.MP.Multiplayer.Serializers;
 
@@ -16,7 +17,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
     public ushort[]? CarNetIDs { get; set; }
     public WarehouseTaskType WarehouseTaskType { get; set; }
     public WarehouseMachine? WarehouseMachine { get; set; }
-    public CargoType CargoType { get; set; }
+    public CargoType_v2? CargoTypeV2 { get; set; }
     public float CargoAmount { get; set; }
     public bool ReadyForMachine { get; set; }
 
@@ -32,7 +33,14 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
             MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(WarehouseMachine, out warehouseMachineNetId);
 
         writer.Write(warehouseMachineNetId);
-        writer.Write((int)CargoType);
+
+        // CargoType serialisation using V2 to maintain compatibility with Custom Cargo Mod
+        if (CargoTypeV2 == null)
+            CargoTypeV2 = CargoType.None.ToV2();
+
+        MultiplayerAPI.Instance.TryGetNetId<CargoType_v2>(CargoTypeV2, out uint cargoTypeNetId);
+        writer.Write(cargoTypeNetId);
+
         writer.Write(CargoAmount);
         writer.Write(ReadyForMachine);
     }
@@ -51,7 +59,12 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 
         WarehouseMachine = warehouseMachine;
 
-        CargoType = (CargoType)reader.ReadInt32();
+        uint cargoTypeNetId = reader.ReadUInt32();
+        if (!MultiplayerAPI.Instance.TryGetObjectFromNetId<CargoType_v2>(cargoTypeNetId, out CargoType_v2 cargoTypeV2))
+            cargoTypeV2 = CargoType.None.ToV2();
+
+        CargoTypeV2 = cargoTypeV2;
+
         CargoAmount = reader.ReadSingle();
         ReadyForMachine = reader.ReadBoolean();
     }
@@ -67,7 +80,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         (
             car =>
             {
-                if (car == null || !MultiplayerAPI.Instance.TryGetNetId(car, out var netId))
+                if (car == null || !MultiplayerAPI.Instance.TryGetNetId(car, out ushort netId))
                     return (ushort)0;
 
                 return netId;
@@ -76,7 +89,7 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
 
         WarehouseTaskType = cityLoadingTask.warehouseTaskType;
         WarehouseMachine = cityLoadingTask.warehouseMachine;
-        CargoType = cityLoadingTask.cargoType;
+        CargoTypeV2 = cityLoadingTask.cargoType.ToV2();
         CargoAmount = cityLoadingTask.cargoAmount;
         ReadyForMachine = cityLoadingTask.readyForMachine;
 
@@ -93,12 +106,13 @@ public class CityLoadingTaskData : TaskNetworkData<CityLoadingTaskData>
         if (WarehouseMachine == null)
             throw new Exception($"Failed to convert CityLoadingTaskData to Task, WarehouseMachine is null! taskNetId: {TaskNetId}");
 
+;
         CityLoadingTask newCityLoadingTask = new
         (
            cars,
            WarehouseTaskType,
            WarehouseMachine,
-           CargoType,
+           CargoTypeV2?.v1 ?? CargoType.None,
            CargoAmount
         );
         

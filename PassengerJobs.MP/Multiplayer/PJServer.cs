@@ -81,13 +81,13 @@ internal class PJServer : IDisposable
     {
         if (sender is PlatformController platformController && platformController.Platform != null && platformController.Platform.Warehouse != null)
         {
-            if (!MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(platformController.Platform.Warehouse, out var warehouseMachineNetId))
+            if (!MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(platformController.Platform.Warehouse, out ushort warehouseMachineNetId))
             {
                 PJMain.Warning($"OnTaskComplete() Could not get netId for warehouse {platformController.Platform.Warehouse.ID}");
                 return;
             }             
 
-            if (!MultiplayerAPI.Instance.TryGetNetId<Task>(args.Task, out var taskNetId))
+            if (!MultiplayerAPI.Instance.TryGetNetId<Task>(args.Task, out ushort taskNetId))
             {
                 PJMain.Warning($"OnTaskComplete() Could not get netId for task belonging to {args?.Task?.Job?.ID}, Warehouse {platformController.Platform.Warehouse.ID}");
                 return;
@@ -103,7 +103,7 @@ internal class PJServer : IDisposable
         {
             PJMain.LogDebug($"Platform {platformController.Platform.Id} state changed. Job: {args.Job?.ID}, State: {args.NewDisplay}");
 
-            if (!MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(platformController.Platform.Warehouse, out var warehouseMachineNetId))
+            if (!MultiplayerAPI.Instance.TryGetNetId<WarehouseMachine>(platformController.Platform.Warehouse, out ushort warehouseMachineNetId))
                 return;
             
             ushort jobNetId = 0;
