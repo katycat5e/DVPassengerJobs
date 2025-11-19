@@ -15,7 +15,8 @@ namespace PassengerJobs.Patches
         {
             if (enumType == typeof(JobLicenses))
             {
-                __result = ExtendArray(__result, LicenseInjector.License.v1);
+                __result = ExtendArray(__result, LicenseInjector.License1.v1);
+                __result = ExtendArray(__result, LicenseInjector.License2.v1);
             }
             else if (enumType == typeof(CargoType))
             {
@@ -55,9 +56,13 @@ namespace PassengerJobs.Patches
         [HarmonyPostfix]
         public static void ToV2ListPostfix(JobLicenses flags, ref List<JobLicenseType_v2> __result)
         {
-            if ((flags & LicenseInjector.License.v1) != JobLicenses.Basic)
+            if ((flags & LicenseInjector.License1.v1) != JobLicenses.Basic)
             {
-                __result.Add(LicenseInjector.License);
+                __result.Add(LicenseInjector.License1);
+            }
+            if ((flags & LicenseInjector.License2.v1) != JobLicenses.Basic)
+            {
+                __result.Add(LicenseInjector.License2);
             }
         }
     }

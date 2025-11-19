@@ -17,7 +17,7 @@ namespace PassengerJobs.Injectors
         {
             var passCargo = ScriptableObject.CreateInstance<CargoType_v2>();
 
-            passCargo.id = "Passengers";
+            passCargo.id = "PassengersCargoTest";
             passCargo.v1 = (CargoType)PASSENGER_CARGO_TYPE_ID;
             passCargo.localizationKeyFull = LocalizationKey.CARGO_NAME_FULL.K();
             passCargo.localizationKeyShort = LocalizationKey.CARGO_NAME_SHORT.K();

@@ -5,7 +5,7 @@ using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using System;
 using UnityEngine;
-using static DV.RenderTextureSystem.BookletRender.VehicleCatalogPageTemplatePaper;
+// TODO: ????
 
 namespace PassengerJobs.Injectors
 {
@@ -55,8 +55,8 @@ namespace PassengerJobs.Injectors
         public static readonly ILicenseData License1Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
-            Name = "Passengers1",
-            Cost = 100_000f,
+            Name = "P 1",
+            Cost = 69_000f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
             PrefabName = "LicensePassengers1",
@@ -69,7 +69,7 @@ namespace PassengerJobs.Injectors
         public static readonly ILicenseData License2Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
-            Name = "Passengers2",
+            Name = "Passengers 2",
             Cost = 100_000f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
@@ -128,6 +128,7 @@ namespace PassengerJobs.Injectors
             string hazmatRenderName = licenseRenderComp.renderPrefabName;
             licenseRenderComp.renderPrefabName = data.RenderPrefabName;
 
+            PJMain.Log("@@@@@@@@@@@@@");
             data.RenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatRenderName));
             data.RenderPrefab.name = data.RenderPrefabName;
             var staticRender = data.RenderPrefab.GetComponent<StaticLicenseBookletRender>();

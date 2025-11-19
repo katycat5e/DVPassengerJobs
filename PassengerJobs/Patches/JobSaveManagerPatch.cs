@@ -162,7 +162,7 @@ namespace PassengerJobs.Patches
 
             PassengerHaulJobDefinition jobDefinition = jobChainHolder.AddComponent<PassengerHaulJobDefinition>();
             var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.destinationStationIds);
-            jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License.v1);
+            jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License2.v1);
 
             jobDefinition.RouteType = (RouteType)jobData.routeType;
             jobDefinition.StartingTrack = startTrack;

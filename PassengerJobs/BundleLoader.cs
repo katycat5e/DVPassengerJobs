@@ -81,7 +81,7 @@ namespace PassengerJobs
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
             License1Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers2.png");
+            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
             UnityEngine.Object.DontDestroyOnLoad(License1Sprite);
             UnityEngine.Object.DontDestroyOnLoad(License2Sprite);
             if (License1Sprite == null)

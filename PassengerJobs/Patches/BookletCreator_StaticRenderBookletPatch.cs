@@ -47,12 +47,25 @@ namespace PassengerJobs.Patches
 
         private static UnityEngine.Object LoadRenderPrefab(string name)
         {
-            var result = name switch
+            // TODO: I hate this
+            GameObject result;
+            if (name == LicenseInjector.License1Data.RenderPrefabName)
             {
-                LicenseInjector.License1Data.RenderPrefabName => LicenseInjector.License1Data.RenderPrefab,
-                LicenseInjector.License1Data.SampleRenderPrefabName => LicenseInjector.License1Data.SampleRenderPrefab,
-                _ => Resources.Load<GameObject>(name),
-            };
+                result = LicenseInjector.License1Data.RenderPrefab;
+            } else if (name == LicenseInjector.License1Data.SampleRenderPrefabName) {
+                result = LicenseInjector.License1Data.SampleRenderPrefab;
+            } else if (name == LicenseInjector.License2Data.RenderPrefabName)
+            {
+                result = LicenseInjector.License2Data.RenderPrefab;
+            } else if (name == LicenseInjector.License2Data.SampleRenderPrefabName)
+            {
+                result = LicenseInjector.License2Data.SampleRenderPrefab;
+            } else
+            {
+                result = Resources.Load<GameObject>(name);
+            }
+
+
 
             result!.SetActive(true);
             return result;

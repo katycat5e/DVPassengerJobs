@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static DV.RenderTextureSystem.BookletRender.VehicleCatalogPageTemplatePaper;
 
 namespace PassengerJobs.Patches
 {
@@ -18,12 +19,21 @@ namespace PassengerJobs.Patches
             SaveDataInjector.InjectDataIntoSaveGame(data);
 
             // refund license in case mod is uninstalled
-            if (LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License))
+            if (LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License1))
             {
                 float? money = data.GetFloat(SaveGameKeys.Player_money);
                 if (money.HasValue)
                 {
-                    float newBalance = money.Value + LicenseData.Cost;
+                    float newBalance = money.Value + LicenseInjector.License1Data.Cost;
+                    data.SetFloat(SaveGameKeys.Player_money, newBalance);
+                }
+            }
+            if (LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License2))
+            {
+                float? money = data.GetFloat(SaveGameKeys.Player_money);
+                if (money.HasValue)
+                {
+                    float newBalance = money.Value + LicenseInjector.License2Data.Cost;
                     data.SetFloat(SaveGameKeys.Player_money, newBalance);
                 }
             }
