@@ -5,31 +5,79 @@ using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using System;
 using UnityEngine;
+using static DV.RenderTextureSystem.BookletRender.VehicleCatalogPageTemplatePaper;
 
 namespace PassengerJobs.Injectors
 {
-    public static class LicenseData
+    public interface ILicenseData
     {
-        public static readonly Color Color = new(0.278f, 0.518f, 0.69f);
-        public const string Name = "Passengers";
+        Color Color { get; }
 
-        public const float Cost = 100_000f;
-        // same as hazmat 2
-        public const float InsuranceIncrease = 150_000f;
-        public const float TimeDecrease = 0.0f;
+        string Name { get; }
 
-        public const string PrefabName = "LicensePassengers1";
-        public const string RenderPrefabName = "PJLicenseRender";
-        public static GameObject? RenderPrefab = null;
+        float Cost { get; }
+        float InsuranceIncrease { get; }
+        float TimeDecrease { get; }
 
-        public const string SamplePrefabName = "LicenseInfoPassengers1";
-        public const string SampleRenderPrefabName = "PJlicenseInfoRender";
-        public static GameObject? SampleRenderPrefab = null;
+        string PrefabName { get; }
+        string RenderPrefabName { get; }
+        GameObject? RenderPrefab { get; set; }
+
+        string SamplePrefabName { get; }
+        string SampleRenderPrefabName { get; }
+        GameObject? SampleRenderPrefab { get; set; }
+    }
+
+    public class PassengerLicenseData : ILicenseData
+    {
+        public Color Color { get; set; }
+
+        public string Name { get; set; } = "";
+
+        public float Cost { get; set; }
+        public float InsuranceIncrease { get; set; }
+        public float TimeDecrease { get; set; }
+
+        public string PrefabName { get; set; } = "";
+        public string RenderPrefabName { get; set; } = "";
+        public GameObject? RenderPrefab { get; set; }
+
+        public string SamplePrefabName { get; set; } = "";
+        public string SampleRenderPrefabName { get; set; } = "";
+        public GameObject? SampleRenderPrefab { get; set; }
     }
 
     public static class LicenseInjector
     {
-        public static JobLicenseType_v2 License { get; internal set; } = null!;
+        public static JobLicenseType_v2 License1 { get; internal set; } = null!;
+        public static JobLicenseType_v2 License2 { get; internal set; } = null!;
+
+        public static readonly ILicenseData License1Data = new PassengerLicenseData
+        {
+            Color = new Color(0.278f, 0.518f, 0.69f),
+            Name = "Passengers1",
+            Cost = 100_000f,
+            InsuranceIncrease = 150_000f,
+            TimeDecrease = 0.0f,
+            PrefabName = "LicensePassengers1",
+            RenderPrefabName = "PJLicense1Render",
+            SamplePrefabName = "LicenseInfoPassengers1",
+            SampleRenderPrefabName = "PJlicense1InfoRender"
+        };
+
+        // TODO: License2 should require License1
+        public static readonly ILicenseData License2Data = new PassengerLicenseData
+        {
+            Color = new Color(0.278f, 0.518f, 0.69f),
+            Name = "Passengers2",
+            Cost = 100_000f,
+            InsuranceIncrease = 150_000f,
+            TimeDecrease = 0.0f,
+            PrefabName = "LicensePassengers2",
+            RenderPrefabName = "PJLicense2Render",
+            SamplePrefabName = "LicenseInfoPassengers2",
+            SampleRenderPrefabName = "PJlicense2InfoRender"
+        };
 
         public static bool RegisterPassengerLicenses()
         {
@@ -37,23 +85,8 @@ namespace PassengerJobs.Injectors
 
             try
             {
-                // create license data object
-                License = ScriptableObject.CreateInstance<JobLicenseType_v2>();
-                License.id = License.name = LicenseData.Name;
-                License.localizationKey = LocalizationKey.LICENSE_NAME.K();
-                License.localizationKeysDescription = new[] { LocalizationKey.LICENSE_DESCRIPTION.K() };
-                License.v1 = (JobLicenses)64;
-
-                License.color = LicenseData.Color;
-
-                License.price = LicenseData.Cost;
-                License.insuranceFeeQuotaIncrease = LicenseData.InsuranceIncrease;
-                License.bonusTimeDecreasePercentage = LicenseData.TimeDecrease;
-
-                SetupLicensePrefabs();
-
-
-                DV.Globals.G.Types.jobLicenses.Add(License);
+                License1 = CreatePassengerLicense(License1Data, (JobLicenses)64);
+                License2 = CreatePassengerLicense(License2Data, (JobLicenses)128);
             }
             catch (Exception ex)
             {
@@ -63,61 +96,105 @@ namespace PassengerJobs.Injectors
             return true;
         }
 
-        private static void SetupLicensePrefabs()
+        private static JobLicenseType_v2 CreatePassengerLicense(
+            ILicenseData data,
+            JobLicenses v1Flag)
         {
-            // license book prefab
-            var hazmatLicense = JobLicenses.Hazmat1.ToV2();
-            License.licensePrefab = ModelUtility.CreateMockPrefab(hazmatLicense.licensePrefab);
-            License.licensePrefab.name = LicenseData.PrefabName;
-            var licenseRenderComp = License.licensePrefab.GetComponent<RuntimeRenderedStaticTextureBooklet>();
-            string hazmatRenderName = licenseRenderComp.renderPrefabName;
-            licenseRenderComp.renderPrefabName = LicenseData.RenderPrefabName;
+            var license = ScriptableObject.CreateInstance<JobLicenseType_v2>();
+            license.id = license.name = data.Name;
+            license.localizationKey = LocalizationKey.LICENSE_NAME.K(); // später evtl. pro Lizenz anders
+            license.localizationKeysDescription = new[] { LocalizationKey.LICENSE_DESCRIPTION.K() };
+            license.v1 = v1Flag;
 
-            // license render prefab
-            LicenseData.RenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatRenderName));
-            LicenseData.RenderPrefab.name = LicenseData.RenderPrefabName;
-            var staticRender = LicenseData.RenderPrefab.GetComponent<StaticLicenseBookletRender>();
-            staticRender.jobLicense = License;
+            license.color = data.Color;
+            license.price = data.Cost;
+            license.insuranceFeeQuotaIncrease = data.InsuranceIncrease;
+            license.bonusTimeDecreasePercentage = data.TimeDecrease;
 
-            // sample book prefab
-            License.licenseInfoPrefab = ModelUtility.CreateMockPrefab(hazmatLicense.licenseInfoPrefab);
-            License.licenseInfoPrefab.name = LicenseData.SamplePrefabName;
-            var infoRenderComp = License.licenseInfoPrefab.GetComponent<RuntimeRenderedStaticTextureBooklet>();
-            string hazmatInfoRenderName = infoRenderComp.renderPrefabName;
-            infoRenderComp.renderPrefabName = LicenseData.SampleRenderPrefabName;
+            SetupLicensePrefabs(license, data);
+            DV.Globals.G.Types.jobLicenses.Add(license);
 
-            // sample render prefab
-            LicenseData.SampleRenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatInfoRenderName));
-            LicenseData.SampleRenderPrefab.name = LicenseData.SampleRenderPrefabName;
-            var staticInfoRender = LicenseData.SampleRenderPrefab.GetComponent<StaticLicenseBookletRender>();
-            staticInfoRender.jobLicense = License;
+            return license;
         }
 
-        public static LicenseTemplatePaperData GetPassengerLicenseTemplate()
+        private static void SetupLicensePrefabs(JobLicenseType_v2 license, ILicenseData data)
         {
-            string name = LocalizationKey.LICENSE_NAME.L();
+            var hazmatLicense = JobLicenses.Hazmat1.ToV2();
+
+            // license book prefab
+            license.licensePrefab = ModelUtility.CreateMockPrefab(hazmatLicense.licensePrefab);
+            license.licensePrefab.name = data.PrefabName;
+            var licenseRenderComp = license.licensePrefab.GetComponent<RuntimeRenderedStaticTextureBooklet>();
+            string hazmatRenderName = licenseRenderComp.renderPrefabName;
+            licenseRenderComp.renderPrefabName = data.RenderPrefabName;
+
+            data.RenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatRenderName));
+            data.RenderPrefab.name = data.RenderPrefabName;
+            var staticRender = data.RenderPrefab.GetComponent<StaticLicenseBookletRender>();
+            staticRender.jobLicense = license;
+
+            // sample book prefab
+            license.licenseInfoPrefab = ModelUtility.CreateMockPrefab(hazmatLicense.licenseInfoPrefab);
+            license.licenseInfoPrefab.name = data.SamplePrefabName;
+            var infoRenderComp = license.licenseInfoPrefab.GetComponent<RuntimeRenderedStaticTextureBooklet>();
+            string hazmatInfoRenderName = infoRenderComp.renderPrefabName;
+            infoRenderComp.renderPrefabName = data.SampleRenderPrefabName;
+
+            data.SampleRenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatInfoRenderName));
+            data.SampleRenderPrefab.name = data.SampleRenderPrefabName;
+            var staticInfoRender = data.SampleRenderPrefab.GetComponent<StaticLicenseBookletRender>();
+            staticInfoRender.jobLicense = license;
+        }
+
+        private static LicenseTemplatePaperData GetPassengerLicenseTemplateInternal(ILicenseData data)
+        {
+            string name = LocalizationKey.LICENSE_NAME.L();          // später evtl. andere Keys
             string description = LocalizationKey.LICENSE_DESCRIPTION.L();
 
             Sprite shuntSprite = JobLicenses.Shunting.ToV2().icon;
 
-            string costString = $"${LicenseData.Cost:F}";
-            string insuranceIncrease = $"+${LicenseData.InsuranceIncrease:F}";
+            string costString = $"${data.Cost:F}";
+            string insuranceIncrease = $"+${data.InsuranceIncrease:F}";
+            string bonusDecrease = "N/A";
 
-            //float percentBonusDecrease = PASS1_TIME_DECREASE * 100f;
-            string bonusDecrease = "N/A"; // "$"-{percentBonusDecrease:F}%";
+            // TODO: tidy up
+            Sprite sprite;
+            if (data.Name == "Passengers1") {
+                sprite = BundleLoader.License1Sprite;
+            } else
+            {
+                sprite = BundleLoader.License2Sprite;
+            }
 
-            return new LicenseTemplatePaperData(
-                name, description, LicenseData.Color, costString, insuranceIncrease, bonusDecrease, BundleLoader.LicenseSprite, shuntSprite);
+                return new LicenseTemplatePaperData(
+                    name, description, data.Color, costString, insuranceIncrease, bonusDecrease, sprite, shuntSprite);
         }
 
-        public static void SetLicenseProperties(GameObject licenseObj)
+        public static LicenseTemplatePaperData GetPassengerLicenseBasicTemplate()
+            => GetPassengerLicenseTemplateInternal(License1Data);
+
+        public static LicenseTemplatePaperData GetPassengerLicenseAdvancedTemplate()
+            => GetPassengerLicenseTemplateInternal(License2Data);
+
+
+        public static void SetLicense1Properties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, LicenseData.PrefabName, LocalizationKey.LICENSE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License1Data.PrefabName, LocalizationKey.LICENSE_ITEM_NAME.K());
         }
 
-        public static void SetLicenseSampleProperties(GameObject licenseObj)
+        public static void SetLicense1SampleProperties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, LicenseData.SamplePrefabName, LocalizationKey.LICENSE_SAMPLE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License1Data.SamplePrefabName, LocalizationKey.LICENSE_SAMPLE_ITEM_NAME.K());
+        }
+
+        public static void SetLicense2Properties(GameObject licenseObj)
+        {
+            SetBookletProperties(licenseObj, License2Data.PrefabName, LocalizationKey.LICENSE_ITEM_NAME.K());
+        }
+
+        public static void SetLicense2SampleProperties(GameObject licenseObj)
+        {
+            SetBookletProperties(licenseObj, License2Data.SamplePrefabName, LocalizationKey.LICENSE_SAMPLE_ITEM_NAME.K());
         }
 
         private static void SetBookletProperties(GameObject licenseObj, string bookletName, string nameLocalKey)
@@ -138,19 +215,28 @@ namespace PassengerJobs.Injectors
 
         public static void RefundLicenses()
         {
-            if (LicenseManager.Instance.IsJobLicenseAcquired(License))
+            RefundSingleLicense(License1, License1Data);
+            RefundSingleLicense(License2, License2Data);
+        }
+
+        private static void RefundSingleLicense(JobLicenseType_v2 license, ILicenseData data)
+        {
+            if (LicenseManager.Instance.IsJobLicenseAcquired(license))
             {
-                LicenseManager.Instance.RemoveJobLicense(new[] { License });
+                LicenseManager.Instance.RemoveJobLicense(new[] { license });
                 LicenseManager.Instance.SaveData(SaveGameManager.Instance.data);
-                Inventory.Instance.AddMoney(LicenseData.Cost);
-                PJMain.Log($"{LicenseData.Name} job license refunded and removed from player");
+                Inventory.Instance.AddMoney(data.Cost);
+                PJMain.Log($"{data.Name} job license refunded and removed from player");
             }
-            else PJMain.Log($"Player does not own {LicenseData.Name} job license");
+            else PJMain.Log($"Player does not own {data.Name} job license");
         }
 
         public static void DestroySpawnedLicenses()
         {
-            foreach (string bookName in new[] { LicenseData.PrefabName, LicenseData.SamplePrefabName } )
+            foreach (string bookName in new[] {
+                License1Data.PrefabName, License1Data.SamplePrefabName,
+                License2Data.PrefabName, License2Data.SamplePrefabName
+            })
             {
                 GameObject licenseObj = GameObject.Find(bookName);
                 if( licenseObj != null )

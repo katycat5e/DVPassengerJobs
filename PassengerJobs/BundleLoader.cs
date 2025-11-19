@@ -10,7 +10,8 @@ namespace PassengerJobs
 {
     internal static class BundleLoader
     {
-        public static Sprite LicenseSprite { get; private set; } = null!;
+        public static Sprite License1Sprite { get; private set; } = null!;
+        public static Sprite License2Sprite { get; private set; } = null!;
 
         private static bool MasterLoadFailed
         {
@@ -79,15 +80,25 @@ namespace PassengerJobs
             var bytes = File.ReadAllBytes(bundlePath);
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
-            LicenseSprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            UnityEngine.Object.DontDestroyOnLoad(LicenseSprite);
-            if (LicenseSprite == null)
+            License1Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
+            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers2.png");
+            UnityEngine.Object.DontDestroyOnLoad(License1Sprite);
+            UnityEngine.Object.DontDestroyOnLoad(License2Sprite);
+            if (License1Sprite == null)
             {
                 PJMain.Error("Failed to load license sprite from asset bundle");
             }
             else
             {
-                LicenseInjector.License.icon = LicenseSprite;
+                LicenseInjector.License1.icon = License1Sprite;
+            }
+            if (License2Sprite == null)
+            {
+                PJMain.Error("Failed to load license sprite from asset bundle");
+            }
+            else
+            {
+                LicenseInjector.License1.icon = License2Sprite;
             }
 
             bundle.Unload(false);

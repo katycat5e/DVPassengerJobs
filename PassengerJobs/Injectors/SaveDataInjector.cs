@@ -5,6 +5,7 @@ using PassengerJobs.Generation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static DV.RenderTextureSystem.BookletRender.VehicleCatalogPageTemplatePaper;
 
 namespace PassengerJobs.Injectors
 {
@@ -12,6 +13,7 @@ namespace PassengerJobs.Injectors
     {
         private const string PJ_DATA_KEY = "passengers_mod";
         private const string HAS_LICENSE_P1_KEY = "pass1_obtained";
+        private const string HAS_LICENSE_P2_KEY = "pass2_obtained";
         private const string VERSION_KEY = "version";
 
         public const int CURRENT_DATA_VERSION = 4;
@@ -38,7 +40,8 @@ namespace PassengerJobs.Injectors
             pjSaveData.SetObjectViaJSON(SaveGameKeys.Jobs, jobsData, JobSaveManager.serializeSettings);
 
             // licenses
-            pjSaveData.SetBool(HAS_LICENSE_P1_KEY, LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License));
+            pjSaveData.SetBool(HAS_LICENSE_P1_KEY, LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License1));
+            pjSaveData.SetBool(HAS_LICENSE_P2_KEY, LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License2));
 
             pjSaveData.SetInt(VERSION_KEY, CURRENT_DATA_VERSION);
 
@@ -88,10 +91,17 @@ namespace PassengerJobs.Injectors
         {
             if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P1_KEY) == true) && Inventory.Instance)
             {
-                PJMain.Log("Acquiring passengers license");
-                LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License });
+                PJMain.Log("Acquiring passengers1 license");
+                LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License1 });
 
-                Inventory.Instance.RemoveMoney(LicenseData.Cost);
+                Inventory.Instance.RemoveMoney(LicenseInjector.License1Data.Cost);
+            }
+            if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P2_KEY) == true) && Inventory.Instance)
+            {
+                PJMain.Log("Acquiring passengers2 license");
+                LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License2 });
+
+                Inventory.Instance.RemoveMoney(LicenseInjector.License2Data.Cost);
             }
         }
     }
