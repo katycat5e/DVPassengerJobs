@@ -128,7 +128,6 @@ namespace PassengerJobs.Injectors
             string hazmatRenderName = licenseRenderComp.renderPrefabName;
             licenseRenderComp.renderPrefabName = data.RenderPrefabName;
 
-            PJMain.Log("@@@@@@@@@@@@@");
             data.RenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatRenderName));
             data.RenderPrefab.name = data.RenderPrefabName;
             var staticRender = data.RenderPrefab.GetComponent<StaticLicenseBookletRender>();
@@ -149,7 +148,8 @@ namespace PassengerJobs.Injectors
 
         private static LicenseTemplatePaperData GetPassengerLicenseTemplateInternal(ILicenseData data)
         {
-            string name = LocalizationKey.LICENSE_NAME.L();          // später evtl. andere Keys
+            // TODO: adjust language here for both licenses
+            string name = LocalizationKey.LICENSE_NAME.L();
             string description = LocalizationKey.LICENSE_DESCRIPTION.L();
 
             Sprite shuntSprite = JobLicenses.Shunting.ToV2().icon;
