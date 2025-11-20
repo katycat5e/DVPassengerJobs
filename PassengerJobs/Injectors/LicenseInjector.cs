@@ -15,6 +15,8 @@ namespace PassengerJobs.Injectors
 
         string Name { get; }
 
+        JobLicenses V1Flag { get; }
+
         float Cost { get; }
         float InsuranceIncrease { get; }
         float TimeDecrease { get; }
@@ -33,6 +35,8 @@ namespace PassengerJobs.Injectors
         public Color Color { get; set; }
 
         public string Name { get; set; } = "";
+
+        public JobLicenses V1Flag { get; set; }
 
         public float Cost { get; set; }
         public float InsuranceIncrease { get; set; }
@@ -56,7 +60,8 @@ namespace PassengerJobs.Injectors
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
             Name = "P 1",
-            Cost = 69_000f,
+            V1Flag = (JobLicenses)64,
+            Cost = 42f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
             PrefabName = "LicensePassengers1",
@@ -69,8 +74,9 @@ namespace PassengerJobs.Injectors
         public static readonly ILicenseData License2Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
-            Name = "Passengers 2",
-            Cost = 100_000f,
+            Name = "P 2",
+            V1Flag = (JobLicenses)128,
+            Cost = 69f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
             PrefabName = "LicensePassengers2",
@@ -85,8 +91,8 @@ namespace PassengerJobs.Injectors
 
             try
             {
-                License1 = CreatePassengerLicense(License1Data, (JobLicenses)64);
-                License2 = CreatePassengerLicense(License2Data, (JobLicenses)128);
+                License1 = CreatePassengerLicense(License1Data);
+                License2 = CreatePassengerLicense(License2Data, License1);
             }
             catch (Exception ex)
             {
@@ -96,20 +102,19 @@ namespace PassengerJobs.Injectors
             return true;
         }
 
-        private static JobLicenseType_v2 CreatePassengerLicense(
-            ILicenseData data,
-            JobLicenses v1Flag)
+        private static JobLicenseType_v2 CreatePassengerLicense(ILicenseData data, JobLicenseType_v2? RequiredJobLicense = null)
         {
             var license = ScriptableObject.CreateInstance<JobLicenseType_v2>();
             license.id = license.name = data.Name;
             license.localizationKey = LocalizationKey.LICENSE_NAME.K(); // später evtl. pro Lizenz anders
             license.localizationKeysDescription = new[] { LocalizationKey.LICENSE_DESCRIPTION.K() };
-            license.v1 = v1Flag;
+            license.v1 = data.V1Flag;
 
             license.color = data.Color;
             license.price = data.Cost;
             license.insuranceFeeQuotaIncrease = data.InsuranceIncrease;
             license.bonusTimeDecreasePercentage = data.TimeDecrease;
+            license.requiredJobLicense = RequiredJobLicense;
 
             SetupLicensePrefabs(license, data);
             DV.Globals.G.Types.jobLicenses.Add(license);
