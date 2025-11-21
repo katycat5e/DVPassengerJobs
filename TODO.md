@@ -6,7 +6,7 @@
 - [ ] Find out how to add a new asset, i.e. the license2 Image
 - [x] Require license1 to buy license2
 - [ ] Rename license1 to License to hopefully Keep backwards compatibility
-- [ ] Both licenses Need different descriptions which need to be added in the lanugages csv file
+- [x] Both licenses Need different descriptions which need to be added in the lanugages csv file
 - [x] Correctly assign licenses for Jobs, i.e. regional->license1 and express->license2
 - [ ] Refactor the current Interface->Class->2 Instances model for the License data, maybe a record works?
 - [ ] Cleanup code changes, i.e. if/else vs. ternary operators, if possible use AI code review

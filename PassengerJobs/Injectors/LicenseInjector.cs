@@ -17,6 +17,9 @@ namespace PassengerJobs.Injectors
 
         JobLicenses V1Flag { get; }
 
+        LocalizationKey LocalizationKey { get; }
+        LocalizationKey LocalizationKeyDescription { get; }
+
         float Cost { get; }
         float InsuranceIncrease { get; }
         float TimeDecrease { get; }
@@ -37,6 +40,9 @@ namespace PassengerJobs.Injectors
         public string Name { get; set; } = "";
 
         public JobLicenses V1Flag { get; set; }
+
+        public LocalizationKey LocalizationKey { get; set; }
+        public LocalizationKey LocalizationKeyDescription { get; set; }
 
         public float Cost { get; set; }
         public float InsuranceIncrease { get; set; }
@@ -59,8 +65,10 @@ namespace PassengerJobs.Injectors
         public static readonly ILicenseData License1Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
-            Name = "P 1",
+            Name = "Passengers1",
             V1Flag = (JobLicenses)64,
+            LocalizationKey = LocalizationKey.LICENSE_1_NAME,
+            LocalizationKeyDescription = LocalizationKey.LICENSE_1_DESCRIPTION,
             Cost = 42f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
@@ -74,8 +82,10 @@ namespace PassengerJobs.Injectors
         public static readonly ILicenseData License2Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
-            Name = "P 2",
+            Name = "Passengers2",
             V1Flag = (JobLicenses)128,
+            LocalizationKey = LocalizationKey.LICENSE_2_NAME,
+            LocalizationKeyDescription = LocalizationKey.LICENSE_2_DESCRIPTION,
             Cost = 69f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
@@ -106,10 +116,9 @@ namespace PassengerJobs.Injectors
         {
             var license = ScriptableObject.CreateInstance<JobLicenseType_v2>();
             license.id = license.name = data.Name;
-            license.localizationKey = LocalizationKey.LICENSE_NAME.K(); // später evtl. pro Lizenz anders
-            license.localizationKeysDescription = new[] { LocalizationKey.LICENSE_DESCRIPTION.K() };
+            license.localizationKey = data.LocalizationKey.K();
+            license.localizationKeysDescription = new[] { data.LocalizationKeyDescription.K() };
             license.v1 = data.V1Flag;
-
             license.color = data.Color;
             license.price = data.Cost;
             license.insuranceFeeQuotaIncrease = data.InsuranceIncrease;
@@ -153,12 +162,9 @@ namespace PassengerJobs.Injectors
 
         private static LicenseTemplatePaperData GetPassengerLicenseTemplateInternal(ILicenseData data)
         {
-            // TODO: adjust language here for both licenses
-            string name = LocalizationKey.LICENSE_NAME.L();
-            string description = LocalizationKey.LICENSE_DESCRIPTION.L();
-
             Sprite shuntSprite = JobLicenses.Shunting.ToV2().icon;
-
+            string name = data.LocalizationKey.L();
+            string description = data.LocalizationKeyDescription.L();
             string costString = $"${data.Cost:F}";
             string insuranceIncrease = $"+${data.InsuranceIncrease:F}";
             string bonusDecrease = "N/A";
@@ -167,13 +173,15 @@ namespace PassengerJobs.Injectors
             Sprite sprite;
             if (data.Name == "Passengers1") {
                 sprite = BundleLoader.License1Sprite;
-            } else
+            }
+            else
             {
                 sprite = BundleLoader.License2Sprite;
             }
 
-                return new LicenseTemplatePaperData(
-                    name, description, data.Color, costString, insuranceIncrease, bonusDecrease, sprite, shuntSprite);
+            return new LicenseTemplatePaperData(
+                name, description, data.Color, costString, insuranceIncrease, bonusDecrease, sprite, shuntSprite
+            );
         }
 
         public static LicenseTemplatePaperData GetPassengerLicenseBasicTemplate()
@@ -185,22 +193,22 @@ namespace PassengerJobs.Injectors
 
         public static void SetLicense1Properties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License1Data.PrefabName, LocalizationKey.LICENSE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License1Data.PrefabName, LocalizationKey.LICENSE_1_ITEM_NAME.K());
         }
 
         public static void SetLicense1SampleProperties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License1Data.SamplePrefabName, LocalizationKey.LICENSE_SAMPLE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License1Data.SamplePrefabName, LocalizationKey.LICENSE_1_SAMPLE_ITEM_NAME.K());
         }
 
         public static void SetLicense2Properties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License2Data.PrefabName, LocalizationKey.LICENSE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License2Data.PrefabName, LocalizationKey.LICENSE_2_ITEM_NAME.K());
         }
 
         public static void SetLicense2SampleProperties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License2Data.SamplePrefabName, LocalizationKey.LICENSE_SAMPLE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License2Data.SamplePrefabName, LocalizationKey.LICENSE_2_SAMPLE_ITEM_NAME.K());
         }
 
         private static void SetBookletProperties(GameObject licenseObj, string bookletName, string nameLocalKey)
