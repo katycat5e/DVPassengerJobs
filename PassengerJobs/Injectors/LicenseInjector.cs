@@ -184,10 +184,10 @@ namespace PassengerJobs.Injectors
             );
         }
 
-        public static LicenseTemplatePaperData GetPassengerLicenseBasicTemplate()
+        public static LicenseTemplatePaperData GetPassengerLicense1Template()
             => GetPassengerLicenseTemplateInternal(License1Data);
 
-        public static LicenseTemplatePaperData GetPassengerLicenseAdvancedTemplate()
+        public static LicenseTemplatePaperData GetPassengerLicense2Template()
             => GetPassengerLicenseTemplateInternal(License2Data);
 
 
