@@ -9,6 +9,7 @@
 - [x] Both licenses Need different descriptions which need to be added in the lanugages csv file
 - [x] Correctly assign licenses for Jobs, i.e. regional->license1 and express->license2
 - [ ] Refactor the current Interface->Class->2 Instances model for the License data, maybe a record works?
+- [ ] Jobs with >6 coaches should require long 1 license
 - [ ] Cleanup code changes, i.e. if/else vs. ternary operators, if possible use AI code review
 - [ ] Testing
     - [ ] Backwards compatibility: create save with upstream mod Version and buy license1, than load save with new mod Version
