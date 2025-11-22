@@ -101,7 +101,7 @@ namespace PassengerJobs.Injectors
 
             try
             {
-                License1 = CreatePassengerLicense(License1Data);
+                License1 = CreatePassengerLicense(License1Data, JobLicenses.Fragile.ToV2());
                 License2 = CreatePassengerLicense(License2Data, License1);
             }
             catch (Exception ex)
