@@ -3,6 +3,8 @@
 
 
 - [ ] Rebalancing of licenses (cost, Multipliers, …)
+    - [ ] Bonus time for regional trains is currently equal to freight hauls. Should be cummulated distance of each station + a bonus for each stop
+    - [ ] Express bonus time is way too long, e.g. 280min for Harbor to GF via CS,CW
 - [ ] Find out how to add a new asset, i.e. the license2 Image
 - [x] Require license1 to buy license2
 - [ ] Rename license1 to License to hopefully Keep backwards compatibility
