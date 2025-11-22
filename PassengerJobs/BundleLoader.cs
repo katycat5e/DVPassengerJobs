@@ -98,7 +98,7 @@ namespace PassengerJobs
             }
             else
             {
-                LicenseInjector.License1.icon = License2Sprite;
+                LicenseInjector.License2.icon = License2Sprite;
             }
 
             bundle.Unload(false);
