@@ -16,9 +16,14 @@ namespace PassengerJobs.Injectors
         private const string HAS_LICENSE_P2_KEY = "pass2_obtained";
         private const string VERSION_KEY = "version";
 
-        public const int CURRENT_DATA_VERSION = 4;
+        public const int CURRENT_DATA_VERSION = 5;
 
         public static JObject? loadedData;
+
+        private static readonly Dictionary<int, Action<SaveGameData, JObject>> SaveDataMigrations = new()
+        {
+            {4, MigrateV4ToV5}
+        };
 
         private static IEnumerable<StationProceduralJobsController> ProceduralJobsControllers
         {
@@ -58,8 +63,16 @@ namespace PassengerJobs.Injectors
                 PJMain.Log("Found injected save data, attempting to load...");
                 if (loadedData.GetInt(VERSION_KEY) != CURRENT_DATA_VERSION)
                 {
-                    PJMain.Warning("Save file contains incompatible data version");
-                    loadedData = null;
+                    try
+                    {
+                        RunMigrations(mainGameData, loadedData);
+                        PJMain.Log("Passenger save data migrated successfully.");
+                    }
+                    catch (Exception ex)
+                    {
+                        PJMain.Warning($"Passenger save data migration failed: {ex.Message}");
+                        loadedData = null;
+                    }
                 }
             }
             else
@@ -103,6 +116,50 @@ namespace PassengerJobs.Injectors
 
                 Inventory.Instance.RemoveMoney(LicenseInjector.License2Data.Cost);
             }
+        }
+
+        private static JObject RunMigrations(SaveGameData mainGameData, JObject mainJobsData)
+        {
+            int version = mainJobsData.GetInt(VERSION_KEY) ?? throw new Exception("Version key missing");
+
+            if (version > CURRENT_DATA_VERSION)
+                throw new Exception($"Save version {version} is newer than supported version {CURRENT_DATA_VERSION}");
+
+            for (int i = version; i < CURRENT_DATA_VERSION; i++)
+            {
+                if (!SaveDataMigrations.TryGetValue(i, out var migrate))
+                {
+                    throw new Exception($"No migration path for v{i}");
+                }
+                PJMain.Log($"Migrating save data from v{version} to v{version + 1}");
+                migrate(mainGameData, mainJobsData);
+            }
+
+            return mainJobsData;
+        }
+
+        private static void MigrateV4ToV5(SaveGameData mainGameData, JObject mainJobsData)
+        {
+            const int fromVersion = 4;
+            const int toVersion = 5;
+            const float v4License1Cost = 100_000f;
+            const float v5License1Cost = 50_000f; // TODO: Add actual cost.
+
+            float refundAmount = v4License1Cost - v5License1Cost;
+            bool hasLicense1 = mainJobsData.GetBool(HAS_LICENSE_P1_KEY) == true;
+
+            if (hasLicense1) 
+            {
+                float? money = mainGameData.GetFloat(SaveGameKeys.Player_money);
+                if (money.HasValue)
+                {
+                    PJMain.Log($"Refunding $ {refundAmount} for passengers 1 license due to cost reduction between v{fromVersion} and v{toVersion}");
+                    float newBalance = money.Value + refundAmount;
+                    mainGameData.SetFloat(SaveGameKeys.Player_money, newBalance);
+                }
+            }
+
+            mainJobsData.SetInt(VERSION_KEY, toVersion);
         }
     }
 }
