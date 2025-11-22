@@ -81,7 +81,7 @@ namespace PassengerJobs
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
             License1Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
+            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers2.png");
             if (License1Sprite == null)
             {
                 PJMain.Error("Failed to load license sprite from asset bundle");
