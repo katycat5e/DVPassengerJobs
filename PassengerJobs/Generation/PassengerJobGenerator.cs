@@ -378,14 +378,10 @@ namespace PassengerJobs.Generation
         {
             // populate the actual job
             PassengerHaulJobDefinition jobDefinition = chainController.jobChainGO.AddComponent<PassengerHaulJobDefinition>();
-            JobLicenses requiredLicenses = (route.RouteType == RouteType.Express) ? LicenseInjector.License2.v1 : LicenseInjector.License1.v1;
-            if (logicCars.Count > 10)
-            {
-                requiredLicenses |= JobLicenses.TrainLength2;
-            } else if (logicCars.Count > 5)
-            {
-                requiredLicenses |= JobLicenses.TrainLength1;
-            }
+            JobLicenses requiredLicenses = JobLicenses.Fragile;
+            requiredLicenses |= (route.RouteType == RouteType.Express) ? LicenseInjector.License2.v1 : LicenseInjector.License1.v1;
+            requiredLicenses |= (logicCars.Count > 10) ? JobLicenses.TrainLength2 : 0;
+            requiredLicenses |= (logicCars.Count > 5 && logicCars.Count <= 10) ? JobLicenses.TrainLength1 : 0;
 
             jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, requiredLicenses);
 
