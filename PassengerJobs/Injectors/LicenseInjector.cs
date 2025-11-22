@@ -10,9 +10,9 @@ namespace PassengerJobs.Injectors
 {
     public class PassengerLicenseData
     {
-        public Color Color { get; set; }
+        public Color Color { get; set; } = new Color(0.278f, 0.518f, 0.69f);
 
-        public string Name { get; set; } = "";
+        public string Name { get; set; }
 
         public JobLicenses V1Flag { get; set; }
 
@@ -39,13 +39,12 @@ namespace PassengerJobs.Injectors
 
         public static readonly PassengerLicenseData License1Data = new PassengerLicenseData
         {
-            Color = new Color(0.278f, 0.518f, 0.69f),
             Name = "Passengers1",
             V1Flag = (JobLicenses)64,
             LocalizationKey = LocalizationKey.LICENSE_1_NAME,
             LocalizationKeyDescription = LocalizationKey.LICENSE_1_DESCRIPTION,
-            Cost = 42f,
-            InsuranceIncrease = 150_000f,
+            Cost = 40_000f,
+            InsuranceIncrease = 45_000f,
             TimeDecrease = 0.0f,
             PrefabName = "LicensePassengers1",
             RenderPrefabName = "PJLicense1Render",
@@ -55,12 +54,11 @@ namespace PassengerJobs.Injectors
 
         public static readonly PassengerLicenseData License2Data = new PassengerLicenseData
         {
-            Color = new Color(0.278f, 0.518f, 0.69f),
             Name = "Passengers2",
             V1Flag = (JobLicenses)128,
             LocalizationKey = LocalizationKey.LICENSE_2_NAME,
             LocalizationKeyDescription = LocalizationKey.LICENSE_2_DESCRIPTION,
-            Cost = 69f,
+            Cost = 100_000f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
             PrefabName = "LicensePassengers2",

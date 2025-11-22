@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using static System.Collections.Specialized.BitVector32;
 
 namespace PassengerJobs.Generation
 {
@@ -260,8 +261,8 @@ namespace PassengerJobs.Generation
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
 
-            var equivalentPayJobType = (jobType == PassJobType.Local) ? JobType.EmptyHaul : JobType.Transport;
-            float transportPayment = JobPaymentCalculator.CalculateJobPayment(equivalentPayJobType, haulDistance, transportPaymentData);
+            //var equivalentPayJobType = (jobType == PassJobType.Local) ? JobType.EmptyHaul : JobType.Transport;
+            float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
 
 
             // scale job payment depending on settings
@@ -303,12 +304,12 @@ namespace PassengerJobs.Generation
         private static float GetTotalHaulDistance(StationController startStation, IEnumerable<RouteTrack> destinations)
         {
             float totalDistance = 0;
-            StationController source = startStation;
+            Vector3 sourceLocation = startStation.transform.position;
 
-            foreach (var station in destinations.Select(t => t.Station).OfType<PassStationData>())
+            foreach (var station in destinations.Select(t => t.Station))
             {
-                totalDistance += JobPaymentCalculator.GetDistanceBetweenStations(source, station.Controller);
-                source = station.Controller;
+                totalDistance += Vector3.Distance(sourceLocation, station.GetLocation());
+                sourceLocation = station.GetLocation();
             }
 
             return totalDistance;
