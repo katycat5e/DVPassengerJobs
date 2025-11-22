@@ -5,35 +5,10 @@ using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using System;
 using UnityEngine;
-// TODO: ????
 
 namespace PassengerJobs.Injectors
 {
-    public interface ILicenseData
-    {
-        Color Color { get; }
-
-        string Name { get; }
-
-        JobLicenses V1Flag { get; }
-
-        LocalizationKey LocalizationKey { get; }
-        LocalizationKey LocalizationKeyDescription { get; }
-
-        float Cost { get; }
-        float InsuranceIncrease { get; }
-        float TimeDecrease { get; }
-
-        string PrefabName { get; }
-        string RenderPrefabName { get; }
-        GameObject? RenderPrefab { get; set; }
-
-        string SamplePrefabName { get; }
-        string SampleRenderPrefabName { get; }
-        GameObject? SampleRenderPrefab { get; set; }
-    }
-
-    public class PassengerLicenseData : ILicenseData
+    public class PassengerLicenseData
     {
         public Color Color { get; set; }
 
@@ -62,7 +37,7 @@ namespace PassengerJobs.Injectors
         public static JobLicenseType_v2 License1 { get; internal set; } = null!;
         public static JobLicenseType_v2 License2 { get; internal set; } = null!;
 
-        public static readonly ILicenseData License1Data = new PassengerLicenseData
+        public static readonly PassengerLicenseData License1Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
             Name = "Passengers1",
@@ -78,8 +53,7 @@ namespace PassengerJobs.Injectors
             SampleRenderPrefabName = "PJlicense1InfoRender"
         };
 
-        // TODO: License2 should require License1
-        public static readonly ILicenseData License2Data = new PassengerLicenseData
+        public static readonly PassengerLicenseData License2Data = new PassengerLicenseData
         {
             Color = new Color(0.278f, 0.518f, 0.69f),
             Name = "Passengers2",
@@ -112,7 +86,7 @@ namespace PassengerJobs.Injectors
             return true;
         }
 
-        private static JobLicenseType_v2 CreatePassengerLicense(ILicenseData data, JobLicenseType_v2? RequiredJobLicense = null)
+        private static JobLicenseType_v2 CreatePassengerLicense(PassengerLicenseData data, JobLicenseType_v2? RequiredJobLicense = null)
         {
             var license = ScriptableObject.CreateInstance<JobLicenseType_v2>();
             license.id = license.name = data.Name;
@@ -131,7 +105,7 @@ namespace PassengerJobs.Injectors
             return license;
         }
 
-        private static void SetupLicensePrefabs(JobLicenseType_v2 license, ILicenseData data)
+        private static void SetupLicensePrefabs(JobLicenseType_v2 license, PassengerLicenseData data)
         {
             var hazmatLicense = JobLicenses.Hazmat1.ToV2();
 
@@ -160,7 +134,7 @@ namespace PassengerJobs.Injectors
             staticInfoRender.jobLicense = license;
         }
 
-        private static LicenseTemplatePaperData GetPassengerLicenseTemplateInternal(ILicenseData data)
+        private static LicenseTemplatePaperData GetPassengerLicenseTemplateInternal(PassengerLicenseData data)
         {
             Sprite shuntSprite = JobLicenses.Shunting.ToV2().icon;
             string name = data.LocalizationKey.L();
@@ -233,7 +207,7 @@ namespace PassengerJobs.Injectors
             RefundSingleLicense(License2, License2Data);
         }
 
-        private static void RefundSingleLicense(JobLicenseType_v2 license, ILicenseData data)
+        private static void RefundSingleLicense(JobLicenseType_v2 license, PassengerLicenseData data)
         {
             if (LicenseManager.Instance.IsJobLicenseAcquired(license))
             {
