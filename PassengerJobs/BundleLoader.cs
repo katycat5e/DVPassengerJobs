@@ -82,14 +82,13 @@ namespace PassengerJobs
 
             License1Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
             License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            UnityEngine.Object.DontDestroyOnLoad(License1Sprite);
-            UnityEngine.Object.DontDestroyOnLoad(License2Sprite);
             if (License1Sprite == null)
             {
                 PJMain.Error("Failed to load license sprite from asset bundle");
             }
             else
             {
+                UnityEngine.Object.DontDestroyOnLoad(License1Sprite);
                 LicenseInjector.License1.icon = License1Sprite;
             }
             if (License2Sprite == null)
@@ -98,6 +97,7 @@ namespace PassengerJobs
             }
             else
             {
+                UnityEngine.Object.DontDestroyOnLoad(License2Sprite);
                 LicenseInjector.License2.icon = License2Sprite;
             }
 
