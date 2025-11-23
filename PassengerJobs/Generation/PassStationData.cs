@@ -15,6 +15,8 @@ namespace PassengerJobs.Generation
         string YardID { get; }
         IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks = false);
         IEnumerable<Track> AllTracks { get; }
+
+        Vector3 GetLocation();
     }
 
     public class RouteData
@@ -43,6 +45,11 @@ namespace PassengerJobs.Generation
         public PassStationData(StationController controller)
         {
             Controller = controller;
+        }
+
+        public Vector3 GetLocation()
+        {
+            return Controller.transform.position;
         }
 
         public void AddPlatform(Track track, StationConfig.CityPlatform config) => Platforms.Add(new(track, config));
@@ -93,11 +100,19 @@ namespace PassengerJobs.Generation
     {
         public readonly RuralLoadingMachine Platform;
 
+        public readonly PlatformController Controller;
+
         public string YardID => Platform.Id;
 
-        public RuralStationData(RuralLoadingMachine platform)
+        public RuralStationData(RuralLoadingMachine platform, PlatformController controller)
         {
             Platform = platform;
+            Controller = controller;
+        }
+
+        public Vector3 GetLocation()
+        {
+            return Controller.transform.position;
         }
 
         public IEnumerable<RouteTrack> GetPlatforms(bool onlyTerminusTracks)

@@ -49,8 +49,10 @@ namespace PassengerJobs.Patches
         {
             var result = name switch
             {
-                LicenseData.RenderPrefabName => LicenseData.RenderPrefab,
-                LicenseData.SampleRenderPrefabName => LicenseData.SampleRenderPrefab,
+                var n when n == LicenseInjector.License1Data.RenderPrefabName => LicenseInjector.License1Data.RenderPrefab,
+                var n when n == LicenseInjector.License1Data.SampleRenderPrefabName => LicenseInjector.License1Data.SampleRenderPrefab,
+                var n when n == LicenseInjector.License2Data.RenderPrefabName => LicenseInjector.License2Data.RenderPrefab,
+                var n when n == LicenseInjector.License2Data.SampleRenderPrefabName => LicenseInjector.License2Data.SampleRenderPrefab,
                 _ => Resources.Load<GameObject>(name),
             };
 

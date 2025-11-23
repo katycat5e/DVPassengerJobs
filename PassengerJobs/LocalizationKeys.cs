@@ -9,11 +9,15 @@ namespace PassengerJobs
     public enum LocalizationKey
     {
         // License
-        LICENSE_NAME,
-        LICENSE_DESCRIPTION,
+        LICENSE_1_NAME,
+        LICENSE_2_NAME,
+        LICENSE_1_DESCRIPTION,
+        LICENSE_2_DESCRIPTION,
 
-        LICENSE_ITEM_NAME,
-        LICENSE_SAMPLE_ITEM_NAME,
+        LICENSE_1_ITEM_NAME,
+        LICENSE_1_SAMPLE_ITEM_NAME,
+        LICENSE_2_ITEM_NAME,
+        LICENSE_2_SAMPLE_ITEM_NAME,
 
         // Cargo
         CARGO_NAME_FULL,
