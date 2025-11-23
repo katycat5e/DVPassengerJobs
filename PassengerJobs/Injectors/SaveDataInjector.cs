@@ -1,10 +1,13 @@
 ﻿using DV.InventorySystem;
 using DV.JObjectExtstensions;
+using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using Newtonsoft.Json.Linq;
 using PassengerJobs.Generation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using VLB;
 using static DV.RenderTextureSystem.BookletRender.VehicleCatalogPageTemplatePaper;
 
 namespace PassengerJobs.Injectors
@@ -20,7 +23,7 @@ namespace PassengerJobs.Injectors
 
         public static JObject? loadedData;
 
-        private static readonly Dictionary<int, Action<SaveGameData, JObject>> SaveDataMigrations = new()
+        private static readonly Dictionary<int, Action<SaveGameData>> SaveDataMigrations = new()
         {
             {4, MigrateV4ToV5}
         };
@@ -58,21 +61,29 @@ namespace PassengerJobs.Injectors
         {
             loadedData = mainGameData.GetJObject(PJ_DATA_KEY);
 
+            PJMain.Log($"Current Passenger Save Version: {loadedData.GetInt(VERSION_KEY)}");
+
             if (loadedData != null)
             {
                 PJMain.Log("Found injected save data, attempting to load...");
-                if (loadedData.GetInt(VERSION_KEY) != CURRENT_DATA_VERSION)
+                switch (loadedData.GetInt(VERSION_KEY))
                 {
-                    try
-                    {
-                        RunMigrations(mainGameData, loadedData);
-                        PJMain.Log("Passenger save data migrated successfully.");
-                    }
-                    catch (Exception ex)
-                    {
-                        PJMain.Warning($"Passenger save data migration failed: {ex.Message}");
+                    case null:
+                        PJMain.Warning("Passenger save data version key not found");
                         loadedData = null;
-                    }
+                        break;
+                    case int version when version != CURRENT_DATA_VERSION:
+                        try
+                        {
+                            RunMigrations(version, mainGameData);
+                            PJMain.Log("Passenger save data migrated successfully.");
+                        }
+                        catch (Exception ex)
+                        {
+                            PJMain.Warning($"Passenger save data migration failed: {ex.Message}");
+                            loadedData = null;
+                        }
+                        break;
                 }
             }
             else
@@ -118,10 +129,8 @@ namespace PassengerJobs.Injectors
             }
         }
 
-        private static JObject RunMigrations(SaveGameData mainGameData, JObject mainJobsData)
+        private static void RunMigrations(int version, SaveGameData mainGameData)
         {
-            int version = mainJobsData.GetInt(VERSION_KEY) ?? throw new Exception("Version key missing");
-
             if (version > CURRENT_DATA_VERSION)
                 throw new Exception($"Save version {version} is newer than supported version {CURRENT_DATA_VERSION}");
 
@@ -132,34 +141,45 @@ namespace PassengerJobs.Injectors
                     throw new Exception($"No migration path for v{i}");
                 }
                 PJMain.Log($"Migrating save data from v{version} to v{version + 1}");
-                migrate(mainGameData, mainJobsData);
+                migrate(mainGameData);
+                loadedData.SetInt(VERSION_KEY, version + 1);
             }
-
-            return mainJobsData;
         }
 
-        private static void MigrateV4ToV5(SaveGameData mainGameData, JObject mainJobsData)
+        private static void MigrateV4ToV5(SaveGameData mainGameData)
         {
             const int fromVersion = 4;
             const int toVersion = 5;
             const float v4License1Cost = 100_000f;
-            const float v5License1Cost = 50_000f; // TODO: Add actual cost.
+            const float v5License1Cost = 40_000f;
 
-            float refundAmount = v4License1Cost - v5License1Cost;
-            bool hasLicense1 = mainJobsData.GetBool(HAS_LICENSE_P1_KEY) == true;
+            float refundAmount;
+            bool hasLicense1 = loadedData.GetBool(HAS_LICENSE_P1_KEY) == true;
+            bool hasFragileLicense = LicenseManager.Instance.IsJobLicenseAcquired(JobLicenses.Fragile.ToV2());
 
-            if (hasLicense1) 
-            {
-                float? money = mainGameData.GetFloat(SaveGameKeys.Player_money);
-                if (money.HasValue)
-                {
-                    PJMain.Log($"Refunding $ {refundAmount} for passengers 1 license due to cost reduction between v{fromVersion} and v{toVersion}");
-                    float newBalance = money.Value + refundAmount;
-                    mainGameData.SetFloat(SaveGameKeys.Player_money, newBalance);
-                }
+            if (!hasLicense1)
+            { 
+                return;
             }
 
-            mainJobsData.SetInt(VERSION_KEY, toVersion);
+            if (hasFragileLicense)
+            {
+                refundAmount = v4License1Cost - v5License1Cost;
+                PJMain.Log($"Refunding ${refundAmount} for passengers 1 license due to cost reduction between v{fromVersion} and v{toVersion}");
+            }
+            else
+            {
+                refundAmount = v4License1Cost;
+                loadedData.SetBool(HAS_LICENSE_P1_KEY, false);
+                PJMain.Log($"Refunding ${refundAmount} for passengers 1 license due to new unmet license requirement in v{toVersion}");
+            }
+
+            float? money = mainGameData.GetFloat(SaveGameKeys.Player_money);
+            if (money.HasValue)
+            {
+                float newBalance = money.Value + refundAmount;
+                mainGameData.SetFloat(SaveGameKeys.Player_money, newBalance);
+            }
         }
     }
 }
