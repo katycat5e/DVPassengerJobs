@@ -13,10 +13,15 @@ namespace PassengerJobs.Patches
         {
             var entry = new CareerManagerLicensesScreen.GeneralOrJobLicense()
             {
-                jobLicense = LicenseInjector.License
+                jobLicense = LicenseInjector.License1
             };
-
             __instance.licensesDisplayOrder.Add(entry);
+
+            var entry2 = new CareerManagerLicensesScreen.GeneralOrJobLicense()
+            {
+                jobLicense = LicenseInjector.License2
+            };
+            __instance.licensesDisplayOrder.Add(entry2);
         }
     }
 }

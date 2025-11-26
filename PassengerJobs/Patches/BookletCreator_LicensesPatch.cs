@@ -15,9 +15,13 @@ namespace PassengerJobs.Patches
         [HarmonyPostfix]
         public static void CreateLicensePostfix(JobLicenseType_v2 license, ref GameObject __result)
         {
-            if (license == LicenseInjector.License)
+            if (license == LicenseInjector.License1)
             {
-                LicenseInjector.SetLicenseProperties(__result);
+                LicenseInjector.SetLicense1Properties(__result);
+            }
+            if (license == LicenseInjector.License2)
+            {
+                LicenseInjector.SetLicense2Properties(__result);
             }
         }
 
@@ -26,9 +30,13 @@ namespace PassengerJobs.Patches
         [HarmonyPostfix]
         public static void CreateLicenseInfoPostfix(JobLicenseType_v2 license, ref GameObject __result)
         {
-            if (license == LicenseInjector.License)
+            if (license == LicenseInjector.License1)
             {
-                LicenseInjector.SetLicenseSampleProperties(__result);
+                LicenseInjector.SetLicense1SampleProperties(__result);
+            }
+            if (license == LicenseInjector.License2)
+            {
+                LicenseInjector.SetLicense2SampleProperties(__result);
             }
         }
     }

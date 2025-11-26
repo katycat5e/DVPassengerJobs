@@ -5,6 +5,7 @@ using PassengerJobs.Injectors;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using DV.ThingTypes;
 
 namespace PassengerJobs.Patches
 {
@@ -162,7 +163,7 @@ namespace PassengerJobs.Patches
 
             PassengerHaulJobDefinition jobDefinition = jobChainHolder.AddComponent<PassengerHaulJobDefinition>();
             var chainData = new ExpressStationsChainData(jobData.originStationId, jobData.destinationStationIds);
-            jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, LicenseInjector.License.v1);
+            jobDefinition.PopulateBaseJobDefinition(logicStation, jobData.timeLimitForJob, jobData.initialWage, chainData, (JobLicenses)jobData.requiredLicenses);
 
             jobDefinition.RouteType = (RouteType)jobData.routeType;
             jobDefinition.StartingTrack = startTrack;

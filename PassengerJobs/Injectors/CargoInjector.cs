@@ -24,7 +24,7 @@ namespace PassengerJobs.Injectors
             passCargo.massPerUnit = PASSENGER_MASS_PER_UNIT;
             passCargo.fullDamagePrice = PASSENGER_FULL_DAMAGE_PRICE;
             passCargo.environmentDamagePrice = PASSENGER_ENVIRONMENT_DAMAGE_PRICE;
-            passCargo.requiredJobLicenses = new[] { LicenseInjector.License };
+            passCargo.requiredJobLicenses = new[] { LicenseInjector.License1 };
             passCargo.loadableCarTypes = new[]
             {
                 new CargoType_v2.LoadableInfo(TrainCarType.PassengerRed.ToV2().parentType, null),

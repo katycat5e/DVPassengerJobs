@@ -1,5 +1,7 @@
 ﻿using DV.InventorySystem;
 using DV.JObjectExtstensions;
+using DV.ThingTypes;
+using DV.ThingTypes.TransitionHelpers;
 using Newtonsoft.Json.Linq;
 using PassengerJobs.Generation;
 using System;
@@ -12,11 +14,17 @@ namespace PassengerJobs.Injectors
     {
         private const string PJ_DATA_KEY = "passengers_mod";
         private const string HAS_LICENSE_P1_KEY = "pass1_obtained";
+        private const string HAS_LICENSE_P2_KEY = "pass2_obtained";
         private const string VERSION_KEY = "version";
 
-        public const int CURRENT_DATA_VERSION = 4;
+        public const int CURRENT_DATA_VERSION = 5;
 
         public static JObject? loadedData;
+
+        private static readonly Dictionary<int, Action<SaveGameData>> SaveDataMigrations = new()
+        {
+            {4, MigrateV4ToV5}
+        };
 
         private static IEnumerable<StationProceduralJobsController> ProceduralJobsControllers
         {
@@ -38,7 +46,8 @@ namespace PassengerJobs.Injectors
             pjSaveData.SetObjectViaJSON(SaveGameKeys.Jobs, jobsData, JobSaveManager.serializeSettings);
 
             // licenses
-            pjSaveData.SetBool(HAS_LICENSE_P1_KEY, LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License));
+            pjSaveData.SetBool(HAS_LICENSE_P1_KEY, LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License1));
+            pjSaveData.SetBool(HAS_LICENSE_P2_KEY, LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License2));
 
             pjSaveData.SetInt(VERSION_KEY, CURRENT_DATA_VERSION);
 
@@ -53,10 +62,24 @@ namespace PassengerJobs.Injectors
             if (loadedData != null)
             {
                 PJMain.Log("Found injected save data, attempting to load...");
-                if (loadedData.GetInt(VERSION_KEY) != CURRENT_DATA_VERSION)
+                switch (loadedData.GetInt(VERSION_KEY))
                 {
-                    PJMain.Warning("Save file contains incompatible data version");
-                    loadedData = null;
+                    case null:
+                        PJMain.Warning("Passenger save data version key not found");
+                        loadedData = null;
+                        break;
+                    case int version when version != CURRENT_DATA_VERSION:
+                        try
+                        {
+                            RunMigrations(version, mainGameData);
+                            PJMain.Log("Passenger save data migrated successfully.");
+                        }
+                        catch (Exception ex)
+                        {
+                            PJMain.Warning($"Passenger save data migration failed: {ex.Message}");
+                            loadedData = null;
+                        }
+                        break;
                 }
             }
             else
@@ -88,10 +111,50 @@ namespace PassengerJobs.Injectors
         {
             if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P1_KEY) == true) && Inventory.Instance)
             {
-                PJMain.Log("Acquiring passengers license");
-                LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License });
+                PJMain.Log("Acquiring passengers1 license");
+                LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License1 });
 
-                Inventory.Instance.RemoveMoney(LicenseData.Cost);
+                Inventory.Instance.RemoveMoney(LicenseInjector.License1Data.Cost);
+            }
+            if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P2_KEY) == true) && Inventory.Instance)
+            {
+                PJMain.Log("Acquiring passengers2 license");
+                LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License2 });
+
+                Inventory.Instance.RemoveMoney(LicenseInjector.License2Data.Cost);
+            }
+        }
+
+        private static void RunMigrations(int version, SaveGameData mainGameData)
+        {
+            if (version > CURRENT_DATA_VERSION)
+                throw new Exception($"Save version {version} is newer than supported version {CURRENT_DATA_VERSION}");
+
+            for (int i = version; i < CURRENT_DATA_VERSION; i++)
+            {
+                if (!SaveDataMigrations.TryGetValue(i, out var migrate))
+                {
+                    throw new Exception($"No migration path for v{i}");
+                }
+                PJMain.Log($"Migrating save data from v{version} to v{version + 1}");
+                migrate(mainGameData);
+                loadedData.SetInt(VERSION_KEY, version + 1);
+            }
+        }
+
+        private static void MigrateV4ToV5(SaveGameData mainGameData)
+        {
+            /*
+             * Differences in license costs as well as refunds when removing v4 passengers license
+             * are handled automatically via the mods 'refund-on-save-in-case-of-uninstall' system
+             */
+            bool hasLicense1 = loadedData.GetBool(HAS_LICENSE_P1_KEY) == true;
+            bool hasFragileLicense = LicenseManager.Instance.IsJobLicenseAcquired(JobLicenses.Fragile.ToV2());
+
+            if (!hasFragileLicense && hasLicense1)
+            {
+                loadedData.SetBool(HAS_LICENSE_P1_KEY, false);
+                PJMain.Log($"Removing Passengers 1 License due to new unmet fragile license requirement in v5; refunding cost of license");
             }
         }
     }

@@ -260,8 +260,7 @@ namespace PassengerJobs.Generation
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
 
-            var equivalentPayJobType = (jobType == PassJobType.Local) ? JobType.EmptyHaul : JobType.Transport;
-            float transportPayment = JobPaymentCalculator.CalculateJobPayment(equivalentPayJobType, haulDistance, transportPaymentData);
+            float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
 
 
             // scale job payment depending on settings
@@ -303,12 +302,12 @@ namespace PassengerJobs.Generation
         private static float GetTotalHaulDistance(StationController startStation, IEnumerable<RouteTrack> destinations)
         {
             float totalDistance = 0;
-            StationController source = startStation;
+            Vector3 sourceLocation = startStation.transform.position;
 
-            foreach (var station in destinations.Select(t => t.Station).OfType<PassStationData>())
+            foreach (var station in destinations.Select(t => t.Station))
             {
-                totalDistance += JobPaymentCalculator.GetDistanceBetweenStations(source, station.Controller);
-                source = station.Controller;
+                totalDistance += Vector3.Distance(sourceLocation, station.GetLocation());
+                sourceLocation = station.GetLocation();
             }
 
             return totalDistance;
@@ -377,7 +376,12 @@ namespace PassengerJobs.Generation
         {
             // populate the actual job
             PassengerHaulJobDefinition jobDefinition = chainController.jobChainGO.AddComponent<PassengerHaulJobDefinition>();
-            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, LicenseInjector.License.v1);
+            JobLicenses requiredLicenses = JobLicenses.Fragile;
+            requiredLicenses |= (route.RouteType == RouteType.Express) ? LicenseInjector.License2.v1 : LicenseInjector.License1.v1;
+            requiredLicenses |= (logicCars.Count > 10) ? JobLicenses.TrainLength2 : 0;
+            requiredLicenses |= (logicCars.Count > 5 && logicCars.Count <= 10) ? JobLicenses.TrainLength1 : 0;
+
+            jobDefinition.PopulateBaseJobDefinition(startStation, timeLimit, initialPay, chainData, requiredLicenses);
 
             jobDefinition.RouteType = route.RouteType;
             jobDefinition.TrainCarsToTransport = logicCars;
