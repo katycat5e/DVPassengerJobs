@@ -14,6 +14,7 @@ namespace PassengerJobs.Platforms
         string Id { get; }
         string DisplayId { get; }
         string TrackId { get; }
+        WarehouseMachine? Warehouse { get; }
 
         Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal);
         List<PlatformTask> GetLoadableTasks(bool loading);
@@ -42,12 +43,17 @@ namespace PassengerJobs.Platforms
     public sealed class StationPlatformWrapper : IPlatformWrapper
     {
         public readonly Track Track;
-        public readonly WarehouseMachine Warehouse;
+        public WarehouseMachine Warehouse { get; }
+        public PlatformController Controller { get; }
 
-        public StationPlatformWrapper(Track track)
+        public StationPlatformWrapper(Track track, PlatformController controller)
         {
             Track = track;
-            Warehouse = new WarehouseMachine(Track, new() { CargoInjector.PassengerCargo.v1 });
+            Controller = controller;
+            Warehouse = new WarehouseMachine(Track, new() { CargoInjector.PassengerCargo.v1 })
+            {
+                ID = Id
+            };
         }
 
         public string Id => Track.ID.ToString();
@@ -57,7 +63,7 @@ namespace PassengerJobs.Platforms
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
             WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
-            return new WarehouseTask(cars, taskType, Warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
+            return new CityLoadingTask(cars, taskType, Warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
         }
 
         public List<PlatformTask> GetLoadableTasks(bool loading)
@@ -74,7 +80,7 @@ namespace PassengerJobs.Platforms
                     {
                         if (AreCarsStoppedAtPlatform(task.cars))
                         {
-                            result.Add(new WarehouseTaskWrapper(task));
+                            result.Add(new CityLoadTaskWrapper((CityLoadingTask)task));
                         }
                     }
                 }
@@ -85,7 +91,7 @@ namespace PassengerJobs.Platforms
 
         public void RemoveTask(PlatformTask task)
         {
-            if (task is WarehouseTaskWrapper wrapper)
+            if (task is CityLoadTaskWrapper wrapper)
             {
                 Warehouse.RemoveWarehouseTask(wrapper.TypedTask);
             }
@@ -97,11 +103,16 @@ namespace PassengerJobs.Platforms
 
         public Car? TransferOneCarOfTask(PlatformTask task, bool loading)
         {
-            if (task is WarehouseTaskWrapper wrapper)
+            if (task is CityLoadTaskWrapper wrapper)
             {
-                return loading ?
+                var car = loading ?
                     Warehouse.LoadOneCarOfTask(wrapper.TypedTask) :
                     Warehouse.UnloadOneCarOfTask(wrapper.TypedTask);
+
+                if (!Warehouse.currentTasks.Contains(wrapper.TypedTask))
+                    Controller.OnTaskComplete(wrapper);
+
+                return car;
             }
             else
             {
@@ -165,32 +176,36 @@ namespace PassengerJobs.Platforms
 
     public sealed class RuralPlatformWrapper : IPlatformWrapper
     {
-        public readonly RuralLoadingMachine LoadingMachine;
+        public WarehouseMachine? Warehouse => _warehouse;
+        public readonly RuralLoadingMachine _warehouse;
+        public PlatformController Controller { get; }
 
-        public RuralPlatformWrapper(RuralLoadingMachine machine)
+        public RuralPlatformWrapper(RuralLoadingMachine machine, PlatformController controller)
         {
-            LoadingMachine = machine;
+            _warehouse = machine;
+            Controller = controller;
         }
 
-        public string Id => LoadingMachine.Id;
-        public string DisplayId => LoadingMachine.Id;
-        public string TrackId => LoadingMachine.IsYardTrack ? LoadingMachine.Track.ID.ToString() : LoadingMachine.Id;
+        public string Id => _warehouse.ID;
+        public string DisplayId => _warehouse.ID;
+        public string TrackId => _warehouse.IsYardTrack ? _warehouse.WarehouseTrack.ID.ToString() : _warehouse.ID;
 
         public Task GenerateBoardingTask(List<Car> cars, bool loading, float totalCapacity, bool isFinal)
         {
-            return new RuralLoadingTask(cars, LoadingMachine, totalCapacity, loading, isFinal);
+            WarehouseTaskType taskType = loading ? WarehouseTaskType.Loading : WarehouseTaskType.Unloading;
+            return new RuralLoadingTask(cars, taskType, _warehouse, CargoInjector.PassengerCargo.v1, totalCapacity, isLastTask: isFinal);
         }
 
         public List<PlatformTask> GetLoadableTasks(bool loading)
         {
-            return LoadingMachine.GetLoadableTasks(loading).ToList();
+            return _warehouse.GetLoadableTasks(loading).ToList();
         }
 
         public void RemoveTask(PlatformTask task)
         {
             if (task is RuralLoadTaskWrapper ruralTask)
             {
-                LoadingMachine.RemoveTask(ruralTask.TypedTask);
+                _warehouse.RemoveWarehouseTask(ruralTask.TypedTask);
             }
             else
             {
@@ -200,9 +215,16 @@ namespace PassengerJobs.Platforms
 
         public Car? TransferOneCarOfTask(PlatformTask task, bool loading)
         {
-            if (task is RuralLoadTaskWrapper ruralTask)
+            if (task is RuralLoadTaskWrapper wrapper)
             {
-                return LoadingMachine.TransferOneCarOfTask(ruralTask.TypedTask, loading);
+                var car = loading ?
+                    _warehouse.LoadOneCarOfTask(wrapper.TypedTask) :
+                    _warehouse.UnloadOneCarOfTask(wrapper.TypedTask);
+
+                if (!_warehouse.currentTasks.Contains(wrapper.TypedTask))
+                    Controller.OnTaskComplete(wrapper);
+
+                return car;
             }
             else
             {
@@ -213,17 +235,17 @@ namespace PassengerJobs.Platforms
 
         public bool AreCarsStoppedAtPlatform(List<Car> cars)
         {
-            return LoadingMachine.AreCarsStoppedAtPlatform(cars);
+            return _warehouse.AreCarsStoppedAtPlatform(cars);
         }
 
         public bool IsAnyTrainPresent()
         {
-            return LoadingMachine.AnyLoadableTrainPresent();
+            return _warehouse.AnyLoadableTrainPresent();
         }
 
         public bool IsAnyTrainPresent(bool loading)
         {
-            return LoadingMachine.AnyLoadableTrainPresent(loading);
+            return _warehouse.AnyLoadableTrainPresent(loading);
         }
     }
 }

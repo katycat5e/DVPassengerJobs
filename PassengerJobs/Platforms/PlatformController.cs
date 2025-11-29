@@ -2,6 +2,7 @@
 using DV.WeatherSystem;
 using PassengerJobs.Generation;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -10,13 +11,12 @@ namespace PassengerJobs.Platforms
 {
     public class PlatformController : MonoBehaviour
     {
+        private const float BELL_AUDIBLE_DISTANCE_SQ = 250000f;
+        private const float ANCHOR_SEARCH_TIMEOUT = 10f;
+
         private static readonly AudioClip? _loadCompletedSound = null;
         private static readonly Dictionary<string, PlatformController> _trackToControllerMap = new();
-
-        public static void PlayBellSound()
-        {
-            _loadCompletedSound.Play2D();
-        }
+        public static IReadOnlyList<PlatformController> AllPlatformControllers => _trackToControllerMap.Values.ToList();
 
         public static PlatformController GetControllerForTrack(string id)
         {
@@ -45,11 +45,24 @@ namespace PassengerJobs.Platforms
         }
 
         public PassStationData.PlatformData PlatformData = null!;
-        public IPlatformWrapper Platform = null!;
-        public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
+        private IPlatformWrapper _platform = null!;
+        public IPlatformWrapper Platform
+        {
+            get => _platform;
+            set
+            {
+                if (value != null)
+                {
+                    if (_platform != null)
+                        _trackToControllerMap.Remove(_platform.TrackId);
 
-        public bool IsLoading { get; private set; } = false;
-        public bool IsUnloading { get; private set; } = false;
+                    _platform = value;
+                    _trackToControllerMap[_platform.TrackId] = this;
+                }
+            }
+        }
+
+        public SignPrinter[] Signs { get; private set; } = Array.Empty<SignPrinter>();
 
         private string CurrentTimeString => WeatherDriver.Instance.manager.DateTime.ToString("HH:mm");
         private string _lastTimeString = string.Empty;
@@ -66,9 +79,14 @@ namespace PassengerJobs.Platforms
             }
         }
 
+        private Transform? _anchor = null;
+        private float _bell_max_distance_sq = BELL_AUDIBLE_DISTANCE_SQ;
+
         public event EventHandler<JobAddedArgs>? JobAdded;
         public event EventHandler<JobRemovedArgs>? JobRemoved;
         public event EventHandler<CarTransferredArgs>? CarTransferred;
+        public event EventHandler<TaskCompleteArgs>? TaskComplete;
+        public event EventHandler<PlatformStateChangeArgs>? PlatformStateChange;
 
         static PlatformController()
         {
@@ -85,16 +103,50 @@ namespace PassengerJobs.Platforms
             }
         }
 
-        public void Start()
+        protected IEnumerator Start()
         {
-            _trackToControllerMap[Platform.TrackId] = this;
             Signs = SignManager.CreatePlatformSigns(Platform.Id).ToArray();
 
             _stateMachine = new PlatformControllerStateMachine(this);
+
+            yield return new WaitUntil(() => Platform != null);
+
+            float timeOut = Time.time;
+            while (_anchor == null && (Time.time - timeOut) <= ANCHOR_SEARCH_TIMEOUT)
+            {
+                var _stationGenerationRange = transform?.parent?.GetComponentInChildren<StationJobGenerationRange>(true);
+                var _ruralFastTravelDestination = transform?.GetComponentsInChildren<Transform>(true)
+                    .Where(t => t.name == RuralStationBuilder.TELEPORT_ANCHOR)
+                    .FirstOrDefault();
+
+                if (_stationGenerationRange != null)
+                {
+                    _anchor = _stationGenerationRange.transform;
+                    _bell_max_distance_sq = _stationGenerationRange.generateJobsSqrDistance;
+
+                    yield break;
+                }
+                else if (_ruralFastTravelDestination != null)
+                {
+                    _anchor = _ruralFastTravelDestination?.transform;
+
+                    yield break;
+                }
+
+                yield return null;
+            }
+
+            PJMain.Log($"Failed to find anchor for platform {Platform.Id}, max distance sq: {_bell_max_distance_sq}");
         }
 
-        private void Update()
+        protected void Update()
         {
+            if (MultiplayerShim.IsInitialized && !MultiplayerShim.IsHost)
+            {
+                RefreshDisplays();
+                return;
+            }
+
             if (_loadUnloadRoutine is null)
             {
                 _stateMachine.Reset();
@@ -102,9 +154,30 @@ namespace PassengerJobs.Platforms
             }
         }
 
-        private void OnDisable()
+        protected void OnDisable()
         {
             StopAllCoroutines();
+        }
+
+        protected void OnDestroy()
+        {
+            if (Platform != null)
+            {
+                _trackToControllerMap.Remove(Platform.TrackId);
+            }
+        }
+
+        public void PlayBellSound()
+        {
+            if (_anchor is not null)
+            {
+                var distanceSq = (PlayerManager.PlayerTransform.position - _anchor.position).sqrMagnitude;
+
+                if (distanceSq > _bell_max_distance_sq)
+                    return;
+            }
+
+            _loadCompletedSound.Play2D();
         }
 
         #region Sign Handling
@@ -183,6 +256,16 @@ namespace PassengerJobs.Platforms
         public void OnCarTransferred(Car car, int totalCarsInTrain, bool isLoading)
         {
             CarTransferred?.Invoke(this, new(car, totalCarsInTrain, isLoading));
+        }
+
+        public void OnTaskComplete(PlatformTask task)
+        {
+            TaskComplete?.Invoke(this, new(task.Task));
+        }
+
+        public void OnPlatformStateChange(Job? job, LocalizationKey newDisplay)
+        {
+            PlatformStateChange?.Invoke(this, new(job, newDisplay));
         }
 
         #endregion

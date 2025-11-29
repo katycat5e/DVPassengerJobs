@@ -24,8 +24,8 @@ namespace PassengerJobs.Platforms
 
         public object? Current => new WaitForSecondsRealtime(LOAD_DELAY);
 
-        private PlatformController _controller;
-        private IPlatformWrapper _platform;
+        private readonly PlatformController _controller;
+        private readonly IPlatformWrapper _platform;
 
         public PlatformControllerStateMachine(PlatformController controller)
         {
@@ -62,7 +62,14 @@ namespace PassengerJobs.Platforms
                 boardingFinished &= !((newState == PlatformState.Loading) || (newState == PlatformState.Unloading));
                 if (boardingFinished)
                 {
-                    PlatformController.PlayBellSound();
+                    // Only send SIGN_EMPTY if we came from Unloading (final stop)
+                    // If we came from Loading, send SIGN_DEPARTING (intermediate stop)
+                    LocalizationKey finalState = (_platformState == PlatformState.Unloading)
+                        ? LocalizationKey.SIGN_EMPTY
+                        : LocalizationKey.SIGN_DEPARTING;
+
+                    _controller.OnPlatformStateChange(null, finalState);
+                    _controller.PlayBellSound();
                 }
 
                 _platformState = newState;
@@ -119,6 +126,7 @@ namespace PassengerJobs.Platforms
             message += LocalizationKey.SIGN_INCOMING_TRAIN.L(task.Job.ID, task.Job.chainData.chainOriginYardId);
 
             _controller.OverrideText = message;
+            _controller.OnPlatformStateChange(task.Job, LocalizationKey.SIGN_INCOMING_TRAIN);
 
             // perform transfer
             var transferredCar = _platform.TransferOneCarOfTask(task, false);
@@ -153,6 +161,7 @@ namespace PassengerJobs.Platforms
             message += LocalizationKey.SIGN_OUTGOING_TRAIN.L(task.Job.ID, task.Job.chainData.chainDestinationYardId);
 
             _controller.OverrideText = message;
+            _controller.OnPlatformStateChange(task.Job, LocalizationKey.SIGN_OUTGOING_TRAIN);
 
             // perform transfer
             var transferredCar = _platform.TransferOneCarOfTask(task, true);
@@ -193,7 +202,7 @@ namespace PassengerJobs.Platforms
         private void DebugLog(string message)
         {
 #if DEBUG
-            PJMain.Log($"Platform {_platform?.Id}: {message}");
+            PJMain.LogDebug($"Platform {_platform?.Id}: {message}");
 #endif
         }
     }

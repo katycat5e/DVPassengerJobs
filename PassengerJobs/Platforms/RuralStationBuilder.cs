@@ -26,7 +26,7 @@ namespace PassengerJobs.Platforms
         private const float LOADING_ZONE_HALF_LENGTH = LOADING_ZONE_LENGTH / 2;
 
         private const string LAMPS_ANCHOR = "[lamps]";
-        private const string TELEPORT_ANCHOR = "[teleport]";
+        public const string TELEPORT_ANCHOR = "[teleport]";
 
         public static RuralStationData? CreateStation(StationConfig.RuralStation station, RuralStationData? existing = null)
         {
@@ -44,7 +44,7 @@ namespace PassengerJobs.Platforms
             
             if (existing is not null)
             {
-                tasks = existing.Platform.Tasks;
+                tasks = existing.Platform.currentTasks.OfType<RuralLoadingTask>();
             }
             else
             {
@@ -88,12 +88,12 @@ namespace PassengerJobs.Platforms
 
             PlatformController controller = platformObj!.AddComponent<PlatformController>();
 
-            var platform = new RuralPlatformWrapper(loadingMachine);
+            var platform = new RuralPlatformWrapper(loadingMachine, controller);
             controller.Platform = platform;
 
             foreach (var task in tasks)
             {
-                loadingMachine.AddTask(task);
+                loadingMachine.AddWarehouseTask(task);
             }
 
             return new RuralStationData(loadingMachine, controller);
@@ -101,7 +101,7 @@ namespace PassengerJobs.Platforms
 
         public static GameObject? GenerateDecorations(RuralLoadingMachine platform, StationConfig.RuralStation config)
         {
-            var railTrack = platform.Track.RailTrack();
+            var railTrack = platform.WarehouseTrack.RailTrack();
 
             EQPoint[] pointSet = railTrack.GetKinkedPointSet().points;
             EQPoint lowPoint, highPoint;
@@ -113,23 +113,23 @@ namespace PassengerJobs.Platforms
             }
             catch (System.IndexOutOfRangeException)
             {
-                PJMain.Error($"Rural station {platform.Id} track points don't exist!");
+                PJMain.Error($"Rural station {platform.ID} track points don't exist!");
                 return null;
             }
 
             if (!platform.IsYardTrack)
             {
-                GenerateTrackSigns(lowPoint, highPoint, platform.Id, railTrack);
+                GenerateTrackSigns(lowPoint, highPoint, platform.ID, railTrack);
             }
 
-            bool isInsideStation = StationController.GetStationByYardID(platform.Id);
+            bool isInsideStation = StationController.GetStationByYardID(platform.ID);
 
-            (var holder, var decorations) = GeneratePlatformMeshes(lowPoint, highPoint, platform.Id, railTrack, config, isInsideStation);
+            (var holder, var decorations) = GeneratePlatformMeshes(lowPoint, highPoint, platform.ID, railTrack, config, isInsideStation);
 
             if (!isInsideStation)
             {
                 var tpAnchor = decorations.transform.Find(TELEPORT_ANCHOR);
-                CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(tpAnchor, platform.Id, platform.MarkerAngle ?? 0));
+                CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(tpAnchor, platform.ID, platform.MarkerAngle ?? 0));
             }
 
             return holder;
@@ -249,18 +249,18 @@ namespace PassengerJobs.Platforms
 
         public static void DestroyDecorations(RuralLoadingMachine platform)
         {
-            var trackTransform = platform.Track.RailTrack().transform;
+            var trackTransform = platform.WarehouseTrack.RailTrack().transform;
 
-            var sign0 = trackTransform.Find($"[track id] {platform.Id} 0");
+            var sign0 = trackTransform.Find($"[track id] {platform.ID} 0");
             if (sign0) Object.Destroy(sign0.gameObject);
 
-            var sign1 = trackTransform.Find($"[track id] {platform.Id} 1");
+            var sign1 = trackTransform.Find($"[track id] {platform.ID} 1");
             if (sign1) Object.Destroy(sign1.gameObject);
 
-            var mapLabel = MarkerController.transform.Find($"MapPaper/Names/PJ_MapLabel_{platform.Id}");
+            var mapLabel = MarkerController.transform.Find($"MapPaper/Names/PJ_MapLabel_{platform.ID}");
             if (mapLabel) Object.Destroy(mapLabel.gameObject);
 
-            var concrete = trackTransform.Find($"[platform] {platform.Id}");
+            var concrete = trackTransform.Find($"[platform] {platform.ID}");
             if (concrete) Object.Destroy(concrete.gameObject);
         }
 

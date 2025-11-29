@@ -1,0 +1,12 @@
+{
+  "Id": "PassengerJobs",
+  "DisplayName": "Passenger Jobs",
+  "Author": "Katycat",
+  "Version": "5.1.1",
+  "AssemblyName": "PassengerJobs.dll",
+  "EntryMethod": "PassengerJobs.PJMain.Load",
+  "Requirements": ["DVLangHelper"],
+  "LoadAfter": ["SlicedPassengerCars","SkinManagerMod","DVLangHelper","Multiplayer"],
+  "HomePage": "https://www.nexusmods.com/derailvalley/mods/203",
+  "Repository": "https://raw.githubusercontent.com/katycat5e/DVPassengerJobs/refs/heads/master/pj_repository.json"
+}

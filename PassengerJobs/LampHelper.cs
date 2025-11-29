@@ -7,7 +7,7 @@ namespace PassengerJobs
 {
     internal static class LampHelper
     {
-        private static Dictionary<Material, Material> s_cache = new();
+        private readonly static Dictionary<Material, Material> s_cache = new();
         private static TrainCarLivery? _de2;
         private static TrainCarLivery? _pax;
         private static Headlight? s_redGlare;
