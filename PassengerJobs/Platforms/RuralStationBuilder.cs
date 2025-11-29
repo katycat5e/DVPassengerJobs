@@ -96,8 +96,7 @@ namespace PassengerJobs.Platforms
                 loadingMachine.AddWarehouseTask(task);
             }
 
-
-            return new RuralStationData(loadingMachine);
+            return new RuralStationData(loadingMachine, controller);
         }
 
         public static GameObject? GenerateDecorations(RuralLoadingMachine platform, StationConfig.RuralStation config)

@@ -128,7 +128,7 @@ namespace PassengerJobs
                 LocalizationAPI.L(startStation.LocalizationKey), startStation.Type, startStation.StationColor,
                 LocalizationAPI.L(endStation.LocalizationKey), endStation.Type, endStation.StationColor,
                 jobData.transportingCars,
-                trainLength, trainMass, trainValue, bonusTime, payment.ToString(),
+                trainLength, trainMass, trainValue, bonusTime, payment.ToString("N0", LocalizationAPI.CC),
                 (pageNum > 0) ? pageNum.ToString() : string.Empty,
                 (totalPages > 0) ? totalPages.ToString() : string.Empty
             );
