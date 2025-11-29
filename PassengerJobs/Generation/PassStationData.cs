@@ -102,7 +102,7 @@ namespace PassengerJobs.Generation
 
         public readonly PlatformController Controller;
 
-        public string YardID => Platform.Id;
+        public string YardID => Platform.ID;
 
         public RuralStationData(RuralLoadingMachine platform, PlatformController controller)
         {
