@@ -27,8 +27,8 @@ namespace PassengerJobs
 
             Translations = new TranslationInjector("cc.foxden.passenger_jobs");
             Translations.AddTranslationsFromCsv(Path.Combine(ModEntry.Path, "translations.csv"));
-            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&gid=633527484");
-
+            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&gid=1132930393");
+     
             // inject licenses
             if (!LicenseInjector.RegisterPassengerLicenses()) return false;
             
