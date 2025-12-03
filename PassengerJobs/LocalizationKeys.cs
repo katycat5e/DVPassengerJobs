@@ -41,6 +41,9 @@ namespace PassengerJobs
         SIGN_BOARDING,
         SIGN_DEPARTING,
         SIGN_EMPTY,
+
+        // Messages
+        MIGRATION_LICENSE_REFUND,
     }
 
     public static class LocalizationKeyExtensions

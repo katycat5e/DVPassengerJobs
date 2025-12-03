@@ -22,6 +22,7 @@
 		<Reference Include="DV.PointSet" />
 		<Reference Include="DV.RailTrack" />
 		<Reference Include="DV.Simulation" />
+		<Reference Include="DV.UI" />
 		<Reference Include="DV.Utils" />
 		<Reference Include="DV.WeatherSystem" />
 		<Reference Include="DVLangHelper.Data" />
