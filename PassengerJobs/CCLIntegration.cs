@@ -1,4 +1,5 @@
 ﻿using DV.ThingTypes;
+using PassengerJobs.Generation;
 using System;
 using System.Reflection;
 using UnityModManagerNet;
@@ -8,9 +9,9 @@ namespace PassengerJobs
     internal class CCLIntegration
     {
         private static bool _loaded = false;
-        private static MethodInfo? _getTrainset;
-        private static MethodInfo? _trainsetEnabled;
-        private static MethodInfo? _liveryEnabled;
+        private static MethodInfo? s_getTrainset;
+        private static MethodInfo? s_trainsetEnabled;
+        private static MethodInfo? s_liveryEnabled;
 
         public static bool Loaded
         {
@@ -31,10 +32,20 @@ namespace PassengerJobs
             if (ccl == null) return;
 
             var manager = ccl.Assembly.GetType("CCL.Importer.CarManager");
-            _getTrainset = manager.GetMethod("GetTrainsetForLivery");
-            _trainsetEnabled = manager.GetMethod("IsTrainsetEnabled");
-            _liveryEnabled = manager.GetMethod("IsCarLiveryEnabled");
+            s_getTrainset = manager.GetMethod("GetTrainsetForLivery");
+            s_trainsetEnabled = manager.GetMethod("IsTrainsetEnabled");
+            s_liveryEnabled = manager.GetMethod("IsCarLiveryEnabled");
             _loaded = true;
+        }
+
+        private static TrainCarLivery[] GetTrainset(TrainCarLivery livery)
+        {
+            if (s_getTrainset == null)
+            {
+                return Array.Empty<TrainCarLivery>();
+            }
+
+            return (TrainCarLivery[])s_getTrainset.Invoke(null, new object[] { livery });
         }
 
         public static bool TryGetTrainset(TrainCarLivery livery, out TrainCarLivery[] result)
@@ -49,28 +60,44 @@ namespace PassengerJobs
             return result.Length > 0;
         }
 
-        private static TrainCarLivery[] GetTrainset(TrainCarLivery livery)
-        {
-            if (_getTrainset == null)
-            {
-                return Array.Empty<TrainCarLivery>();
-            }
-
-            return (TrainCarLivery[])_getTrainset.Invoke(null, new object[] { livery });
-        }
-
         public static bool IsTrainsetEnabled(TrainCarLivery[] trainset)
         {
-            if (!Loaded || _trainsetEnabled == null) return true;
+            if (!Loaded || s_trainsetEnabled == null) return true;
 
-            return (bool)_trainsetEnabled.Invoke(null, new object[] { trainset, true });
+            return (bool)s_trainsetEnabled.Invoke(null, new object[] { trainset, true });
         }
 
-        public static bool IsLiveryEnabled(TrainCarLivery livery)
+        public static bool IsLiveryEnabled(TrainCarLivery livery, RouteType route)
         {
-            if (!Loaded || _liveryEnabled == null) return true;
+            if (!Loaded || s_liveryEnabled == null) return true;
 
-            return (bool)_liveryEnabled.Invoke(null, new object[] { livery });
+            var enabled = (bool)s_liveryEnabled.Invoke(null, new object[] { livery });
+
+            var t = livery.GetType();
+            var f = t.GetField(route == RouteType.Express ? "AllowOnExpressRoutes" : "AllowOnRegionalRoutes");
+
+            if (f != null) return enabled && (bool)f.GetValue(livery);
+
+            return enabled;
+        }
+
+        public static bool IsCCLPrefered()
+        {
+            return PJMain.Settings.PreferCCL;
+        }
+
+        public static int GetMaxRepeatedSpawn(TrainCarLivery livery)
+        {
+            if (!Loaded) return int.MaxValue;
+
+            var t = livery.GetType();
+            var f = t.GetField("MaxRepeatedSpawn");
+
+            if (f == null) return int.MaxValue;
+
+            var value = (int)f.GetValue(livery);
+
+            return value > 0 ? value : int.MaxValue;
         }
     }
 }

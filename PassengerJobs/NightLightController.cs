@@ -5,15 +5,29 @@ namespace PassengerJobs
 {
     public abstract class NightLightController : MonoBehaviour
     {
-        private bool _currentlyLit;
-        private SpriteLightsEvent _events = null!;
-        private Light[] _lights = null!;
+        private static SpriteLightsEvent? s_events = null;
 
+        private static SpriteLightsEvent Events
+        {
+            get
+            {
+                if (s_events == null)
+                {
+                    s_events = WorldTimeBasedEvents.Instance.GetComponent<SpriteLightsEvent>();
+                }
+
+                return s_events;
+            }
+        }
+
+        public static bool StreetlightState => Events.LightTypeOn[(int)SpriteLightType.StreetSpriteLight];
+
+        private bool _currentlyLit;
+        private Light[] _lights = null!;
         public bool CurrentlyLit => _currentlyLit;
 
         public virtual void Awake()
         {
-            _events = WorldTimeBasedEvents.Instance.GetComponent<SpriteLightsEvent>();
             _lights = GetComponentsInChildren<Light>();
         }
 
@@ -34,10 +48,7 @@ namespace PassengerJobs
             AlwaysUpdateLightsOn(lightsOn);
         }
 
-        protected virtual bool GetNewLightState()
-        {
-            return _events.LightTypeOn[(int)SpriteLightType.StreetSpriteLight];
-        }
+        protected virtual bool GetNewLightState() => StreetlightState;
 
         protected virtual void SetLightsOn(bool lightsOn)
         {

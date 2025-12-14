@@ -215,23 +215,40 @@ namespace PassengerJobs.Generation
                 if (potentialStart == null) return null;
                 startPlatform = new RouteTrack(_stationData, potentialStart);
 
-                destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests);
+                var routeType = jobType.GetRouteType();
+
+                destinations = RouteManager.GetRoute(_stationData, routeType, currentDests);
                 if (destinations == null) return null;
 
-                double minLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
-                minLength = (minLength * LENGTH_MULTIPLIER) - WIGGLE_DISTANCE;
+                double maxAllowedLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
+                maxAllowedLength = (maxAllowedLength * LENGTH_MULTIPLIER) - WIGGLE_DISTANCE;
 
-                TrainCarLivery livery = ConsistManager.GetPassengerCars(minLength).PickOne()!;
+                TrainCarLivery livery = ConsistManager.GetFilteredPassengerCars(routeType, maxAllowedLength).PickOne()!;
 
                 if (CCLIntegration.TryGetTrainset(livery, out var trainset) && CCLIntegration.IsTrainsetEnabled(trainset))
                 {
+                    // Use the trainset itself directly. Length has already been checked, so it fits.
                     jobCarTypes = trainset.ToList();
                     randomOrientation = false;
+
+                    // Check if it's possible to have more of the trainset spawn.
+                    var count = CCLIntegration.GetMaxRepeatedSpawn(livery);
+                    var current = 1;
+                    var length = CarSpawner.Instance.GetTotalCarLiveriesLength(jobCarTypes, true);
+                    var total = length + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
+
+                    while (total < maxAllowedLength && current < count)
+                    {
+                        jobCarTypes.AddRange(trainset);
+                        current++;
+                        total += CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
+                    }
                 }
                 else
                 {
+                    // Regular single livery consist.
                     double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
-                    nTotalCars = (int)Math.Floor(minLength / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
+                    nTotalCars = (int)Math.Floor(maxAllowedLength / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
 
                     if (jobType == PassJobType.Local)
                     {
@@ -242,6 +259,7 @@ namespace PassengerJobs.Generation
                         nTotalCars -= 2;
                     }
 
+                    nTotalCars = Math.Min(nTotalCars, CCLIntegration.GetMaxRepeatedSpawn(livery));
                     jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
                 }
             }
@@ -361,7 +379,7 @@ namespace PassengerJobs.Generation
             RouteTrack startTrack, RouteResult route, List<TrainCarLivery> carTypes,
             ExpressStationsChainData chainData, float timeLimit, float initialPay, bool randomOrientation)
         {
-            // Spawn the cars
+            // Spawn the cars.
             RailTrack startRT = startTrack.Track.RailTrack();
 
             var spawnedCars = SpawnCars();
@@ -395,8 +413,9 @@ namespace PassengerJobs.Generation
                 // Same but the other side.
                 if (!startRT.outIsConnected)
                 {
-                    var length = CarSpawner.Instance.GetTotalCarLiveriesLength(carTypes, true);
-                    return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, startTrack.Length - length - WIGGLE_DISTANCE,
+                    // It's defined by the distance from the start of the "in" of the track, so position must be reversed.
+                    var position = startTrack.Length - CarSpawner.Instance.GetTotalCarLiveriesLength(carTypes, true);
+                    return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, position - WIGGLE_DISTANCE,
                         flipConsist, randomOrientation, false);
                 }
 
