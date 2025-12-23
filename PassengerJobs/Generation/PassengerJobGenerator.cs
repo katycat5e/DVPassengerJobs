@@ -254,12 +254,12 @@ namespace PassengerJobs.Generation
                     {
                         nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
                     }
-                    else
+                    else if (nTotalCars > 6)
                     {
                         nTotalCars -= 2;
                     }
 
-                    nTotalCars = Math.Min(nTotalCars, CCLIntegration.GetMaxRepeatedSpawn(livery));
+                    nTotalCars = Mathf.Min(nTotalCars, CCLIntegration.GetMaxRepeatedSpawn(livery), Controller.proceduralJobsRuleset.maxCarsPerJob);
                     jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
                 }
             }

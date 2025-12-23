@@ -1,4 +1,5 @@
-﻿using DV.ThingTypes;
+﻿using DV.Logic.Job;
+using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using UnityEngine;
 
@@ -32,6 +33,11 @@ namespace PassengerJobs.Injectors
 
             DV.Globals.G.Types.cargos.Add(passCargo);
             PassengerCargo = passCargo;
+        }
+
+        public static bool CanLoadPassengers(Car car)
+        {
+            return PassengerCargo.IsLoadableOnCarType(car.carType.parentType);
         }
     }
 }
