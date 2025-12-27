@@ -18,6 +18,7 @@ namespace PassengerJobs.Generation
         private const float BASE_TO_BONUS_MULTIPLIER = 2;
         private const float WIGGLE_DISTANCE = 4;
         private const float LENGTH_MULTIPLIER = 0.95f;
+        private const float STOPPING_TIME = 25f;
 
         private const int MAX_REGIONAL_CARS = 4;
 
@@ -290,10 +291,10 @@ namespace PassengerJobs.Generation
 
             // calculate haul payment
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);
-            float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false);
+            float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false) * GetTimeMultiplier(jobType);
+            bonusLimit += GetTimeForStops(destinations);
 
             float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
-
 
             // scale job payment depending on settings
             float wageScale = PJMain.Settings.UseCustomWages ? BASE_WAGE_SCALE : 1;
@@ -344,6 +345,15 @@ namespace PassengerJobs.Generation
 
             return totalDistance;
         }
+
+        private static float GetTimeMultiplier(JobType jobType) => jobType switch
+        {
+            PassJobType.Local => 1.1f,
+            PassJobType.Express => 0.8f,
+            _ => 1.0f,
+        };
+
+        private static float GetTimeForStops(RouteResult route) => Mathf.Max(0, route.Tracks.Length - 1) * STOPPING_TIME;
 
         private static PaymentCalculationData GetJobPaymentData(IEnumerable<TrainCarLivery> carTypes, bool empty = false)
         {

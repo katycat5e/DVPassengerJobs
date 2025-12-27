@@ -3,7 +3,6 @@ using DV.ThingTypes;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
