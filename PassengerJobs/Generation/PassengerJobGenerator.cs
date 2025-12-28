@@ -18,7 +18,9 @@ namespace PassengerJobs.Generation
         private const float BASE_TO_BONUS_MULTIPLIER = 2;
         private const float WIGGLE_DISTANCE = 4;
         private const float LENGTH_MULTIPLIER = 0.95f;
-        private const float STOPPING_TIME = 25f;
+        // Time taken for a stop along the route.
+        // This should count both the unloading/loading + stopping and going.
+        private const float STOPPING_TIME = 45f;
 
         private const int MAX_REGIONAL_CARS = 4;
 
@@ -346,13 +348,15 @@ namespace PassengerJobs.Generation
             return totalDistance;
         }
 
+        // Express jobs were much easier to complete on time than locals, so this artifically changes the balance.
         private static float GetTimeMultiplier(JobType jobType) => jobType switch
         {
             PassJobType.Local => 1.1f,
-            PassJobType.Express => 0.8f,
+            PassJobType.Express => 0.7f,
             _ => 1.0f,
         };
 
+        // The regular time calculation doesn't account for stops during the route, which this should help with.
         private static float GetTimeForStops(RouteResult route) => Mathf.Max(0, route.Tracks.Length - 1) * STOPPING_TIME;
 
         private static PaymentCalculationData GetJobPaymentData(IEnumerable<TrainCarLivery> carTypes, bool empty = false)
@@ -371,16 +375,7 @@ namespace PassengerJobs.Generation
                 totalCars += 1;
             }
 
-            Dictionary<CargoType, int> cargoTypeDict;
-            if (empty)
-            {
-                cargoTypeDict = new Dictionary<CargoType, int>(0);
-            }
-            else
-            {
-                cargoTypeDict = new Dictionary<CargoType, int>(1) { { CargoInjector.PassengerCargo.v1, totalCars } };
-            }
-
+            Dictionary<CargoType, int> cargoTypeDict = empty ? new(0) : new(1) { { CargoInjector.PassengerCargo.v1, totalCars } };
             return new PaymentCalculationData(carTypeCount, cargoTypeDict);
         }
 
