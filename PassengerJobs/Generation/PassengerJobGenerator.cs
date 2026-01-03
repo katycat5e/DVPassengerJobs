@@ -20,7 +20,7 @@ namespace PassengerJobs.Generation
         private const float LENGTH_MULTIPLIER = 0.95f;
         // Time taken for a stop along the route.
         // This should count both the unloading/loading + stopping and going.
-        private const float STOPPING_TIME = 45f;
+        private const float STOPPING_TIME = 90f;
 
         private const int MAX_REGIONAL_CARS = 4;
 
@@ -352,7 +352,7 @@ namespace PassengerJobs.Generation
         private static float GetTimeMultiplier(JobType jobType) => jobType switch
         {
             PassJobType.Local => 1.1f,
-            PassJobType.Express => 0.7f,
+            PassJobType.Express => 0.8f,
             _ => 1.0f,
         };
 
