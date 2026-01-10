@@ -29,6 +29,9 @@ namespace PassengerJobs.Platforms
     }
     public class RuralTaskData : TaskData
     {
+        public string stationId;
+        public bool isLoading;
+
         public RuralTaskData(RuralLoadingTask task) : base(
             RuralLoadingTask.TaskType,
             task.state,
@@ -44,6 +47,8 @@ namespace PassengerJobs.Platforms
             false,
             false)
         {
+            stationId = task.warehouseMachine.ID;
+            isLoading = task.IsLoading;
         }
     }
 
