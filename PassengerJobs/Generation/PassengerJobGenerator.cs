@@ -9,10 +9,25 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
+using ThreadTask = System.Threading.Tasks.Task;
+
 namespace PassengerJobs.Generation
 {
     public class PassengerJobGenerator : MonoBehaviour
     {
+        private class DelayedGenTracker
+        {
+            public bool Finished = false;
+            public PassengerChainController? Controller;
+            public int FrameCount = 0;
+
+            public void Finish(PassengerChainController? controller)
+            {
+                Finished = true;
+                Controller = controller;
+            }
+        }
+
         private static readonly Dictionary<string, PassengerJobGenerator> _instances = new();
         private const float BASE_WAGE_SCALE = 0.5f;
         private const float BASE_TO_BONUS_MULTIPLIER = 2;
@@ -171,134 +186,157 @@ namespace PassengerJobs.Generation
             _generationRoutine = StartCoroutine(GeneratePassengerJobs());
         }
 
-        private static readonly WaitForSeconds _generationDelay = WaitFor.Seconds(0.2f);
-
         private IEnumerator GeneratePassengerJobs()
         {
             int watchdog = 15;
+
             while ((watchdog > 0) && _stationData.TerminusTracks.GetUnusedTracks().Any())
             {
-                yield return _generationDelay;
+                yield return WaitFor.FixedUpdate;
 
-                try
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var tracker = new DelayedGenTracker();
+
+                while (!tracker.Finished)
                 {
-                    GenerateJob(_nextJobType);
-                    _nextJobType = (_nextJobType == PassJobType.Express) ? PassJobType.Local : PassJobType.Express;
-                }
-                catch (Exception ex)
-                {
-                    PJMain.Error($"Error generating job @ {_stationData.YardID}", ex);
+                    yield return GenerateJobDelayed(_nextJobType, tracker);
                 }
 
+                _nextJobType = (_nextJobType == PassJobType.Express) ? PassJobType.Local : PassJobType.Express;
                 watchdog--;
+                sw.Stop();
+
+                if (tracker.Controller == null) PJMain.Log($"No job was generated");
+                PJMain.Log($"Total gen time: {sw.Elapsed.TotalSeconds:F4}s / Frames: {tracker.FrameCount}");
             }
 
             _generationRoutine = null;
         }
 
-        public PassengerChainController? GenerateJob(JobType jobType, PassConsistInfo? consistInfo = null)
+        public PassengerChainController? GenerateJob(JobType jobType, PassConsistInfo consistInfo)
         {
-            int nTotalCars;
+            var currentDests = Controller.logicStation.availableJobs
+                .Where(j => PassJobType.IsPJType(j.jobType))
+                .Select(j => j.chainData.chainDestinationYardId);
+
+            // Use existing consist.
+            double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
+            var destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests, consistLength);
+
+            if (destinations == null) return null;
+            List<TrainCarLivery> jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();
+
+            return GenerateController(jobType, consistInfo, jobCarTypes, consistInfo.track, destinations, false);
+        }
+
+        private IEnumerator GenerateJobDelayed(JobType jobType, DelayedGenTracker tracker)
+        {
+            bool randomOrientation = true;
             List<TrainCarLivery> jobCarTypes;
-            
             RouteTrack startPlatform;
-            RouteResult? destinations;
+            RouteResult? destinations = null;
 
             var currentDests = Controller.logicStation.availableJobs
                 .Where(j => PassJobType.IsPJType(j.jobType))
                 .Select(j => j.chainData.chainDestinationYardId);
 
-            bool randomOrientation = true;
+            // Establish the starting consist and its storage location.
+            var potentialStart = _stationData.TerminusTracks.GetUnusedTracks().PickOne();
+            if (potentialStart == null) goto ReturnEmpty;
+            startPlatform = new RouteTrack(_stationData, potentialStart);
 
-            // Establish the starting consist and its storage location
-            if (consistInfo == null)
+            var routeType = jobType.GetRouteType();
+            var routeWorking = true;
+
+            // Execute this generation in a separate thread as it is expensive.
+            ThreadTask.Run(() =>
             {
-                // generate a new consist
-                var potentialStart = _stationData.TerminusTracks.GetUnusedTracks().PickOne();
-                if (potentialStart == null) return null;
-                startPlatform = new RouteTrack(_stationData, potentialStart);
-
-                var routeType = jobType.GetRouteType();
-
                 destinations = RouteManager.GetRoute(_stationData, routeType, currentDests);
-                if (destinations == null) return null;
+                routeWorking = false;
+            });
 
-                double maxAllowedLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
-                maxAllowedLength = (maxAllowedLength * LENGTH_MULTIPLIER) - WIGGLE_DISTANCE;
+            while (routeWorking)
+            {
+                yield return null;
+                tracker.FrameCount++;
+            }
 
-                TrainCarLivery livery = ConsistManager.GetFilteredPassengerCars(routeType, maxAllowedLength).PickOne()!;
+            if (destinations == null) goto ReturnEmpty;
 
-                if (CCLIntegration.TryGetTrainset(livery, out var trainset) && CCLIntegration.IsTrainsetEnabled(trainset))
+            double maxAllowedLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
+            maxAllowedLength = (maxAllowedLength * LENGTH_MULTIPLIER) - WIGGLE_DISTANCE;
+
+            TrainCarLivery livery = ConsistManager.GetFilteredPassengerCars(routeType, maxAllowedLength).PickOne()!;
+
+            if (CCLIntegration.TryGetTrainset(livery, out var trainset) && CCLIntegration.IsTrainsetEnabled(trainset))
+            {
+                // Use the trainset itself directly. Length has already been checked, so it fits.
+                jobCarTypes = trainset.ToList();
+                randomOrientation = false;
+
+                // Check if it's possible to have more of the trainset spawn.
+                var count = CCLIntegration.GetMaxRepeatedSpawn(livery);
+                var current = 1;
+                var length = CarSpawner.Instance.GetTotalCarLiveriesLength(jobCarTypes, true);
+                var total = length + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
+
+                while (total < maxAllowedLength && current < count)
                 {
-                    // Use the trainset itself directly. Length has already been checked, so it fits.
-                    jobCarTypes = trainset.ToList();
-                    randomOrientation = false;
-
-                    // Check if it's possible to have more of the trainset spawn.
-                    var count = CCLIntegration.GetMaxRepeatedSpawn(livery);
-                    var current = 1;
-                    var length = CarSpawner.Instance.GetTotalCarLiveriesLength(jobCarTypes, true);
-                    var total = length + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
-
-                    while (total < maxAllowedLength && current < count)
-                    {
-                        jobCarTypes.AddRange(trainset);
-                        current++;
-                        total += CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
-                    }
-                }
-                else
-                {
-                    // Regular single livery consist.
-                    double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
-                    nTotalCars = (int)Math.Floor(maxAllowedLength / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
-
-                    if (jobType == PassJobType.Local)
-                    {
-                        nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
-                    }
-                    else if (nTotalCars > 6)
-                    {
-                        nTotalCars -= 2;
-                    }
-
-                    nTotalCars = Mathf.Min(nTotalCars, CCLIntegration.GetMaxRepeatedSpawn(livery), Controller.proceduralJobsRuleset.maxCarsPerJob);
-                    jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
+                    jobCarTypes.AddRange(trainset);
+                    current++;
+                    total += CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
                 }
             }
             else
             {
-                // use existing consist
-                nTotalCars = consistInfo.cars.Count;
-                startPlatform = consistInfo.track;
+                // Regular single livery consist.
+                double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
+                int nTotalCars = (int)Math.Floor(maxAllowedLength / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
 
-                double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
-                destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests, consistLength);
-                if (destinations == null) return null;
+                if (jobType == PassJobType.Local)
+                {
+                    nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
+                }
+                else if (nTotalCars > 6)
+                {
+                    nTotalCars -= 2;
+                }
 
-                jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();
+                nTotalCars = Mathf.Min(nTotalCars, CCLIntegration.GetMaxRepeatedSpawn(livery), Controller.proceduralJobsRuleset.maxCarsPerJob);
+                jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
             }
 
-            // create job chain controller
+            var chainController = GenerateController(jobType, null, jobCarTypes, startPlatform, destinations, randomOrientation);
+            tracker.Finish(chainController);
+            yield break;
+
+        ReturnEmpty:
+            tracker.Finish(null);
+            yield break;
+        }
+
+        private PassengerChainController? GenerateController(JobType jobType, PassConsistInfo? consistInfo, List<TrainCarLivery> jobCarTypes,
+            RouteTrack startPlatform, RouteResult destinations, bool randomOrientation)
+        {
+            // Create job chain controller.
             string destString = string.Join(" - ", destinations.Tracks.Select(d => d.Station.YardID));
             var chainJobObject = new GameObject($"ChainJob[Passenger]: {Controller.stationInfo.YardID} - {destString}");
             chainJobObject.transform.SetParent(Controller.transform);
             var chainController = new PassengerChainController(chainJobObject);
 
-
             //--------------------------------------------------------------------------------------------------------------------------------
-            // Create multi stage transport job
+            // Create multi stage transport job.
             var chainData = new ExpressStationsChainData(Controller.stationInfo.YardID, destinations.Tracks.Select(d => d.Station.YardID).ToArray());
             PaymentCalculationData transportPaymentData = GetJobPaymentData(jobCarTypes);
 
-            // calculate haul payment
+            // Calculate haul payment.
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);
             float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false) * GetTimeMultiplier(jobType);
             bonusLimit += GetTimeForStops(destinations);
 
             float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
 
-            // scale job payment depending on settings
+            // Scale job payment depending on settings.
             float wageScale = PJMain.Settings.UseCustomWages ? BASE_WAGE_SCALE : 1;
             transportPayment = Mathf.Round(transportPayment * wageScale);
 
@@ -327,10 +365,9 @@ namespace PassengerJobs.Generation
 
             chainController.AddJobDefinitionToChain(jobDefinition);
 
-            // Finalize job
+            // Finalize job.
             chainController.FinalizeSetupAndGenerateFirstJob();
             PJMain.Log($"Generated new passenger haul job: {chainJobObject.name} ({chainController.currentJobInChain.ID})");
-
             return chainController;
         }
 

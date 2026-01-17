@@ -330,6 +330,7 @@ namespace PassengerJobs.Generation
         }
 
         private static bool _routesInitialized = false;
+
         public static void EnsureInitialized()
         {
             if (_routesInitialized) return;
@@ -370,6 +371,7 @@ namespace PassengerJobs.Generation
             }
 
             _routesInitialized = true;
+            PJMain.Log("Route Manager initialised");
         }
 
         private static void BuildRouteGraph(RouteGraph graph, IEnumerable<RouteConfig.Node> nodeData)
