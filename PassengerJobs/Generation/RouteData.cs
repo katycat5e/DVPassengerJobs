@@ -82,20 +82,21 @@ namespace PassengerJobs.Generation
                 Nodes[i] = new RouteNode(stations.Destinations[i], minLength, isFinal);
             }
 
-            if (Nodes.Any(n => n.Weight == 0))
-            {
-                Weight = 0;
-            }
-            else
-            {
-                Weight = 1 + GetWeightNoise();
-            }
+            Weight = Nodes.Any(n => n.Weight == 0) ? 0 : 1;
         }
 
         private static float GetWeightNoise()
         {
             // +/- 0.25
             return (UnityEngine.Random.value + 1) / 4;
+        }
+
+        public void AddNoiseIfNeeded()
+        {
+            if (Weight > 0)
+            {
+                Weight += GetWeightNoise();
+            }
         }
 
         public RouteTrack[] PickTracks()

@@ -465,10 +465,12 @@ namespace PassengerJobs.Generation
 
         private static List<RoutePath> CreateGraph(IEnumerable<RouteData> routes, IEnumerable<string> existingDests, double minLength = 0)
         {
-            var graph = routes.Select(s => new RoutePath(s, TrackType.Platform, minLength)).ToList();
+            var graph = routes.AsParallel().Select(s => new RoutePath(s, TrackType.Platform, minLength)).ToList();
 
             foreach (var route in graph)
             {
+                route.AddNoiseIfNeeded();
+
                 // give extra weight to unused stations
                 if (!existingDests.Contains(route.Nodes.Last().Station.YardID))
                 {
