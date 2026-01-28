@@ -71,12 +71,13 @@ namespace PassengerJobs.Generation
             }
         }
 
-        public StationController Controller = null!;
         public readonly List<PlatformController> PlatformControllers = new();
+        public StationController Controller = null!;
+
+        private readonly Dictionary<PassConsistInfo, Coroutine> _consistGenRoutines = new();
         private StationJobGenerationRange _stationRange = null!;
         private PassStationData _stationData = null!;
         private Coroutine? _generationRoutine = null;
-
         private bool _playerWasInRange = false;
         private JobType _nextJobType;
 
@@ -171,6 +172,8 @@ namespace PassengerJobs.Generation
             _playerWasInRange = nowInRange;
         }
 
+        #region Regular Generation
+
         public void StopGeneration()
         {
             if (_generationRoutine != null)
@@ -183,10 +186,10 @@ namespace PassengerJobs.Generation
         public void StartGenerationAsync()
         {
             StopGeneration();
-            _generationRoutine = StartCoroutine(GeneratePassengerJobs());
+            _generationRoutine = StartCoroutine(GeneratePassengerJobsRoutine());
         }
 
-        private IEnumerator GeneratePassengerJobs()
+        private IEnumerator GeneratePassengerJobsRoutine()
         {
             int watchdog = 15;
 
@@ -211,22 +214,6 @@ namespace PassengerJobs.Generation
             }
 
             _generationRoutine = null;
-        }
-
-        public PassengerChainController? GenerateJob(JobType jobType, PassConsistInfo consistInfo)
-        {
-            var currentDests = Controller.logicStation.availableJobs
-                .Where(j => PassJobType.IsPJType(j.jobType))
-                .Select(j => j.chainData.chainDestinationYardId);
-
-            // Use existing consist.
-            double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
-            var destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests, consistLength);
-
-            if (destinations == null) return null;
-            List<TrainCarLivery> jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();
-
-            return GenerateController(jobType, consistInfo, jobCarTypes, consistInfo.track, destinations, false);
         }
 
         private IEnumerator GenerateJobDelayed(JobType jobType, DelayedGenTracker tracker)
@@ -314,6 +301,108 @@ namespace PassengerJobs.Generation
             tracker.Finish(null);
             yield break;
         }
+
+        #endregion
+
+        #region Consist Generation
+
+        public void StartGenerationFromConsistAsync(JobType jobType, PassConsistInfo consistInfo)
+        {
+            if (_consistGenRoutines.TryGetValue(consistInfo, out var coroutine))
+            {
+                StopCoroutine(coroutine);
+            }
+
+            _consistGenRoutines[consistInfo] = StartCoroutine(GeneratePassengerJobsFromConsistRoutine(jobType, consistInfo));
+        }
+
+        public PassengerChainController? GenerateJobFromConsist(JobType jobType, PassConsistInfo consistInfo)
+        {
+            var currentDests = Controller.logicStation.availableJobs
+                .Where(j => PassJobType.IsPJType(j.jobType))
+                .Select(j => j.chainData.chainDestinationYardId);
+
+            // Use existing consist.
+            double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
+            var destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests, consistLength);
+
+            if (destinations == null) return null;
+            List<TrainCarLivery> jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();
+
+            return GenerateController(jobType, consistInfo, jobCarTypes, consistInfo.track, destinations, false);
+        }
+
+        private IEnumerator GeneratePassengerJobsFromConsistRoutine(JobType jobType, PassConsistInfo consistInfo)
+        {
+            int watchdog = 5;
+
+            while (watchdog > 0)
+            {
+                yield return WaitFor.FixedUpdate;
+
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var tracker = new DelayedGenTracker();
+
+                while (!tracker.Finished)
+                {
+                    yield return GenerateJobFromConsistDelayed(jobType, consistInfo, tracker);
+                }
+
+                watchdog--;
+                sw.Stop();
+
+                if (tracker.Controller != null)
+                {
+                    PJMain.Log($"Job generation was successful");
+                    PJMain.Log($"Total gen time: {sw.Elapsed.TotalSeconds:F4}s / Frames: {tracker.FrameCount}");
+                    break;
+                }
+
+                PJMain.Log($"No job for consist was generated");
+                PJMain.Log($"Total gen time: {sw.Elapsed.TotalSeconds:F4}s / Frames: {tracker.FrameCount}");
+            }
+
+            _consistGenRoutines.Remove(consistInfo);
+        }
+
+        private IEnumerator GenerateJobFromConsistDelayed(JobType jobType, PassConsistInfo consistInfo, DelayedGenTracker tracker)
+        {
+            var currentDests = Controller.logicStation.availableJobs
+                .Where(j => PassJobType.IsPJType(j.jobType))
+                .Select(j => j.chainData.chainDestinationYardId);
+
+            // Use existing consist.
+            double consistLength = CarSpawner.Instance.GetTotalCarsLength(consistInfo.cars, true);
+            RouteResult? destinations = null;
+            var routeWorking = true;
+
+            // Execute this generation in a separate thread as it is expensive.
+            ThreadTask.Run(() =>
+            {
+                destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests, consistLength);
+                routeWorking = false;
+            });
+
+            while (routeWorking)
+            {
+                yield return null;
+                tracker.FrameCount++;
+            }
+
+            if (destinations == null)
+            {
+                tracker.Finish(null);
+                yield break;
+            }
+
+            List<TrainCarLivery> jobCarTypes = consistInfo.cars.Select(c => c.carType).ToList();
+
+            var chainController = GenerateController(jobType, null, jobCarTypes, consistInfo.track, destinations, false);
+            tracker.Finish(chainController);
+            yield break;
+        }
+
+        #endregion
 
         private PassengerChainController? GenerateController(JobType jobType, PassConsistInfo? consistInfo, List<TrainCarLivery> jobCarTypes,
             RouteTrack startPlatform, RouteResult destinations, bool randomOrientation)

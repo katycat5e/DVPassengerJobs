@@ -1,6 +1,5 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
-using DV.Utils;
 using Newtonsoft.Json;
 using System.Linq;
 using UnityEngine;
@@ -30,9 +29,7 @@ namespace PassengerJobs.Generation
 
     public class PassengerChainController : JobChainController
     {
-        public PassengerChainController(GameObject jobChainGO) : base(jobChainGO)
-        {
-        }
+        public PassengerChainController(GameObject jobChainGO) : base(jobChainGO) { }
 
         public override void OnLastJobInChainCompleted(Job lastJobInChain)
         {
@@ -42,24 +39,16 @@ namespace PassengerJobs.Generation
 
                 if (PassengerJobGenerator.TryGetInstance(currentYardId, out var generator))
                 {
-                    var newChain = generator.GenerateJob(
-                        lastJobInChain.jobType,
+                    PJMain.Log($"Trying to generate new chain with cars from job {lastJobInChain.ID}");
+
+                    generator.StartGenerationFromConsistAsync(lastJobInChain.jobType,
                         new PassConsistInfo(previousJob.DestinationTracks.Last(), carsForJobChain.ToList()));
-
-                    if (newChain == null)
-                    {
-                        PJMain.Warning($"Failed to create new chain with cars from job {lastJobInChain.ID}");
-
-                        var trainCars = carsForJobChain.Select(lc => TrainCarRegistry.Instance.logicCarToTrainCar[lc]).ToList();
-                        SingletonBehaviour<CarSpawner>.Instance.DeleteTrainCars(trainCars, true);
-                    }
-
                     carsForJobChain.Clear();
                 }
             }
             else
             {
-                PJMain.Log($"{jobChainGO?.name} ended without child job");
+                PJMain.Log($"{jobChainGO?.name} ended without child job.");
             }
 
             // handle destruction of chain
@@ -71,13 +60,9 @@ namespace PassengerJobs.Generation
     {
         [JsonConstructor]
         public PassengerChainSaveData(JobDefinitionDataBase[] jobChainData, string[] trainCarGuids, bool jobTaken, TaskSaveData[] currentJobTaskData, string firstJobId) :
-            base(jobChainData, trainCarGuids, jobTaken, currentJobTaskData, firstJobId)
-        {
-        }
+            base(jobChainData, trainCarGuids, jobTaken, currentJobTaskData, firstJobId) { }
 
         public PassengerChainSaveData(JobChainSaveData baseData) :
-            base(baseData.jobChainData, baseData.trainCarGuids, baseData.jobTaken, baseData.currentJobTaskData, baseData.firstJobId)
-        {
-        }
+            base(baseData.jobChainData, baseData.trainCarGuids, baseData.jobTaken, baseData.currentJobTaskData, baseData.firstJobId) { }
     }
 }
