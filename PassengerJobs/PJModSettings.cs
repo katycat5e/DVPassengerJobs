@@ -18,10 +18,6 @@ namespace PassengerJobs
         public bool UseCustomWages = true;
         [Draw("Change the look of passenger coach interior lights", Tooltip = "Requires reloading the session to change the layout")]
         public CoachLightMode CoachLights = CoachLightMode.Improved;
-        [Draw("Use custom coach light colour", InvisibleOn = "CoachLights|0")]
-        public bool UseCustomCoachLightColour = false;
-        [Draw("Light colour", VisibleOn = "UseCustomCoachLightColour|True")]
-        public Color CustomCoachLightColour = Color.white;
 
         [Draw("Coach lights require loco power", Tooltip = "Main fuse on or dynamo running")]
         public bool CoachLightsRequirePower = true;

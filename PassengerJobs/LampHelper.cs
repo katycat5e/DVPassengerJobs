@@ -86,11 +86,6 @@ namespace PassengerJobs
         {
             get
             {
-                if (PJMain.Settings.UseCustomCoachLightColour)
-                {
-                    return PJMain.Settings.CustomCoachLightColour;
-                }
-
                 if (!s_litColor.HasValue)
                 {
                     s_litColor = Color.LerpUnclamped(Color.grey,
@@ -112,7 +107,7 @@ namespace PassengerJobs
                         filterMode = FilterMode.Point
                     };
 
-                    s_smallLit.SetPixels(new[] { Color.white, Color.black });
+                    s_smallLit.SetPixels(new[] { LitColour, Color.black });
                     s_smallLit.Apply();
                 }
 
@@ -144,7 +139,7 @@ namespace PassengerJobs
             lit.SetFloat("_Glossiness", 0.5f);
             lit.SetFloat("_BumpScale", 0.5f);
             lit.SetFloat("_OcclusionStrength", 0.5f);
-            lit.SetColor("_EmissionColor", LitColour);
+            lit.SetColor("_EmissionColor", LitColour * 0.6f);
 
             lit.color = Color.white;
             lit.name = unlit.name;

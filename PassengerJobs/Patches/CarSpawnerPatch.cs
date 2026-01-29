@@ -66,7 +66,7 @@ namespace PassengerJobs.Patches
 
         private static void ImprovedLightPositions(Transform parent)
         {
-            parent.localPosition = new Vector3(0, 3.75f, 0);
+            parent.localPosition = new Vector3(0, 3.65f, 0);
 
             AddLightAtOffset(parent, new Vector3(0, 0, 10.6f));
             AddLightAtOffset(parent, new Vector3(0, 0, 8));
@@ -103,8 +103,8 @@ namespace PassengerJobs.Patches
             light.type = LightType.Point;
             light.spotAngle = 125.0f;
             light.color = LampHelper.LitColour;
-            light.intensity = 2.1f;
-            light.range = 2.8f;
+            light.intensity = 1.8f;
+            light.range = 2.7f;
 
             //light.shadows = LightShadows.Soft;
             //light.shadowResolution = LightShadowResolution.Low;
