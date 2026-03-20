@@ -2,6 +2,7 @@
 using System.Xml.Serialization;
 using UnityEngine;
 using UnityModManagerNet;
+using PassengerJobs.Generation;
 
 namespace PassengerJobs
 {
