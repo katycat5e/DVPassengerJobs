@@ -19,6 +19,8 @@ namespace PassengerJobs.Injectors
 
         public const int CURRENT_DATA_VERSION = 5;
 
+        public static List<LocalizationKey> PostLoadMessageKeys { get; } = new();
+
         public static JObject? loadedData;
 
         private static readonly Dictionary<int, Action<SaveGameData>> SaveDataMigrations = new()
@@ -155,6 +157,8 @@ namespace PassengerJobs.Injectors
             {
                 loadedData.SetBool(HAS_LICENSE_P1_KEY, false);
                 PJMain.Log($"Removing Passengers 1 License due to new unmet fragile license requirement in v5; refunding cost of license");
+
+                PostLoadMessageKeys.Add(LocalizationKey.MIGRATION_LICENSE_REFUND);
             }
         }
     }
