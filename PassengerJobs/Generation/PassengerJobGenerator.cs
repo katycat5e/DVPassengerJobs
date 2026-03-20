@@ -16,6 +16,8 @@ namespace PassengerJobs.Generation
         private static readonly Dictionary<string, PassengerJobGenerator> _instances = new();
         private const float BASE_WAGE_SCALE = 0.5f;
         private const float BASE_TO_BONUS_MULTIPLIER = 2;
+        private const float WIGGLE_DISTANCE = 4;
+        private const float LENGTH_MULTIPLIER = 0.95f;
 
         private const int MAX_REGIONAL_CARS = 4;
 
@@ -207,6 +209,8 @@ namespace PassengerJobs.Generation
                 .Where(j => PassJobType.IsPJType(j.jobType))
                 .Select(j => j.chainData.chainDestinationYardId);
 
+            bool randomOrientation = true;
+
             // Establish the starting consist and its storage location
             if (consistInfo == null)
             {
@@ -215,25 +219,53 @@ namespace PassengerJobs.Generation
                 if (potentialStart == null) return null;
                 startPlatform = new RouteTrack(_stationData, potentialStart);
 
-                destinations = RouteManager.GetRoute(_stationData, jobType.GetRouteType(), currentDests);
+                var routeType = jobType.GetRouteType();
+
+                destinations = RouteManager.GetRoute(_stationData, routeType, currentDests);
                 if (destinations == null) return null;
 
-                double minLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
+                double maxAllowedLength = Math.Min(startPlatform.Length, destinations.MinTrackLength);
+                maxAllowedLength = (maxAllowedLength * LENGTH_MULTIPLIER) - WIGGLE_DISTANCE;
 
-                TrainCarLivery livery = ConsistManager.GetPassengerCars().PickOne()!;
-                double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
-                nTotalCars = (int)Math.Floor((minLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS) / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
+                TrainCarLivery livery = ConsistManager.GetFilteredPassengerCars(routeType, maxAllowedLength).PickOne()!;
 
-                if (jobType == PassJobType.Local)
+                if (CCLIntegration.TryGetTrainset(livery, out var trainset) && CCLIntegration.IsTrainsetEnabled(trainset))
                 {
-                    nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
+                    // Use the trainset itself directly. Length has already been checked, so it fits.
+                    jobCarTypes = trainset.ToList();
+                    randomOrientation = false;
+
+                    // Check if it's possible to have more of the trainset spawn.
+                    var count = CCLIntegration.GetMaxRepeatedSpawn(livery);
+                    var current = 1;
+                    var length = CarSpawner.Instance.GetTotalCarLiveriesLength(jobCarTypes, true);
+                    var total = length + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
+
+                    while (total < maxAllowedLength && current < count)
+                    {
+                        jobCarTypes.AddRange(trainset);
+                        current++;
+                        total += CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS + length;
+                    }
                 }
                 else
                 {
-                    nTotalCars -= 2;
-                }
+                    // Regular single livery consist.
+                    double carLength = CarSpawner.Instance.carLiveryToCarLength[livery];
+                    nTotalCars = (int)Math.Floor(maxAllowedLength / (carLength + CarSpawner.SEPARATION_BETWEEN_TRAIN_CARS));
 
-                jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
+                    if (jobType == PassJobType.Local)
+                    {
+                        nTotalCars = Math.Min(nTotalCars, MAX_REGIONAL_CARS);
+                    }
+                    else if (nTotalCars > 6)
+                    {
+                        nTotalCars -= 2;
+                    }
+
+                    nTotalCars = Mathf.Min(nTotalCars, CCLIntegration.GetMaxRepeatedSpawn(livery), Controller.proceduralJobsRuleset.maxCarsPerJob);
+                    jobCarTypes = Enumerable.Repeat(livery, nTotalCars).ToList();
+                }
             }
             else
             {
@@ -276,7 +308,7 @@ namespace PassengerJobs.Generation
             {
                 jobDefinition = PopulateExpressJobAndSpawn(
                     chainController, Controller.logicStation, startPlatform, destinations,
-                    jobCarTypes, chainData, bonusLimit, transportPayment);
+                    jobCarTypes, chainData, bonusLimit, transportPayment, randomOrientation);
             }
             else
             {
@@ -349,13 +381,12 @@ namespace PassengerJobs.Generation
         private static PassengerHaulJobDefinition? PopulateExpressJobAndSpawn(
             JobChainController chainController, Station startStation,
             RouteTrack startTrack, RouteResult route, List<TrainCarLivery> carTypes,
-            ExpressStationsChainData chainData, float timeLimit, float initialPay)
+            ExpressStationsChainData chainData, float timeLimit, float initialPay, bool randomOrientation)
         {
-            // Spawn the cars
+            // Spawn the cars.
             RailTrack startRT = startTrack.Track.RailTrack();
 
-            var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true,
-                true, 0, false, false);
+            var spawnedCars = SpawnCars();
 
             if (spawnedCars == null) return null;
 
@@ -371,6 +402,39 @@ namespace PassengerJobs.Generation
             return PopulateExpressJobExistingCars(chainController, startStation,
                 startTrack, route, logicCars,
                 chainData, timeLimit, initialPay);
+
+            List<TrainCar> SpawnCars()
+            {
+                bool flipConsist = UnityEngine.Random.value <= 0.5f;
+
+                // Bias toward buffers/track end. This looks better on terminal stations like CW.
+                if (!startRT.inIsConnected)
+                {
+                    return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, WIGGLE_DISTANCE,
+                        flipConsist, randomOrientation, false);
+                }
+
+                // Same but the other side.
+                if (!startRT.outIsConnected)
+                {
+                    // It's defined by the distance from the start of the "in" of the track, so position must be reversed.
+                    var position = startTrack.Length - CarSpawner.Instance.GetTotalCarLiveriesLength(carTypes, true);
+                    return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, position - WIGGLE_DISTANCE,
+                        flipConsist, randomOrientation, false);
+                }
+
+                // Else use the regular middle based spawn data.
+                if (randomOrientation)
+                {
+                    return CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT,
+                        true, true, 0, flipConsist, false);
+                }
+                else
+                {
+                    return CarSpawner.Instance.SpawnCarTypesOnTrack(carTypes, Enumerable.Repeat(false, carTypes.Count).ToList(), startRT,
+                        true, true, 0, flipConsist, false);
+                }
+            }
         }
 
         private static PassengerHaulJobDefinition PopulateExpressJobExistingCars(

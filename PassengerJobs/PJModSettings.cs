@@ -1,5 +1,4 @@
-﻿using PassengerJobs.Generation;
-using System;
+﻿using System;
 using System.Xml.Serialization;
 using UnityEngine;
 using UnityModManagerNet;
@@ -26,6 +25,12 @@ namespace PassengerJobs
 
         [Draw("Coach lights require loco power", Tooltip = "Main fuse on or dynamo running", InvisibleOn = "MPActive|true")]
         public bool CoachLightsRequirePower = true;
+
+        [Draw("Allow CCL coaches to spawn alone if any part of the trainset is disabled", Tooltip = "In case a part of a trainset is disabled by CCL, \n" +
+            "whether to allow spawning parts of it by themselves or require the whole trainset to be enabled")]
+        public bool AllowCCLTrainsetAlone = false;
+        [Draw("Prefer CCL in jobs", Tooltip = "Use CCL coaches instead of base game ones if available")]
+        public bool PreferCCL = false;
 
 #if DEBUG
         [Draw("Reload rural stations config")]
