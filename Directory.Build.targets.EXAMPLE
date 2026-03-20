@@ -13,9 +13,12 @@
     <PropertyGroup>
         <DvInstallDir>C:\Program Files (x86)\Steam\steamapps\common\Derail Valley</DvInstallDir>
         <ReferencePath>
-            $(DvInstallDir)\DerailValley_Data\Managed\;
-            $(DvInstallDir)\DerailValley_Data\Managed\UnityModManager\;
+			$(DvInstallDir)\DerailValley_Data\Managed\;
+			$(DvInstallDir)\DerailValley_Data\Managed\UnityModManager\;
+			$(UnityInstallDir)\Data\Managed\;
 			$(DvInstallDir)\Mods\DVLangHelper\;
+			$(DvInstallDir)\Mods\CommsRadioAPI\;
+			$(DvInstallDir)\Mods\Multiplayer\;
         </ReferencePath>
         <AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);</AssemblySearchPaths>
 		<SignToolPath>C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\</SignToolPath>

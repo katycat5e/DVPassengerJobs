@@ -85,7 +85,11 @@ namespace PassengerJobs.Generation
         {
             get
             {
+                if (MultiplayerShim.IsInitialized && !MultiplayerShim.IsHost)
+                    return false;
+
                 float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
+
                 return _stationRange.IsPlayerInJobGenerationZone(playerDist);
             }
         }
@@ -116,7 +120,7 @@ namespace PassengerJobs.Generation
                 holder.transform.SetParent(Controller.transform, false);
 
                 var platformController = holder.AddComponent<PlatformController>();
-                platformController.Platform = new StationPlatformWrapper(platform.Track);
+                platformController.Platform = new StationPlatformWrapper(platform.Track, platformController);
                 platformController.PlatformData = platform;
                 platformController.SetDecorationsEnabled(_playerWasInRange);
                 PlatformControllers.Add(platformController);

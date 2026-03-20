@@ -99,7 +99,7 @@ namespace PassengerJobs.Generation
 
         public readonly PlatformController Controller;
 
-        public string YardID => Platform.Id;
+        public string YardID => Platform.ID;
 
         public RuralStationData(RuralLoadingMachine platform, PlatformController controller)
         {
@@ -121,13 +121,13 @@ namespace PassengerJobs.Generation
             
             if (Platform.IsYardTrack)
             {
-                return new[] { new RouteTrack(this, Platform.Track) };
+                return new[] { new RouteTrack(this, Platform.WarehouseTrack) };
             }
 
-            return new[] { new RouteTrack(this, Platform.Track, Platform.LowerBound, Platform.UpperBound) };
+            return new[] { new RouteTrack(this, Platform.WarehouseTrack, Platform.LowerBound, Platform.UpperBound) };
         }
 
-        public IEnumerable<Track> AllTracks => new Track[] { Platform.Track };
+        public IEnumerable<Track> AllTracks => new Track[] { Platform.WarehouseTrack };
     }
 
     public enum TrackType
