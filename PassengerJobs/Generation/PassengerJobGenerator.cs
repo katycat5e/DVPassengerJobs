@@ -64,7 +64,11 @@ namespace PassengerJobs.Generation
         {
             get
             {
+                if (MultiplayerShim.IsInitialized && !MultiplayerShim.IsHost)
+                    return false;
+
                 float playerDist = _stationRange.PlayerSqrDistanceFromStationCenter;
+
                 return _stationRange.IsPlayerInJobGenerationZone(playerDist);
             }
         }
@@ -95,7 +99,7 @@ namespace PassengerJobs.Generation
                 holder.transform.SetParent(Controller.transform, false);
 
                 var platformController = holder.AddComponent<PlatformController>();
-                platformController.Platform = new StationPlatformWrapper(platform.Track);
+                platformController.Platform = new StationPlatformWrapper(platform.Track, platformController);
                 platformController.PlatformData = platform;
                 platformController.SetDecorationsEnabled(_playerWasInRange);
                 PlatformControllers.Add(platformController);
@@ -195,7 +199,7 @@ namespace PassengerJobs.Generation
         {
             int nTotalCars;
             List<TrainCarLivery> jobCarTypes;
-            
+
             RouteTrack startPlatform;
             RouteResult? destinations;
 
@@ -349,9 +353,9 @@ namespace PassengerJobs.Generation
         {
             // Spawn the cars
             RailTrack startRT = startTrack.Track.RailTrack();
-            
-            var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true, 
-                true,0, false, false);
+
+            var spawnedCars = CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT, true,
+                true, 0, false, false);
 
             if (spawnedCars == null) return null;
 

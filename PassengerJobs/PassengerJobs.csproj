@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="DVMultiplayerAPI" Version="1.0.0" />
 		<PackageReference Include="Krafs.Publicizer" Version="2.2.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

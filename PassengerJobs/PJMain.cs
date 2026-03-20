@@ -1,16 +1,12 @@
-﻿using DV.Common;
-using DVLangHelper.Runtime;
+﻿using DVLangHelper.Runtime;
 using HarmonyLib;
 using PassengerJobs.Generation;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
+using UnityEngine;
 using UnityModManagerNet;
 
 namespace PassengerJobs
@@ -31,8 +27,8 @@ namespace PassengerJobs
 
             Translations = new TranslationInjector("cc.foxden.passenger_jobs");
             Translations.AddTranslationsFromCsv(Path.Combine(ModEntry.Path, "translations.csv"));
-            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&gid=633527484");
-
+            Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&gid=1132930393");
+     
             // inject licenses
             if (!LicenseInjector.RegisterPassengerLicenses()) return false;
             
@@ -46,7 +42,7 @@ namespace PassengerJobs
             //PlatformManager.TryLoadSignLocations();
 
             // Initialize settings
-            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+            ReloadSettings();
             //Settings.DoPurge = false;
 
             ModEntry.OnGUI = DrawGUI;
@@ -54,6 +50,7 @@ namespace PassengerJobs
 
             // Find companion mods
             //SkinManager_Patch.Initialize();
+            MultiplayerShim.TryInitialise(modEntry);
 
             DV.Globals.G.Types.RecalculateCaches();
 
@@ -85,9 +82,19 @@ namespace PassengerJobs
 
         #region Settings
 
+        public static void ReloadSettings()
+        {
+            Settings = UnityModManager.ModSettings.Load<PJModSettings>(ModEntry);
+        }
+
         static void DrawGUI( UnityModManager.ModEntry entry )
         {
             Settings.Draw(entry);
+
+            if (Settings.MPActive)
+            {
+                GUILayout.Label("<color=\"red\">Settings are locked while a multiplayer session is active.</color>");
+            }
         }
 
         static void SaveGUI( UnityModManager.ModEntry entry )
@@ -107,7 +114,13 @@ namespace PassengerJobs
             ModEntry.Logger.LogException(ex);
             ModEntry.Logger.Error(msg);
         }
+        public static void LogDebug(string msg)
+        {
+#if DEBUG
+            ModEntry.Logger.Log($"[Debug] {msg}");
+#endif
+        }
 
-        #endregion
+         #endregion
     }
 }
