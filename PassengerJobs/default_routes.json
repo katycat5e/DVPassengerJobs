@@ -194,16 +194,13 @@
 		}, {
 			"id": "SO",
 			"linkA": ["FF", "OWN", "GF", "WF"],
-			"linkB": ["MB", "HN", "IME", "CME", "GFO"]
-		}, {
-			"id": "MB",
-			"linkA": ["SO", "GFO", "CME"]
+			"linkB": ["HN", "IME", "CME", "GFO"]
 		}, {
 			"id": "IME",
 			"linkA": ["SO", "GFO", "CME"]
 		}, {
 			"id": "CME",
-			"linkA": ["GFO", "SO", "MB", "HN", "IME"],
+			"linkA": ["GFO", "SO", "HN", "IME"],
 			"linkB": ["RJ"]
 		}, {
 			"id": "RJ",
@@ -211,7 +208,7 @@
 			"linkB": ["HV", "HB"]
 		}, {
 			"id": "GFO",
-			"linkA": ["SO", "MB", "HN", "IME", "CME"],
+			"linkA": ["SO", "HN", "IME", "CME"],
 			"linkB": ["AM", "HV"]
 		}, {
 			"id": "HV",
