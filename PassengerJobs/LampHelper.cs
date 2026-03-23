@@ -7,6 +7,9 @@ namespace PassengerJobs
 {
     internal static class LampHelper
     {
+        public const int LightLayer = 10;
+        public const int LightMask = ~(1 << LightLayer);
+
         private static Dictionary<Material, Material> s_cache = new();
         private static TrainCarLivery? _de2;
         private static TrainCarLivery? _pax;
@@ -88,8 +91,9 @@ namespace PassengerJobs
             {
                 if (!s_litColor.HasValue)
                 {
-                    s_litColor = Color.LerpUnclamped(Color.grey,
-                        DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor"), 0.7f) * 0.7f;
+                    var temp = DE2.prefab.GetComponentInChildren<CabLightsController>().lightsLit.GetColor("_EmissionColor") * 0.6f;
+                    temp.a = 1f;
+                    s_litColor = temp;
                 }
 
                 return s_litColor.Value;
@@ -107,7 +111,7 @@ namespace PassengerJobs
                         filterMode = FilterMode.Point
                     };
 
-                    s_smallLit.SetPixels(new[] { LitColour, Color.black });
+                    s_smallLit.SetPixels(new[] { LitColour / LitColour.maxColorComponent, Color.black });
                     s_smallLit.Apply();
                 }
 
@@ -139,7 +143,7 @@ namespace PassengerJobs
             lit.SetFloat("_Glossiness", 0.5f);
             lit.SetFloat("_BumpScale", 0.5f);
             lit.SetFloat("_OcclusionStrength", 0.5f);
-            lit.SetColor("_EmissionColor", LitColour * 0.6f);
+            lit.SetColor("_EmissionColor", LitColour * 0.8f);
 
             lit.color = Color.white;
             lit.name = unlit.name;

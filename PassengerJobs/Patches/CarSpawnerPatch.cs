@@ -44,6 +44,14 @@ namespace PassengerJobs.Patches
                 return;
             }
 
+            var controller = car.gameObject.GetComponent<CoachLightController>();
+
+            // Check if it somehow already has it.
+            if (controller != null)
+            {
+                return;
+            }
+
             var lightHolder = new GameObject("[PJ Lights]").transform;
             lightHolder.SetParent(car.transform, false);
 
@@ -59,14 +67,14 @@ namespace PassengerJobs.Patches
                     break;
             }
 
-            var controller = car.gameObject.AddComponent<CoachLightController>();
+            controller = car.gameObject.AddComponent<CoachLightController>();
 
             AddRedLights(car.transform, controller);
         }
 
         private static void ImprovedLightPositions(Transform parent)
         {
-            parent.localPosition = new Vector3(0, 3.65f, 0);
+            parent.localPosition = new Vector3(0, 3.7f, 0);
 
             AddLightAtOffset(parent, new Vector3(0, 0, 10.6f));
             AddLightAtOffset(parent, new Vector3(0, 0, 8));
@@ -103,8 +111,9 @@ namespace PassengerJobs.Patches
             light.type = LightType.Point;
             light.spotAngle = 125.0f;
             light.color = LampHelper.LitColour;
-            light.intensity = 1.8f;
-            light.range = 2.7f;
+            light.intensity = 1.5f;
+            light.range = 3.0f;
+            light.cullingMask = LampHelper.LightMask;
 
             //light.shadows = LightShadows.Soft;
             //light.shadowResolution = LightShadowResolution.Low;
@@ -172,6 +181,7 @@ namespace PassengerJobs.Patches
             lamp.transform.localPosition = lampPos;
             lamp.transform.localRotation = direction ? Quaternion.identity : Flipped;
             lamp.transform.localScale = RedMeshScale;
+            lamp.gameObject.layer = LampHelper.LightLayer;
         }
     }
 }
