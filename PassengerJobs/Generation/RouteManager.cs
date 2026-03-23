@@ -19,13 +19,17 @@ namespace PassengerJobs.Generation
         private const string ROUTE_CONFIG_FILE = "routes.json";
         private const string DEFAULT_ROUTE_CONFIG_FILE = "default_routes.json";
 
+        public static event Action? RuralStationsCreated;
+
         private static StationConfig? _stationConfig = null;
         private static RouteConfig? _routeConfig = null;
 
-        private static RouteGraph _localRoutes = new(RouteType.Local);
+        private readonly static RouteGraph _localRoutes = new(RouteType.Local);
 
         private static readonly Dictionary<string, IPassDestination> _stations = new();
 
+        public static StationConfig.CityStation[]? CityStations => _stationConfig?.cityStations?.ToArray();
+        public static StationConfig.RuralStation[]? RuralStations => _stationConfig?.ruralStations?.ToArray();
         public static bool IsPassengerStation(string yardId) => _stationConfig?.cityStations.Any(p => p.yardId == yardId) == true;
 
         static RouteManager()
@@ -102,7 +106,7 @@ namespace PassengerJobs.Generation
             return config;
         }
 
-        private static JsonSerializerSettings _jsonSettings = new()
+        private static readonly JsonSerializerSettings _jsonSettings = new()
         {
             NullValueHandling = NullValueHandling.Ignore,
             DefaultValueHandling = DefaultValueHandling.Ignore,
@@ -174,6 +178,27 @@ namespace PassengerJobs.Generation
             LoadConfig();
             CreateRuralStations();
             ApplyPlatformData();
+        }
+
+        public static void SetStations(StationConfig.CityStation[]? newCityStations, StationConfig.RuralStation[]? newRuralStations)
+        {
+
+            if(newCityStations == null && newRuralStations == null)
+            {
+                PJMain.Warning($"Tried to set stations, but new stations are null");
+                return;
+            }
+
+            newCityStations ??= Array.Empty<StationConfig.CityStation>();
+            newRuralStations ??= Array.Empty<StationConfig.RuralStation>();
+
+            _stationConfig ??= new StationConfig();
+
+            _stationConfig.cityStations = newCityStations;
+            _stationConfig.ruralStations = newRuralStations;
+
+            //CreateRuralStations();
+            //ApplyPlatformData();
         }
 
         public static void SavePlatformConfig(string platformId, Vector3 cornerA, Vector3 cornerB, float depth)
@@ -320,13 +345,15 @@ namespace PassengerJobs.Generation
 
                 if (newStation.Platform.IsYardTrack)
                 {
-                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID}");
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.WarehouseTrack.ID}");
                 }
                 else
                 {
-                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.Track.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
+                    PJMain.Log($"Created rural station {station.id} on {newStation.Platform.WarehouseTrack.ID} {newStation.Platform.LowerBound}-{newStation.Platform.UpperBound}");
                 }
             }
+
+            RuralStationsCreated?.Invoke();
         }
 
         private static bool _routesInitialized = false;

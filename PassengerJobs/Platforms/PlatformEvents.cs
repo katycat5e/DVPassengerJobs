@@ -44,4 +44,26 @@ namespace PassengerJobs.Platforms
             IsLoading = isLoading;
         }
     }
+
+    public class TaskCompleteArgs : EventArgs
+    {
+        public readonly Task Task;
+
+        public TaskCompleteArgs(Task task)
+        {
+            Task = task;
+        }
+    }
+
+    public class PlatformStateChangeArgs : EventArgs
+    {
+        public readonly Job? Job;
+        public readonly LocalizationKey NewDisplay;
+
+        public PlatformStateChangeArgs(Job? job, LocalizationKey newDisplay)
+        {
+            Job = job;
+            NewDisplay = newDisplay;
+        }
+    }
 }

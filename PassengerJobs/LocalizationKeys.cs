@@ -41,10 +41,16 @@ namespace PassengerJobs
         SIGN_BOARDING,
         SIGN_DEPARTING,
         SIGN_EMPTY,
+
+        // Messages
+        MIGRATION_LICENSE_REFUND,
     }
 
     public static class LocalizationKeyExtensions
     {
+        public const string MOD_KEY_PREFIX = "passjobs/";
+        public const string STATION_NAME_KEY = $"{MOD_KEY_PREFIX}station_";
+
         private static readonly Dictionary<LocalizationKey, string> _keyValues;
 
         static LocalizationKeyExtensions()
@@ -53,7 +59,7 @@ namespace PassengerJobs
                 .Cast<LocalizationKey>()
                 .ToDictionary(
                     k => k,
-                    k => $"passjobs/{Enum.GetName(typeof(LocalizationKey), k).ToLower()}"
+                    k => $"{MOD_KEY_PREFIX}{Enum.GetName(typeof(LocalizationKey), k).ToLower()}"
                 );
         }
 
@@ -64,7 +70,7 @@ namespace PassengerJobs
         public static string L(this LocalizationKey key, params string[] values) => LocalizationAPI.L(K(key), values);
 
         /// <summary>Get localized name for rural station</summary>
-        public static string StationName(string yardId) => LocalizationAPI.L($"passjobs/station_{yardId.ToLower()}");
+        public static string StationName(string yardId) => LocalizationAPI.L($"{STATION_NAME_KEY}{yardId.ToLower()}");
 
         public static string BuiltinStationName(string yardId) => LocalizationAPI.L($"w3/{yardId.ToLower()}");
     }
