@@ -15,6 +15,8 @@ namespace PassengerJobs
 
         [Draw("Use custom wage scaling for (new) passenger haul jobs")]
         public bool UseCustomWages = true;
+        [Draw("Custom time scaling for (new) passenger haul jobs", Tooltip = "Use 1 to use the default multiplier")]
+        public float TimeScale = 1.0f;
         [Draw("Change the look of passenger coach interior lights", Tooltip = "Requires reloading the session to change the layout")]
         public CoachLightMode CoachLights = CoachLightMode.Improved;
 

@@ -420,7 +420,7 @@ namespace PassengerJobs.Generation
 
             // Calculate haul payment.
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);
-            float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false) * GetTimeMultiplier(jobType);
+            float bonusLimit = JobPaymentCalculator.CalculateHaulBonusTimeLimit(haulDistance, false) * GetTimeMultiplier(jobType) * PJMain.Settings.TimeScale;
             bonusLimit += GetTimeForStops(destinations);
 
             float transportPayment = JobPaymentCalculator.CalculateJobPayment(JobType.Transport, haulDistance, transportPaymentData);
