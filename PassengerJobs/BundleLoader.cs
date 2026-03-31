@@ -1,35 +1,55 @@
-﻿using DV.ThingTypes;
+﻿#nullable disable
+using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using PassengerJobs.Injectors;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace PassengerJobs
 {
     internal static class BundleLoader
     {
-        public static Sprite License1Sprite { get; private set; } = null!;
-        public static Sprite License2Sprite { get; private set; } = null!;
+        public class LicenseSprites
+        {
+            public readonly string BaseName;
+
+            public LicenseSprites(string baseName)
+            {
+                BaseName = baseName;
+            }
+
+            public Sprite Icon;
+            public string IconPath => $"Assets/Licenses/{BaseName}.png";
+
+            public Sprite ItemSprite;
+            public string ItemSpritePath => $"Assets/Licenses/{BaseName}Item.png";
+
+            public Sprite ItemSampleSprite;
+            public string ItemSampleSpritePath => $"Assets/Licenses/{BaseName}ItemSample.png";
+        }
+
+        public static bool SpritesLoadFailed { get; private set; }
+        public static readonly LicenseSprites Pass1Sprites = new("Passengers1");
+        public static readonly LicenseSprites Pass2Sprites = new("Passengers2");
 
         private static bool MasterLoadFailed
         {
             set
             {
+                SpritesLoadFailed = value;
                 SignLoadFailed = value;
                 PlatformLoadFailed = value;
             }
         }
 
         public static bool SignLoadFailed { get; private set; }
-        public static GameObject SignPrefab = null!;
-        public static GameObject SmallSignPrefab = null!;
-        public static GameObject LillySignPrefab = null!;
+        public static GameObject SignPrefab;
+        public static GameObject SmallSignPrefab;
+        public static GameObject LillySignPrefab;
 
         public static bool PlatformLoadFailed { get; private set; }
-        public static GameObject RuralPlatform = null!;
-        public static GameObject RuralPlatformNoBase = null!;
+        public static GameObject RuralPlatform;
+        public static GameObject RuralPlatformNoBase;
 
         public static void EnsureInitialized()
         {
@@ -57,6 +77,9 @@ namespace PassengerJobs
             PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
             PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatformNoBase.prefab", ref RuralPlatformNoBase);
 
+            SpritesLoadFailed |= !TryLoadSprites(bundle, Pass1Sprites);
+            SpritesLoadFailed |= !TryLoadSprites(bundle, Pass2Sprites);
+
             bundle.Unload(false);
         }
 
@@ -73,6 +96,29 @@ namespace PassengerJobs
             return false;
         }
 
+        private static bool TryLoadSprites(AssetBundle bundle, LicenseSprites sprites)
+        {
+            bool success = true;
+            success &= TryLoadSprite(bundle, sprites.IconPath, out sprites.Icon);
+            success &= TryLoadSprite(bundle, sprites.ItemSpritePath, out sprites.ItemSprite);
+            success &= TryLoadSprite(bundle, sprites.ItemSampleSpritePath, out sprites.ItemSampleSprite);
+            return success;
+        }
+        
+        private static bool TryLoadSprite(AssetBundle bundle, string assetPath, out Sprite sprite)
+        {
+            sprite = bundle.LoadAsset<Sprite>(assetPath);
+            if (!sprite)
+            {
+                PJMain.Error($"Failed to load sprite ({assetPath}) from asset bundle");
+            }
+            else
+            {
+                Object.DontDestroyOnLoad(sprite);
+            }
+            return sprite;
+        }
+
         public static void HandleSaveReload()
         {
             string bundlePath = Path.Combine(PJMain.ModEntry.Path, "passengerjobs");
@@ -80,31 +126,18 @@ namespace PassengerJobs
             var bytes = File.ReadAllBytes(bundlePath);
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
-            License1Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers2.png");
-            if (License1Sprite == null)
-            {
-                PJMain.Error("Failed to load license sprite from asset bundle");
-            }
-            else
-            {
-                UnityEngine.Object.DontDestroyOnLoad(License1Sprite);
-                LicenseInjector.License1.icon = License1Sprite;
-            }
-            if (License2Sprite == null)
-            {
-                PJMain.Error("Failed to load license sprite from asset bundle");
-            }
-            else
-            {
-                UnityEngine.Object.DontDestroyOnLoad(License2Sprite);
-                LicenseInjector.License2.icon = License2Sprite;
-            }
+            SpritesLoadFailed = false;
+
+            SpritesLoadFailed |= !TryLoadSprites(bundle, Pass1Sprites);
+            LicenseInjector.License1.icon = Pass1Sprites.Icon;
+
+            TryLoadSprites(bundle, Pass2Sprites);
+            LicenseInjector.License2.icon = Pass2Sprites.Icon;
 
             bundle.Unload(false);
         }
 
-        private static Shader? _engineShader = null;
+        private static Shader _engineShader = null;
 
         private static Shader EngineShader
         {
