@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Xml.Serialization;
-using UnityEngine;
 using UnityModManagerNet;
 using PassengerJobs.Generation;
 
@@ -17,12 +16,10 @@ namespace PassengerJobs
 
         [Draw("Use custom wage scaling for (new) passenger haul jobs", InvisibleOn = "MPActive|true")]
         public bool UseCustomWages = true;
-        [Draw("Change the look of passenger coach interior lights", Tooltip = "Requires reloading the session to change the layout", InvisibleOn = "MPActive|true")]
+        [Draw("Custom time scaling for (new) passenger haul jobs", Tooltip = "Use 1 to use the default multiplier")]
+        public float TimeScale = 1.0f;
+        [Draw("Change the look of passenger coach interior lights", Tooltip = "Requires reloading the session to change the layout")]
         public CoachLightMode CoachLights = CoachLightMode.Improved;
-        [Draw("Use custom coach light colour", VisibleOn = "MPActive|false", InvisibleOn = "CoachLights|0")]
-        public bool UseCustomCoachLightColour = false;
-        [Draw("Light colour", VisibleOn = "UseCustomCoachLightColour|True", InvisibleOn = "MPActive|true")]
-        public Color CustomCoachLightColour = Color.white;
 
         [Draw("Coach lights require loco power", Tooltip = "Main fuse on or dynamo running", InvisibleOn = "MPActive|true")]
         public bool CoachLightsRequirePower = true;

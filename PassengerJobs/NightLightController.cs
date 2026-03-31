@@ -1,4 +1,6 @@
-﻿using DV.Customization;
+﻿using DV;
+using DV.Customization;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PassengerJobs
@@ -64,14 +66,6 @@ namespace PassengerJobs
         {
             // Used for lights that need to be updated more often.
         }
-
-        protected void SetAllLightColours(Color lightColor)
-        {
-            foreach (var light in _lights)
-            {
-                light.color = lightColor;
-            }
-        }
     }
 
     public class PlatformLightController : NightLightController
@@ -107,6 +101,8 @@ namespace PassengerJobs
         private const int MaterialIndex = 3;
 
         private TrainCar _trainCar = null!;
+        private InternalExternalSnapshotSwitcher _switcher = null!;
+        private GameObject[] _outsideGos = null!;
         private MeshRenderer _interior = null!;
         private Material _lampOff = null!;
         private Material? _lampOn;
@@ -121,6 +117,7 @@ namespace PassengerJobs
         private bool _inOn = false;
         private bool _tempState = false;
         private bool _hasLoco = false;
+        private bool _inside = false;
 
         private Material InteriorMat
         {
@@ -157,12 +154,30 @@ namespace PassengerJobs
             RefreshMaterials();
             StartCoroutine(Optimizer());
 
-            PJMain.Settings.OnSettingsSaved += UpdateColours;
+            var list = new List<GameObject>();
+            var t = transform.Find("CarPassenger");
+
+            foreach (Transform child in t)
+            {
+                if (child.name.StartsWith("CarPassenger_"))
+                {
+                    list.Add(child.gameObject);
+                }
+            }
+
+            _outsideGos = list.ToArray();
+            _switcher = GetComponent<InternalExternalSnapshotSwitcher>();
+
+            UpdateLayers(_switcher.IsInside(), true);
+
+            //PJMain.Settings.OnSettingsSaved += UpdateSettings;
         }
 
         private void OnDestroy()
         {
-            PJMain.Settings.OnSettingsSaved -= UpdateColours;
+            _trainCar.TrainsetChanged -= OnTrainsetChanged;
+            UpdateLayers(true, true);
+            //PJMain.Settings.OnSettingsSaved -= UpdateSettings;
         }
 
         protected override bool GetNewLightState()
@@ -255,11 +270,15 @@ namespace PassengerJobs
             {
                 yield return WaitFor.Seconds(0.3f);
 
+                if (this == null) break;
+
                 var player = PlayerManager.PlayerTransform;
 
                 if (player == null) continue;
 
                 _redHolder.SetActive(Vector3.SqrMagnitude(player.position - _redHolder.transform.position) <= 2250000);
+
+                UpdateLayers(_switcher.IsInside());
             }
         }
 
@@ -305,12 +324,25 @@ namespace PassengerJobs
             _lampOn = null;
         }
 
-        protected void UpdateColours(PJModSettings settings)
+        private void UpdateLayers(bool inside, bool forced = false)
+        {
+            if (inside == _inside && !forced) return;
+
+            int layer = inside ? 0 : LampHelper.LightLayer;
+
+            foreach (var item in _outsideGos)
+            {
+                item.layer = layer;
+            }
+
+            _inside = inside;
+        }
+
+        protected void UpdateSettings(PJModSettings settings)
         {
             LampHelper.RemoveFromCache(LampOff);
             BeforeSkinChange();
             AfterSkinChange();
-            SetAllLightColours(LampHelper.LitColour);
         }
     }
 }
