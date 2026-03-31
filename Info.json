@@ -2,7 +2,7 @@
   "Id": "PassengerJobs",
   "DisplayName": "Passenger Jobs",
   "Author": "Katycat",
-  "Version": "5.1.1",
+  "Version": "5.2.1",
   "AssemblyName": "PassengerJobs.dll",
   "EntryMethod": "PassengerJobs.PJMain.Load",
   "Requirements": ["DVLangHelper"],
