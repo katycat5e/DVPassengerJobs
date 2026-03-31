@@ -20,6 +20,9 @@ namespace PassengerJobs.Injectors
         public LocalizationKey LocalizationKey { get; set; }
         public LocalizationKey LocalizationKeyDescription { get; set; }
 
+        public LocalizationKey ItemNameKey { get; set; }
+        public LocalizationKey SampleItemNameKey { get; set; }
+
         public float Cost { get; set; }
         public float InsuranceIncrease { get; set; }
         public float TimeDecrease { get; set; }
@@ -39,12 +42,14 @@ namespace PassengerJobs.Injectors
         public static JobLicenseType_v2 License1 { get; internal set; } = null!;
         public static JobLicenseType_v2 License2 { get; internal set; } = null!;
 
-        public static readonly PassengerLicenseData License1Data = new PassengerLicenseData
+        public static readonly PassengerLicenseData License1Data = new()
         {
             Name = "Passengers1",
             V1Flag = (JobLicenses)64,
             LocalizationKey = LocalizationKey.LICENSE_1_NAME,
             LocalizationKeyDescription = LocalizationKey.LICENSE_1_DESCRIPTION,
+            ItemNameKey = LocalizationKey.LICENSE_1_ITEM_NAME,
+            SampleItemNameKey = LocalizationKey.LICENSE_1_SAMPLE_ITEM_NAME,
             Cost = 40_000f,
             InsuranceIncrease = 45_000f,
             TimeDecrease = 0.0f,
@@ -54,12 +59,14 @@ namespace PassengerJobs.Injectors
             SampleRenderPrefabName = "PJlicense1InfoRender"
         };
 
-        public static readonly PassengerLicenseData License2Data = new PassengerLicenseData
+        public static readonly PassengerLicenseData License2Data = new()
         {
             Name = "Passengers2",
             V1Flag = (JobLicenses)128,
             LocalizationKey = LocalizationKey.LICENSE_2_NAME,
             LocalizationKeyDescription = LocalizationKey.LICENSE_2_DESCRIPTION,
+            ItemNameKey = LocalizationKey.LICENSE_2_ITEM_NAME,
+            SampleItemNameKey = LocalizationKey.LICENSE_2_SAMPLE_ITEM_NAME,
             Cost = 100_000f,
             InsuranceIncrease = 150_000f,
             TimeDecrease = 0.0f,
@@ -75,8 +82,8 @@ namespace PassengerJobs.Injectors
 
             try
             {
-                License1 = CreatePassengerLicense(License1Data, BundleLoader.License1Sprite, JobLicenses.Fragile.ToV2());
-                License2 = CreatePassengerLicense(License2Data, BundleLoader.License2Sprite, License1);
+                License1 = CreatePassengerLicense(License1Data, BundleLoader.Pass1Sprites.Icon, JobLicenses.Fragile.ToV2());
+                License2 = CreatePassengerLicense(License2Data, BundleLoader.Pass2Sprites.Icon, License1);
             }
             catch (Exception ex)
             {
@@ -145,7 +152,7 @@ namespace PassengerJobs.Injectors
             string costString = $"${data.Cost:F}";
             string insuranceIncrease = $"+${data.InsuranceIncrease:F}";
             string bonusDecrease = "N/A";
-            Sprite sprite = (data.Name == "Passengers1") ? BundleLoader.License1Sprite : BundleLoader.License2Sprite;
+            Sprite sprite = (data == License1Data) ? BundleLoader.Pass1Sprites.Icon : BundleLoader.Pass2Sprites.Icon;
 
             return new LicenseTemplatePaperData(
                 name, description, data.Color, costString, insuranceIncrease, bonusDecrease, sprite, shuntSprite
@@ -161,25 +168,25 @@ namespace PassengerJobs.Injectors
 
         public static void SetLicense1Properties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License1Data.PrefabName, LocalizationKey.LICENSE_1_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License1Data.PrefabName, LocalizationKey.LICENSE_1_ITEM_NAME, BundleLoader.Pass1Sprites.ItemSprite);
         }
 
         public static void SetLicense1SampleProperties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License1Data.SamplePrefabName, LocalizationKey.LICENSE_1_SAMPLE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License1Data.SamplePrefabName, LocalizationKey.LICENSE_1_SAMPLE_ITEM_NAME, BundleLoader.Pass1Sprites.ItemSampleSprite);
         }
 
         public static void SetLicense2Properties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License2Data.PrefabName, LocalizationKey.LICENSE_2_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License2Data.PrefabName, LocalizationKey.LICENSE_2_ITEM_NAME, BundleLoader.Pass2Sprites.ItemSprite);
         }
 
         public static void SetLicense2SampleProperties(GameObject licenseObj)
         {
-            SetBookletProperties(licenseObj, License2Data.SamplePrefabName, LocalizationKey.LICENSE_2_SAMPLE_ITEM_NAME.K());
+            SetBookletProperties(licenseObj, License2Data.SamplePrefabName, LocalizationKey.LICENSE_2_SAMPLE_ITEM_NAME, BundleLoader.Pass2Sprites.ItemSampleSprite);
         }
 
-        private static void SetBookletProperties(GameObject licenseObj, string bookletName, string nameLocalKey)
+        private static void SetBookletProperties(GameObject licenseObj, string bookletName, LocalizationKey itemName, Sprite itemSprite)
         {
             licenseObj.name = bookletName;
 
@@ -187,8 +194,10 @@ namespace PassengerJobs.Injectors
             InventoryItemSpec itemSpec = licenseObj.GetComponent<InventoryItemSpec>();
             if (itemSpec)
             {
-                itemSpec.localizationKeyName = nameLocalKey;
+                itemSpec.localizationKeyName = itemName.K();
                 itemSpec.itemPrefabName = bookletName;
+                itemSpec.itemIconSprite = itemSprite;
+                itemSpec.itemIconSpriteStandard = itemSprite;
             }
             else PJMain.Warning($"Couldn't set inventory name on {bookletName}");
 

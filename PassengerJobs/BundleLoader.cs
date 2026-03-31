@@ -9,13 +9,34 @@ namespace PassengerJobs
 {
     internal static class BundleLoader
     {
-        public static Sprite License1Sprite { get; private set; }
-        public static Sprite License2Sprite { get; private set; }
+        public class LicenseSprites
+        {
+            public readonly string BaseName;
+
+            public LicenseSprites(string baseName)
+            {
+                BaseName = baseName;
+            }
+
+            public Sprite Icon;
+            public string IconPath => $"Assets/Licenses/{BaseName}.png";
+
+            public Sprite ItemSprite;
+            public string ItemSpritePath => $"Assets/Licenses/{BaseName}Item.png";
+
+            public Sprite ItemSampleSprite;
+            public string ItemSampleSpritePath => $"Assets/Licenses/{BaseName}ItemSample.png";
+        }
+
+        public static bool SpritesLoadFailed { get; private set; }
+        public static readonly LicenseSprites Pass1Sprites = new("Passengers1");
+        public static readonly LicenseSprites Pass2Sprites = new("Passengers2");
 
         private static bool MasterLoadFailed
         {
             set
             {
+                SpritesLoadFailed = value;
                 SignLoadFailed = value;
                 PlatformLoadFailed = value;
             }
@@ -56,8 +77,8 @@ namespace PassengerJobs
             PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
             PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatformNoBase.prefab", ref RuralPlatformNoBase);
 
-            License1Sprite = TryLoadSprite(bundle, "Assets/Passengers1.png");
-            License2Sprite = TryLoadSprite(bundle, "Assets/Passengers2.png");
+            SpritesLoadFailed |= !TryLoadSprites(bundle, Pass1Sprites);
+            SpritesLoadFailed |= !TryLoadSprites(bundle, Pass2Sprites);
 
             bundle.Unload(false);
         }
@@ -75,9 +96,18 @@ namespace PassengerJobs
             return false;
         }
 
-        private static Sprite TryLoadSprite(AssetBundle bundle, string assetPath)
+        private static bool TryLoadSprites(AssetBundle bundle, LicenseSprites sprites)
         {
-            var sprite = bundle.LoadAsset<Sprite>(assetPath);
+            bool success = true;
+            success &= TryLoadSprite(bundle, sprites.IconPath, out sprites.Icon);
+            success &= TryLoadSprite(bundle, sprites.ItemSpritePath, out sprites.ItemSprite);
+            success &= TryLoadSprite(bundle, sprites.ItemSampleSpritePath, out sprites.ItemSampleSprite);
+            return success;
+        }
+        
+        private static bool TryLoadSprite(AssetBundle bundle, string assetPath, out Sprite sprite)
+        {
+            sprite = bundle.LoadAsset<Sprite>(assetPath);
             if (!sprite)
             {
                 PJMain.Error($"Failed to load sprite ({assetPath}) from asset bundle");
@@ -96,11 +126,13 @@ namespace PassengerJobs
             var bytes = File.ReadAllBytes(bundlePath);
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
-            License1Sprite = TryLoadSprite(bundle, "Assets/Passengers1.png");
-            LicenseInjector.License1.icon = License1Sprite;
+            SpritesLoadFailed = false;
 
-            License2Sprite = TryLoadSprite(bundle, "Assets/Passengers2.png");
-            LicenseInjector.License2.icon = License2Sprite;
+            SpritesLoadFailed |= !TryLoadSprites(bundle, Pass1Sprites);
+            LicenseInjector.License1.icon = Pass1Sprites.Icon;
+
+            TryLoadSprites(bundle, Pass2Sprites);
+            LicenseInjector.License2.icon = Pass2Sprites.Icon;
 
             bundle.Unload(false);
         }
