@@ -1,10 +1,12 @@
 ﻿using DV.Booklets;
+using DV.Booklets.Rendered;
+using DV.RenderTextureSystem;
+using DV.RenderTextureSystem.BookletRender;
+using DV.Utils;
 using HarmonyLib;
 using PassengerJobs.Injectors;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
 using UnityEngine;
 
 namespace PassengerJobs.Patches
@@ -16,48 +18,47 @@ namespace PassengerJobs.Patches
             AccessTools.Method(typeof(Resources), nameof(Resources.Load), new[] { typeof(string), typeof(Type) });
 
         [HarmonyPatch(nameof(BookletCreator_StaticRenderBooklet.Render))]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> RenderTranspiler(IEnumerable<CodeInstruction> instructions)
+        [HarmonyPrefix]
+        public static bool RenderPrefix(GameObject existingBooklet, string renderPrefabName, ref RenderedTexturesBase __result)
         {
-            // replace call to Resources.Load() in order to inject passenger prefabs
-            bool skipping = false;
-
-            foreach (var instruction in instructions)
+            GameObject renderPrefab;
+            if (renderPrefabName == LicenseInjector.License1Data.RenderPrefabName)
             {
-                // skip until after the Resources.Load call
-                if (skipping)
-                {
-                    if (instruction.Calls(_resourcesLoadMethod))
-                    {
-                        skipping = false;
-                    }
-                    continue;
-                }
-
-                if (instruction.opcode == OpCodes.Ldtoken)
-                {
-                    yield return CodeInstruction.Call((string s) => LoadRenderPrefab(s));
-                    skipping = true;
-                    continue;
-                }
-
-                yield return instruction;
+                renderPrefab = LicenseInjector.License1Data.RenderPrefab;
             }
-        }
-
-        private static UnityEngine.Object LoadRenderPrefab(string name)
-        {
-            var result = name switch
+            else if (renderPrefabName == LicenseInjector.License1Data.SampleRenderPrefabName)
             {
-                var n when n == LicenseInjector.License1Data.RenderPrefabName => LicenseInjector.License1Data.RenderPrefab,
-                var n when n == LicenseInjector.License1Data.SampleRenderPrefabName => LicenseInjector.License1Data.SampleRenderPrefab,
-                var n when n == LicenseInjector.License2Data.RenderPrefabName => LicenseInjector.License2Data.RenderPrefab,
-                var n when n == LicenseInjector.License2Data.SampleRenderPrefabName => LicenseInjector.License2Data.SampleRenderPrefab,
-                _ => Resources.Load<GameObject>(name),
-            };
+                renderPrefab = LicenseInjector.License1Data.SampleRenderPrefab;
+            }
+            else if (renderPrefabName == LicenseInjector.License2Data.RenderPrefabName)
+            {
+                renderPrefab = LicenseInjector.License2Data.RenderPrefab;
+            }
+            else if (renderPrefabName == LicenseInjector.License2Data.SampleRenderPrefabName)
+            {
+                renderPrefab = LicenseInjector.License2Data.SampleRenderPrefab;
+            }
+            else
+            {
+                renderPrefab = Resources.Load<GameObject>(renderPrefabName);
+            }
 
-            result!.SetActive(true);
-            return result;
+            var instantiated = UnityEngine.Object.Instantiate(renderPrefab, SingletonBehaviour<RenderTextureSystem>.Instance.transform.position, Quaternion.identity);
+            instantiated.SetActive(true);
+            var staticRenderBase = instantiated.GetComponent<StaticTextureRenderBase>();
+            var renderedTextures = existingBooklet.GetComponent<RenderedTexturesBase>();
+
+            renderedTextures.RegisterTexturesGeneratedEvent(staticRenderBase);
+            staticRenderBase.GenerateStaticPagesTextures();
+
+            if (staticRenderBase is StaticLicenseBookletRender lbr && lbr.jobLicense)
+            {
+                PJMain.Log($"Render job license {renderPrefabName} icon {lbr.jobLicense.icon}");
+            }
+            
+            __result = renderedTextures;
+
+            return false;
         }
     }
 }

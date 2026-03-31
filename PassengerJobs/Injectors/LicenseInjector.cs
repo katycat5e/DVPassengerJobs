@@ -8,6 +8,7 @@ using UnityEngine;
 
 namespace PassengerJobs.Injectors
 {
+#nullable disable
     public class PassengerLicenseData
     {
         public Color Color { get; set; } = new Color(0.278f, 0.518f, 0.69f);
@@ -25,12 +26,13 @@ namespace PassengerJobs.Injectors
 
         public string PrefabName { get; set; } = "";
         public string RenderPrefabName { get; set; } = "";
-        public GameObject? RenderPrefab { get; set; }
+        public GameObject RenderPrefab { get; set; }
 
         public string SamplePrefabName { get; set; } = "";
         public string SampleRenderPrefabName { get; set; } = "";
-        public GameObject? SampleRenderPrefab { get; set; }
+        public GameObject SampleRenderPrefab { get; set; }
     }
+#nullable restore
 
     public static class LicenseInjector
     {
@@ -73,8 +75,8 @@ namespace PassengerJobs.Injectors
 
             try
             {
-                License1 = CreatePassengerLicense(License1Data, JobLicenses.Fragile.ToV2());
-                License2 = CreatePassengerLicense(License2Data, License1);
+                License1 = CreatePassengerLicense(License1Data, BundleLoader.License1Sprite, JobLicenses.Fragile.ToV2());
+                License2 = CreatePassengerLicense(License2Data, BundleLoader.License2Sprite, License1);
             }
             catch (Exception ex)
             {
@@ -84,7 +86,7 @@ namespace PassengerJobs.Injectors
             return true;
         }
 
-        private static JobLicenseType_v2 CreatePassengerLicense(PassengerLicenseData data, JobLicenseType_v2? RequiredJobLicense = null)
+        private static JobLicenseType_v2 CreatePassengerLicense(PassengerLicenseData data, Sprite icon, JobLicenseType_v2? RequiredJobLicense = null)
         {
             var license = ScriptableObject.CreateInstance<JobLicenseType_v2>();
             license.id = license.name = data.Name;
@@ -93,6 +95,7 @@ namespace PassengerJobs.Injectors
             license.v1 = data.V1Flag;
             license.color = data.Color;
             license.price = data.Cost;
+            license.icon = icon;
             license.insuranceFeeQuotaIncrease = data.InsuranceIncrease;
             license.bonusTimeDecreasePercentage = data.TimeDecrease;
             license.requiredJobLicense = RequiredJobLicense;
@@ -116,6 +119,7 @@ namespace PassengerJobs.Injectors
 
             data.RenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatRenderName));
             data.RenderPrefab.name = data.RenderPrefabName;
+            data.RenderPrefab.SetActive(false);
             var staticRender = data.RenderPrefab.GetComponent<StaticLicenseBookletRender>();
             staticRender.jobLicense = license;
 
@@ -128,6 +132,7 @@ namespace PassengerJobs.Injectors
 
             data.SampleRenderPrefab = ModelUtility.CreateMockPrefab(Resources.Load<GameObject>(hazmatInfoRenderName));
             data.SampleRenderPrefab.name = data.SampleRenderPrefabName;
+            data.SampleRenderPrefab.SetActive(false);
             var staticInfoRender = data.SampleRenderPrefab.GetComponent<StaticLicenseBookletRender>();
             staticInfoRender.jobLicense = license;
         }

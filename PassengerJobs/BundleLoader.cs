@@ -1,17 +1,16 @@
-﻿using DV.ThingTypes;
+﻿#nullable disable
+using DV.ThingTypes;
 using DV.ThingTypes.TransitionHelpers;
 using PassengerJobs.Injectors;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace PassengerJobs
 {
     internal static class BundleLoader
     {
-        public static Sprite License1Sprite { get; private set; } = null!;
-        public static Sprite License2Sprite { get; private set; } = null!;
+        public static Sprite License1Sprite { get; private set; }
+        public static Sprite License2Sprite { get; private set; }
 
         private static bool MasterLoadFailed
         {
@@ -23,13 +22,13 @@ namespace PassengerJobs
         }
 
         public static bool SignLoadFailed { get; private set; }
-        public static GameObject SignPrefab = null!;
-        public static GameObject SmallSignPrefab = null!;
-        public static GameObject LillySignPrefab = null!;
+        public static GameObject SignPrefab;
+        public static GameObject SmallSignPrefab;
+        public static GameObject LillySignPrefab;
 
         public static bool PlatformLoadFailed { get; private set; }
-        public static GameObject RuralPlatform = null!;
-        public static GameObject RuralPlatformNoBase = null!;
+        public static GameObject RuralPlatform;
+        public static GameObject RuralPlatformNoBase;
 
         public static void EnsureInitialized()
         {
@@ -57,6 +56,9 @@ namespace PassengerJobs
             PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatform.prefab", ref RuralPlatform);
             PlatformLoadFailed |= !TryLoadPrefab(bundle, "Assets/Platforms/RuralPlatformNoBase.prefab", ref RuralPlatformNoBase);
 
+            License1Sprite = TryLoadSprite(bundle, "Assets/Passengers1.png");
+            License2Sprite = TryLoadSprite(bundle, "Assets/Passengers2.png");
+
             bundle.Unload(false);
         }
 
@@ -73,6 +75,20 @@ namespace PassengerJobs
             return false;
         }
 
+        private static Sprite TryLoadSprite(AssetBundle bundle, string assetPath)
+        {
+            var sprite = bundle.LoadAsset<Sprite>(assetPath);
+            if (!sprite)
+            {
+                PJMain.Error($"Failed to load sprite ({assetPath}) from asset bundle");
+            }
+            else
+            {
+                Object.DontDestroyOnLoad(sprite);
+            }
+            return sprite;
+        }
+
         public static void HandleSaveReload()
         {
             string bundlePath = Path.Combine(PJMain.ModEntry.Path, "passengerjobs");
@@ -80,31 +96,16 @@ namespace PassengerJobs
             var bytes = File.ReadAllBytes(bundlePath);
             var bundle = AssetBundle.LoadFromMemory(bytes);
 
-            License1Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers1.png");
-            License2Sprite = bundle.LoadAsset<Sprite>("Assets/Passengers2.png");
-            if (License1Sprite == null)
-            {
-                PJMain.Error("Failed to load license sprite from asset bundle");
-            }
-            else
-            {
-                UnityEngine.Object.DontDestroyOnLoad(License1Sprite);
-                LicenseInjector.License1.icon = License1Sprite;
-            }
-            if (License2Sprite == null)
-            {
-                PJMain.Error("Failed to load license sprite from asset bundle");
-            }
-            else
-            {
-                UnityEngine.Object.DontDestroyOnLoad(License2Sprite);
-                LicenseInjector.License2.icon = License2Sprite;
-            }
+            License1Sprite = TryLoadSprite(bundle, "Assets/Passengers1.png");
+            LicenseInjector.License1.icon = License1Sprite;
+
+            License2Sprite = TryLoadSprite(bundle, "Assets/Passengers2.png");
+            LicenseInjector.License2.icon = License2Sprite;
 
             bundle.Unload(false);
         }
 
-        private static Shader? _engineShader = null;
+        private static Shader _engineShader = null;
 
         private static Shader EngineShader
         {
