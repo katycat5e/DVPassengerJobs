@@ -81,8 +81,6 @@ public class PJClient : IDisposable
         // Load settings from packet
         PJMain.Settings.UseCustomWages = packet.UseCustomWages;
         PJMain.Settings.CoachLights = packet.CoachLights;
-        PJMain.Settings.UseCustomCoachLightColour = packet.UseCustomCoachLightColour;
-        PJMain.Settings.CustomCoachLightColour = packet.CustomCoachLightColour;
         PJMain.Settings.CoachLightsRequirePower = packet.CoachLightsRequirePower;
 
         // Notify listeners that settings have changed

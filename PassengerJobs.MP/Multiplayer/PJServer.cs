@@ -131,8 +131,6 @@ internal class PJServer : IDisposable
         {
             UseCustomWages = PJMain.Settings.UseCustomWages,
             CoachLights = PJMain.Settings.CoachLights,
-            UseCustomCoachLightColour = PJMain.Settings.UseCustomCoachLightColour,
-            CustomCoachLightColour = PJMain.Settings.CustomCoachLightColour,
             CoachLightsRequirePower = PJMain.Settings.CoachLightsRequirePower
         };
 
