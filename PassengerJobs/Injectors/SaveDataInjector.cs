@@ -111,16 +111,14 @@ namespace PassengerJobs.Injectors
 
         public static void AcquirePassengerLicense()
         {
-            if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P1_KEY) == true) &&
-                Inventory.Instance && !LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License1))
+            if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P1_KEY) == true) && Inventory.Instance)
             {
                 PJMain.Log("Acquiring passengers1 license");
                 LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License1 });
 
                 Inventory.Instance.RemoveMoney(LicenseInjector.License1Data.Cost);
             }
-            if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P2_KEY) == true)
-                && Inventory.Instance && !LicenseManager.Instance.IsJobLicenseAcquired(LicenseInjector.License2))
+            if ((loadedData != null) && (loadedData.GetBool(HAS_LICENSE_P2_KEY) == true) && Inventory.Instance)
             {
                 PJMain.Log("Acquiring passengers2 license");
                 LicenseManager.Instance.AcquireJobLicense(new[] { LicenseInjector.License2 });
