@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.WeatherSystem;
+using PassengerJobs.Extensions;
 using PassengerJobs.Generation;
 using System;
 using System.Collections;

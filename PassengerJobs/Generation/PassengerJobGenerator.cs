@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using DV.ThingTypes;
+using PassengerJobs.Extensions;
 using PassengerJobs.Injectors;
 using PassengerJobs.Platforms;
 using System;
@@ -509,6 +510,14 @@ namespace PassengerJobs.Generation
             return new PaymentCalculationData(carTypeCount, cargoTypeDict);
         }
 
+        public delegate void BeginSpawnConsistDelegate(IEnumerable<TrainCarLivery> carTypes);
+        public delegate void AfterSpawnConsistDelegate(IEnumerable<TrainCar>? spawnedCars);
+
+        public static event BeginSpawnConsistDelegate? BeginSpawnConsist;
+        public static event AfterSpawnConsistDelegate? AfterSpawnConsist;
+
+        private static object _spawnThreadLock = new();
+
         private static PassengerHaulJobDefinition? PopulateExpressJobAndSpawn(
             JobChainController chainController, Station startStation,
             RouteTrack startTrack, RouteResult route, List<TrainCarLivery> carTypes,
@@ -517,7 +526,13 @@ namespace PassengerJobs.Generation
             // Spawn the cars.
             RailTrack startRT = startTrack.Track.RailTrack();
 
-            var spawnedCars = SpawnCars();
+            List<TrainCar> spawnedCars;
+            lock (_spawnThreadLock)
+            {
+                BeginSpawnConsist?.Invoke(carTypes);
+                spawnedCars = SpawnCars(startTrack, carTypes, randomOrientation, startRT);
+                AfterSpawnConsist?.Invoke(spawnedCars);
+            }
 
             if (spawnedCars == null) return null;
 
@@ -533,38 +548,38 @@ namespace PassengerJobs.Generation
             return PopulateExpressJobExistingCars(chainController, startStation,
                 startTrack, route, logicCars,
                 chainData, timeLimit, initialPay);
+        }
 
-            List<TrainCar> SpawnCars()
+        private static List<TrainCar> SpawnCars(RouteTrack startTrack, List<TrainCarLivery> carTypes, bool randomOrientation, RailTrack startRT)
+        {
+            bool flipConsist = UnityEngine.Random.value <= 0.5f;
+
+            // Bias toward buffers/track end. This looks better on terminal stations like CW.
+            if (!startRT.inIsConnected)
             {
-                bool flipConsist = UnityEngine.Random.value <= 0.5f;
+                return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, WIGGLE_DISTANCE,
+                    flipConsist, randomOrientation, false);
+            }
 
-                // Bias toward buffers/track end. This looks better on terminal stations like CW.
-                if (!startRT.inIsConnected)
-                {
-                    return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, WIGGLE_DISTANCE,
-                        flipConsist, randomOrientation, false);
-                }
+            // Same but the other side.
+            if (!startRT.outIsConnected)
+            {
+                // It's defined by the distance from the start of the "in" of the track, so position must be reversed.
+                var position = startTrack.Length - CarSpawner.Instance.GetTotalCarLiveriesLength(carTypes, true);
+                return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, position - WIGGLE_DISTANCE,
+                    flipConsist, randomOrientation, false);
+            }
 
-                // Same but the other side.
-                if (!startRT.outIsConnected)
-                {
-                    // It's defined by the distance from the start of the "in" of the track, so position must be reversed.
-                    var position = startTrack.Length - CarSpawner.Instance.GetTotalCarLiveriesLength(carTypes, true);
-                    return CarSpawner.Instance.SpawnCarTypesOnTrackStrict(carTypes, startRT, true, true, position - WIGGLE_DISTANCE,
-                        flipConsist, randomOrientation, false);
-                }
-
-                // Else use the regular middle based spawn data.
-                if (randomOrientation)
-                {
-                    return CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT,
-                        true, true, 0, flipConsist, false);
-                }
-                else
-                {
-                    return CarSpawner.Instance.SpawnCarTypesOnTrack(carTypes, Enumerable.Repeat(false, carTypes.Count).ToList(), startRT,
-                        true, true, 0, flipConsist, false);
-                }
+            // Else use the regular middle based spawn data.
+            if (randomOrientation)
+            {
+                return CarSpawner.Instance.SpawnCarTypesOnTrackRandomOrientation(carTypes, startRT,
+                    true, true, 0, flipConsist, false);
+            }
+            else
+            {
+                return CarSpawner.Instance.SpawnCarTypesOnTrack(carTypes, Enumerable.Repeat(false, carTypes.Count).ToList(), startRT,
+                    true, true, 0, flipConsist, false);
             }
         }
 

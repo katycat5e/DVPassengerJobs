@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DebugTools", "DebugTools\De
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PassengerJobs.MP", "PassengerJobs.MP\PassengerJobs.MP.csproj", "{D2C70092-D260-46A6-8257-97EF61C67127}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PassengerJobs.Skins", "PassengerJobs.Skins\PassengerJobs.Skins.csproj", "{73586C17-B7F8-42E3-A586-E793030C6CF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{D2C70092-D260-46A6-8257-97EF61C67127}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2C70092-D260-46A6-8257-97EF61C67127}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2C70092-D260-46A6-8257-97EF61C67127}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73586C17-B7F8-42E3-A586-E793030C6CF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73586C17-B7F8-42E3-A586-E793030C6CF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73586C17-B7F8-42E3-A586-E793030C6CF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73586C17-B7F8-42E3-A586-E793030C6CF2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

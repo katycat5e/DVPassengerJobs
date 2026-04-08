@@ -50,11 +50,6 @@ namespace PassengerJobs.Patches
 
             renderedTextures.RegisterTexturesGeneratedEvent(staticRenderBase);
             staticRenderBase.GenerateStaticPagesTextures();
-
-            if (staticRenderBase is StaticLicenseBookletRender lbr && lbr.jobLicense)
-            {
-                PJMain.Log($"Render job license {renderPrefabName} icon {lbr.jobLicense.icon}");
-            }
             
             __result = renderedTextures;
 

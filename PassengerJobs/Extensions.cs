@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 
-namespace PassengerJobs
+namespace PassengerJobs.Extensions
 {
-    internal static class Extensions
+    public static class Extensions
     {
         private static readonly Random R = new();
         

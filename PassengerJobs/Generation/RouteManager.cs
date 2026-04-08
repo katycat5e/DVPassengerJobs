@@ -1,5 +1,6 @@
 ﻿using DV.Logic.Job;
 using Newtonsoft.Json;
+using PassengerJobs.Extensions;
 using PassengerJobs.Platforms;
 using System;
 using System.Collections.Generic;
