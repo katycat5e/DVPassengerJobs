@@ -28,10 +28,10 @@ namespace PassengerJobs
             Translations = new TranslationInjector("cc.foxden.passenger_jobs");
             Translations.AddTranslationsFromCsv(Path.Combine(ModEntry.Path, "translations.csv"));
             Translations.AddTranslationsFromWebCsv("https://docs.google.com/spreadsheets/d/1sQ26qpB6czqGC0ObV6Y7OfwIEqPtGm1SBCLYvp47PSY/export?format=csv&gid=1132930393");
-     
+
             // inject licenses
             if (!LicenseInjector.RegisterPassengerLicenses()) return false;
-            
+
             // load route config
             if (!RouteManager.LoadConfig()) return false;
 
@@ -49,8 +49,8 @@ namespace PassengerJobs
             ModEntry.OnSaveGUI = SaveGUI;
 
             // Find companion mods
-            //SkinManager_Patch.Initialize();
-            MultiplayerShim.TryInitialise(modEntry);
+            TryLoadSkinManager();
+            MultiplayerShim.TryInitialise();
 
             DV.Globals.G.Types.RecalculateCaches();
 
@@ -58,24 +58,31 @@ namespace PassengerJobs
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
 #if DEBUG
-            string debugToolsDll = Path.Combine(ModEntry.Path, "PassengerJobs.DebugTools.dll");
-            var dtAssembly = Assembly.LoadFile(debugToolsDll);
+            var dtAssembly = Bootstrapper.TryLoadAssembly("PassengerJobs.DebugTools.dll");
 
             if (dtAssembly is not null)
             {
                 Log("Loaded Debug Tools");
-                //foreach (var initMethod in dtAssembly.GetTypes().SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static)))
-                //{
-                //    if ((initMethod.Name == "Initialize") && (initMethod.GetParameters().Length == 0))
-                //    {
-                //        initMethod.Invoke(null, Array.Empty<object>());
-                //    }
-                //}
                 harmony.PatchAll(dtAssembly);
             }
 #endif
 
             return true;
+        }
+        
+        private static void TryLoadSkinManager()
+        {
+            if (UnityModManager.FindMod("SkinManagerMod")?.Active == true)
+            {
+                if (Bootstrapper.TryLoadAssembly("PassengerJobs.Skins.dll") is not null)
+                {
+                    Log("Activated Skin Manager integration");
+                }
+            }
+            else
+            {
+                Log("Skin Manager not found, skipping integration");
+            }
         }
 
         #endregion

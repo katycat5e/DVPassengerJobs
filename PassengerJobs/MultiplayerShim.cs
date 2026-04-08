@@ -35,34 +35,25 @@ internal static class MultiplayerShim
         }
     }
 
-    internal static void TryInitialise(UnityModManager.ModEntry modEntry)
+    internal static void TryInitialise()
     {
         UnityModManager.ModEntry? multiplayer = UnityModManager.FindMod(MULTIPLAYER_MOD_ID);
         var mpapiAssembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == MPAPI_ASSEMBLY_NAME);
-        var path = Path.Combine(modEntry.Path, MP_INTEGRATION_DLL);
 
         try
         {
             if (multiplayer?.Enabled == true && mpapiAssembly != null)
             {
                 PJMain.Log("Multiplayer mod detected");
-                if (!File.Exists(path))
+
+                var initMethod = Bootstrapper.TryLoadInitializeMethod(MP_INTEGRATION_DLL, MP_INTEGRATION_BOOTSTRAP, MP_INTEGRATION_INIT_METHOD);
+                if (initMethod == null)
                 {
-                    PJMain.Warning($"{MP_INTEGRATION_DLL} Was not found, unable to activate multiplayer integration");
+                    PJMain.Warning($"Failed to find {MP_INTEGRATION_BOOTSTRAP}.{MP_INTEGRATION_INIT_METHOD} in {MP_INTEGRATION_DLL}, multiplayer support will be disabled.");
                     return;
                 }
 
-                var mpAssembly = Assembly.LoadFile(path);
-                var bootstrap = mpAssembly.GetType(MP_INTEGRATION_BOOTSTRAP);
-
-                if (bootstrap == null)
-                {
-                    PJMain.Warning($"Failed to find {MP_INTEGRATION_BOOTSTRAP} in {MP_INTEGRATION_DLL}, multiplayer support will be disabled.");
-                    return;
-                }
-
-                var init = bootstrap.GetMethod(MP_INTEGRATION_INIT_METHOD, BindingFlags.Public | BindingFlags.Static);
-                init?.Invoke(null, null);
+                initMethod.Invoke(null, null);
 
                 var mpApiType = mpapiAssembly.GetType(MPAPI_TYPE_NAME);
                 var instanceProp = mpApiType?.GetProperty(MPAPI_INSTANCE_PROPERTY, BindingFlags.Public | BindingFlags.Static);
