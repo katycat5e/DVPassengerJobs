@@ -9,6 +9,7 @@ namespace PassengerJobs
     internal class CCLIntegration
     {
         private static bool _loaded = false;
+        private static UnityModManager.ModEntry? s_mod;
         private static MethodInfo? s_getTrainset;
         private static MethodInfo? s_trainsetEnabled;
         private static MethodInfo? s_liveryEnabled;
@@ -17,7 +18,7 @@ namespace PassengerJobs
         {
             get
             {
-                if (_loaded) return true;
+                if (_loaded && s_mod != null) return s_mod.Active;
                 TryLoad();
                 return _loaded;
             }
@@ -25,13 +26,17 @@ namespace PassengerJobs
 
         private static void TryLoad()
         {
-            if (_loaded) return;
+            if (_loaded && s_mod != null) return;
 
-            var ccl = UnityModManager.FindMod("DVCustomCarLoader");
+            _loaded = false;
+            s_mod = UnityModManager.FindMod("DVCustomCarLoader");
 
-            if (ccl == null) return;
+            if (s_mod == null || s_mod.Assembly == null) return;
 
-            var manager = ccl.Assembly.GetType("CCL.Importer.CarManager");
+            var manager = s_mod.Assembly.GetType("CCL.Importer.CarManager");
+
+            if (manager == null) return;
+            
             s_getTrainset = manager.GetMethod("GetTrainsetForLivery");
             s_trainsetEnabled = manager.GetMethod("IsTrainsetEnabled");
             s_liveryEnabled = manager.GetMethod("IsCarLiveryEnabled");
