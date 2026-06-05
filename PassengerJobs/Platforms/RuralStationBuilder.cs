@@ -30,8 +30,23 @@ namespace PassengerJobs.Platforms
 
         public static RuralStationData? CreateStation(StationConfig.RuralStation station, RuralStationData? existing = null)
         {
+            if(station.location != null)
+            {
+                return CreateStationPart(station, (Vector3)station.location, false, null);   
+            } else if (station.locationA != null && station.locationB != null)
+            {
+                var firstPartStationData = CreateStationPart(station, (Vector3)station.locationA, false, null);
+                return CreateStationPart(station, (Vector3)station.locationB, true, firstPartStationData);
+            } else
+            {
+                PJMain.Error($"location was null and locationA and locationB weren't both set for station {station.id}");
+                return null;
+            }
+        }
+        public static RuralStationData? CreateStationPart(StationConfig.RuralStation station, Vector3 location, bool isSideB = false, RuralStationData? existing = null)
+        {
             // find closest track point to station location
-            Vector3 searchPosition = station.location + WorldMover.currentMove;
+            Vector3 searchPosition = location + WorldMover.currentMove;
 
             (RailTrack? railTrack, EQPoint? trackPoint) = RailTrack.GetClosest(searchPosition);
             if (!railTrack || !trackPoint.HasValue)
@@ -80,7 +95,7 @@ namespace PassengerJobs.Platforms
             // create controllers & meshes
             var loadingMachine = new RuralLoadingMachine(station.id, track, lowIdx, highIdx, station.markerAngle, isYardTrack);
 
-            var platformObj = GenerateDecorations(loadingMachine, station);
+            var platformObj = GenerateDecorations(loadingMachine, station, isSideB);
             if (!platformObj)
             {
                 return null;
@@ -99,7 +114,7 @@ namespace PassengerJobs.Platforms
             return new RuralStationData(loadingMachine, controller);
         }
 
-        public static GameObject? GenerateDecorations(RuralLoadingMachine platform, StationConfig.RuralStation config)
+        public static GameObject? GenerateDecorations(RuralLoadingMachine platform, StationConfig.RuralStation config, bool isSideB)
         {
             var railTrack = platform.WarehouseTrack.RailTrack();
 
@@ -124,7 +139,7 @@ namespace PassengerJobs.Platforms
 
             bool isInsideStation = StationController.GetStationByYardID(platform.ID);
 
-            (var holder, var decorations) = GeneratePlatformMeshes(lowPoint, highPoint, platform.ID, railTrack, config, isInsideStation);
+            (var holder, var decorations) = GeneratePlatformMeshes(lowPoint, highPoint, platform.ID, railTrack, config, isInsideStation, isSideB);
 
             if (!isInsideStation)
             {
@@ -153,7 +168,7 @@ namespace PassengerJobs.Platforms
             SetTrackSignText(highSign, id);
         }
 
-        private static (GameObject holder, GameObject decorations) GeneratePlatformMeshes(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack, StationConfig.RuralStation config, bool isInsideStation)
+        private static (GameObject holder, GameObject decorations) GeneratePlatformMeshes(EQPoint lowPoint, EQPoint highPoint, string id, RailTrack railTrack, StationConfig.RuralStation config, bool isInsideStation, bool isSideB)
         {
             // Setup platform
             var platformHolder = new GameObject($"[platform] {id}");
@@ -167,7 +182,8 @@ namespace PassengerJobs.Platforms
             PJMain.Log($"spawn {id} center @ {railTrack.name} {centerPoint.index}");
 #endif
             
-            double platformLengthOffset = config.swapSides ? -PLATFORM_HALF_LENGTH : PLATFORM_HALF_LENGTH;
+            bool shouldSwapSides = isSideB ? (config.swapSidesB ?? !config.swapSides) : config.swapSides;
+            double platformLengthOffset = shouldSwapSides ? -PLATFORM_HALF_LENGTH : PLATFORM_HALF_LENGTH;
 
             double highSpan = Mathd.Clamp(centerPoint.span + platformLengthOffset, 0, pointSet.span);
             int platformHighIdx = pointSet.GetPointIndexForSpan(highSpan);
