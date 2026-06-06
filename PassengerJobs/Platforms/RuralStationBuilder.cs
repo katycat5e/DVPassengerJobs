@@ -141,7 +141,7 @@ namespace PassengerJobs.Platforms
 
             (var holder, var decorations) = GeneratePlatformMeshes(lowPoint, highPoint, platform.ID, railTrack, config, isInsideStation, isSideB);
 
-            if (!isInsideStation)
+            if (!isInsideStation && !isSideB)
             {
                 var tpAnchor = decorations.transform.Find(TELEPORT_ANCHOR);
                 CoroutineManager.Instance.StartCoroutine(InitStationLabelCoro(tpAnchor, platform.ID, platform.MarkerAngle ?? 0));
