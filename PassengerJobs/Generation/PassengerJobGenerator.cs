@@ -421,7 +421,7 @@ namespace PassengerJobs.Generation
             //--------------------------------------------------------------------------------------------------------------------------------
             // Create multi stage transport job.
             var chainData = new ExpressStationsChainData(Controller.stationInfo.YardID, destinations.Tracks.Select(d => d.Station.YardID).ToArray());
-            PaymentCalculationData transportPaymentData = GetJobPaymentData(jobCarTypes);
+            PaymentCalculationData transportPaymentData = CCLIntegration.GetModifiedData(GetJobPaymentData(jobCarTypes), jobCarTypes);
 
             // Calculate haul payment.
             float haulDistance = GetTotalHaulDistance(Controller, destinations.Tracks);

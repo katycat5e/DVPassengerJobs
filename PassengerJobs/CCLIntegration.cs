@@ -1,6 +1,8 @@
 ﻿using DV.ThingTypes;
 using PassengerJobs.Generation;
+using PassengerJobs.Injectors;
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityModManagerNet;
 
@@ -9,32 +11,45 @@ namespace PassengerJobs
     internal class CCLIntegration
     {
         private static bool _loaded = false;
+        private static UnityModManager.ModEntry? s_mod;
         private static MethodInfo? s_getTrainset;
         private static MethodInfo? s_trainsetEnabled;
         private static MethodInfo? s_liveryEnabled;
+        private static MethodInfo? s_getExtendedPaymentData;
 
         public static bool Loaded
         {
             get
             {
-                if (_loaded) return true;
+                if (_loaded && s_mod != null) return s_mod.Active;
                 TryLoad();
-                return _loaded;
+                return _loaded && s_mod != null && s_mod.Active;
             }
         }
 
         private static void TryLoad()
         {
-            if (_loaded) return;
+            if (_loaded && s_mod != null) return;
 
-            var ccl = UnityModManager.FindMod("DVCustomCarLoader");
+            _loaded = false;
+            s_mod = UnityModManager.FindMod("DVCustomCarLoader");
 
-            if (ccl == null) return;
+            if (s_mod == null || s_mod.Assembly == null) return;
 
-            var manager = ccl.Assembly.GetType("CCL.Importer.CarManager");
+            var manager = s_mod.Assembly.GetType("CCL.Importer.CarManager");
+
+            if (manager == null) return;
+            
             s_getTrainset = manager.GetMethod("GetTrainsetForLivery");
             s_trainsetEnabled = manager.GetMethod("IsTrainsetEnabled");
             s_liveryEnabled = manager.GetMethod("IsCarLiveryEnabled");
+
+            var extendedPaymentData = s_mod.Assembly.GetType("CCL.Importer.ExtendedPaymentData");
+
+            if (extendedPaymentData == null) return;
+
+            s_getExtendedPaymentData = extendedPaymentData.GetMethod("ForSingleCargoType");
+
             _loaded = true;
         }
 
@@ -98,6 +113,13 @@ namespace PassengerJobs
             var value = (int)f.GetValue(livery);
 
             return value > 0 ? value : int.MaxValue;
+        }
+
+        public static PaymentCalculationData GetModifiedData(PaymentCalculationData original, List<TrainCarLivery> jobCarTypes)
+        {
+            if (!Loaded || s_getExtendedPaymentData == null) return original;
+
+            return (PaymentCalculationData)s_getExtendedPaymentData.Invoke(null, new object[] { original, jobCarTypes, CargoInjector.PassengerCargo.v1 });
         }
     }
 }
