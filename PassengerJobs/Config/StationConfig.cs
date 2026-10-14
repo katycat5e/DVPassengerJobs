@@ -29,8 +29,11 @@ namespace PassengerJobs.Config
         {
             public string id;
 
-            public Vector3 location;
+            public Vector3? location;
+            public Vector3? locationA;
+            public Vector3? locationB;
             public bool swapSides;
+            public bool? swapSidesB;
 
             // Platform configuration
             public bool hideConcrete;
