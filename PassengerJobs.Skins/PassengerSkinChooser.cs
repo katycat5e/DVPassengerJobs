@@ -4,21 +4,34 @@ using DV.ThingTypes;
 using PassengerJobs.Extensions;
 using PassengerJobs.Generation;
 using SkinManagerMod;
+using HarmonyLib;
 
 namespace PassengerJobs.Skins;
 
-public class PassengerSkinChooser : SkinChooser
+public static class PassengerSkinChooser
 {
-    private string? _chosenConsistSkin = null;
+    private static string? _chosenConsistSkin;
+    private static HashSet<TrainCarLivery>? _consistLiveries;
+    private static bool _initialized;
 
-    public PassengerSkinChooser() : base()
+    public static void Initialize()
     {
+        if (_initialized) return;
+        var harmony = new Harmony("PassengerJobs.Skins");
+        harmony.Patch(AccessTools.Method(typeof(SkinProvider), nameof(SkinProvider.GetNewSkin),
+            new[] { typeof(TrainCarLivery) }),
+            prefix: new HarmonyMethod(typeof(PassengerSkinChooser), nameof(ChooseConsistSkin)));
+        // Clear the selection even when spawning throws, including older Passenger Jobs builds.
+        harmony.Patch(AccessTools.Method(typeof(PassengerJobGenerator), "SpawnCars"),
+            finalizer: new HarmonyMethod(typeof(PassengerSkinChooser), nameof(ClearConsistSkin)));
         PassengerJobGenerator.BeginSpawnConsist += OnBeginSpawnConsist;
         PassengerJobGenerator.AfterSpawnConsist += OnAfterSpawnConsist;
+        _initialized = true;
     }
 
-    private void OnBeginSpawnConsist(IEnumerable<TrainCarLivery> carTypes)
+    private static void OnBeginSpawnConsist(IEnumerable<TrainCarLivery> carTypes)
     {
+        ClearConsistSkin();
         var availableSkins = new HashSet<string>();
         bool first = true;
 
@@ -31,10 +44,12 @@ public class PassengerSkinChooser : SkinChooser
         // find skins that are applicable to the entire consist
         foreach (var livery in uniqueCarTypes)
         {
-            bool isCCL = SkinManager.IsCCLCarType(livery);
+            bool isCCL = !SkinProvider.IsThemeable(livery);
             bool includeDefaults = preferDefaults || allowDefaults || (allowCCLDefaults && isCCL);
 
             var skinsForType = SkinProvider.GetSkinsForType(livery, includeDefaults, false);
+            skinsForType.RemoveAll(s => SkinProvider.TryGetThemeSettings(s.name, out var settings)
+                && settings.PreventRandomSpawning);
             if (preferDefaults)
             {
                 skinsForType.RemoveAll(s => !SkinProvider.IsBuiltInTheme(s));
@@ -67,16 +82,25 @@ public class PassengerSkinChooser : SkinChooser
         }
 
         PJMain.Log($"Chose skin {_chosenConsistSkin} for new consist");
+        _consistLiveries = new HashSet<TrainCarLivery>(uniqueCarTypes);
     }
     
-    private void OnAfterSpawnConsist(IEnumerable<TrainCar>? _)
+    private static void OnAfterSpawnConsist(IEnumerable<TrainCar>? _)
     {
-        _chosenConsistSkin = null;
+        ClearConsistSkin();
     }
 
-    public override bool TryChooseSkin(TrainCar car, out string? skinName)
+    private static void ClearConsistSkin()
     {
-        skinName = _chosenConsistSkin;
-        return _chosenConsistSkin is not null;
+        _chosenConsistSkin = null;
+        _consistLiveries = null;
+    }
+
+    private static bool ChooseConsistSkin(TrainCarLivery __0, ref string __result)
+    {
+        if (_chosenConsistSkin is null || _consistLiveries?.Contains(__0) != true)
+            return true;
+        __result = _chosenConsistSkin;
+        return false;
     }
 }

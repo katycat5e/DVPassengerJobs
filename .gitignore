@@ -544,6 +544,7 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/windows,visualstudio,csharp
 
 Directory.Build.targets
+artifacts/
 
 # jetbrains rider
 .idea

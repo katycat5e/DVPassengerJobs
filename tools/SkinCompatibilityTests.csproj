@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IntermediateOutputPath>obj/tests/</IntermediateOutputPath>
+    <OutputPath>bin/tests/</OutputPath>
+  </PropertyGroup>
+  <ItemGroup><Compile Include="SkinCompatibilityTests.cs" /></ItemGroup>
+</Project>

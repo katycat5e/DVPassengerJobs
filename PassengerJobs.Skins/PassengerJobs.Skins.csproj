@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Reference Include="Assembly-CSharp"/>
+    <Reference Include="0Harmony"/>
     <Reference Include="DV.ThingTypes"/>
     <Reference Include="SkinManagerMod"/>
     <Reference Include="UnityEngine.CoreModule"/>

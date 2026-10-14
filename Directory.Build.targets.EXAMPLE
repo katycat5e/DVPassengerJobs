@@ -19,6 +19,7 @@
 			$(DvInstallDir)\Mods\DVLangHelper\;
 			$(DvInstallDir)\Mods\CommsRadioAPI\;
 			$(DvInstallDir)\Mods\Multiplayer\;
+            $(DvInstallDir)\Mods\SkinManagerMod\;
         </ReferencePath>
         <AssemblySearchPaths>$(AssemblySearchPaths);$(ReferencePath);</AssemblySearchPaths>
 		<SignToolPath>C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\</SignToolPath>

@@ -74,9 +74,19 @@ namespace PassengerJobs
         {
             if (UnityModManager.FindMod("SkinManagerMod")?.Active == true)
             {
-                if (Bootstrapper.TryLoadAssembly("PassengerJobs.Skins.dll") is not null)
+                var initialize = Bootstrapper.TryLoadInitializeMethod("PassengerJobs.Skins.dll",
+                    "PassengerJobs.Skins.PassengerSkinChooser");
+                if (initialize is not null)
                 {
-                    Log("Activated Skin Manager integration");
+                    try
+                    {
+                        initialize.Invoke(null, null);
+                        Log("Activated Skin Manager integration");
+                    }
+                    catch (Exception ex)
+                    {
+                        Warning($"Skin Manager integration could not be initialized: {ex}");
+                    }
                 }
             }
             else

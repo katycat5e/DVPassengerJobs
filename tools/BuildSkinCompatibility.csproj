@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Build the adapter against the installed Passenger Jobs version without downgrading it. -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>PassengerJobs.Skins</AssemblyName>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DvInstallDir Condition="'$(DvInstallDir)' == ''">W:\SteamLibrary\steamapps\common\Derail Valley</DvInstallDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../PassengerJobs.Skins/PassengerSkinChooser.cs" />
+    <Reference Include="PassengerJobs" HintPath="$(DvInstallDir)/Mods/PassengerJobs/PassengerJobs.dll" />
+    <Reference Include="SkinManagerMod" HintPath="$(DvInstallDir)/Mods/SkinManagerMod/SkinManagerMod.dll" />
+    <Reference Include="0Harmony" HintPath="$(DvInstallDir)/DerailValley_Data/Managed/UnityModManager/0Harmony.dll" />
+    <Reference Include="Assembly-CSharp" HintPath="$(DvInstallDir)/DerailValley_Data/Managed/Assembly-CSharp.dll" />
+    <Reference Include="DV.ThingTypes" HintPath="$(DvInstallDir)/DerailValley_Data/Managed/DV.ThingTypes.dll" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(DvInstallDir)/DerailValley_Data/Managed/UnityEngine.CoreModule.dll" />
+    <Reference Include="UnityModManager" HintPath="$(DvInstallDir)/DerailValley_Data/Managed/UnityModManager/UnityModManager.dll" />
+  </ItemGroup>
+</Project>
